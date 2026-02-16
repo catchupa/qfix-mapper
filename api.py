@@ -4,7 +4,7 @@ import tempfile
 
 from flask import Flask, jsonify, request
 
-from mapping import map_product
+from mapping import map_product, map_clothing_type, map_material, QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS
 from mapping_v2 import map_product_v2
 from database import create_table_v2, upsert_product_v2, migrate_products_table, create_table_ginatricot
 from protocol_parser import parse_protocol_xlsx
@@ -402,6 +402,127 @@ def identify():
         return jsonify({"error": f"Vision API error: {e}"}), 500
 
     return jsonify(result)
+
+
+# ── Unmapped categories endpoint ──────────────────────────────────────────
+
+@app.route("/unmapped")
+def unmapped_categories():
+    """Return all clothing types and materials that don't map to QFix, grouped by brand."""
+    conn = get_db()
+
+    result = {}
+
+    # KappAhl unmapped
+    kappahl_rows = conn.execute(
+        "SELECT DISTINCT clothing_type, material_composition, category FROM products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
+    ).fetchall()
+
+    kappahl_unmapped_types = {}
+    kappahl_unmapped_materials = set()
+    for row in kappahl_rows:
+        ct = row["clothing_type"]
+        mat = row["material_composition"]
+        mapped_type = map_clothing_type(ct)
+        if mapped_type is None and ct:
+            if ct not in kappahl_unmapped_types:
+                kappahl_unmapped_types[ct] = 0
+            kappahl_unmapped_types[ct] += 1
+        mapped_mat = map_material(mat)
+        if mapped_mat == "Other/Unsure" and mat:
+            kappahl_unmapped_materials.add(mat)
+
+    result["kappahl"] = {
+        "unmapped_clothing_types": [
+            {"clothing_type": ct, "distinct_products": count}
+            for ct, count in sorted(kappahl_unmapped_types.items())
+        ],
+        "unmapped_materials": sorted(kappahl_unmapped_materials),
+    }
+
+    # Gina Tricot unmapped
+    try:
+        gt_rows = conn.execute(
+            "SELECT DISTINCT clothing_type, material_composition, category FROM ginatricot_products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
+        ).fetchall()
+    except Exception:
+        gt_rows = []
+
+    gt_unmapped_types = {}
+    gt_unmapped_materials = set()
+    for row in gt_rows:
+        ct = row["clothing_type"]
+        mat = row["material_composition"]
+        mapped_type = map_clothing_type(ct)
+        if mapped_type is None and ct:
+            if ct not in gt_unmapped_types:
+                gt_unmapped_types[ct] = 0
+            gt_unmapped_types[ct] += 1
+        mapped_mat = map_material(mat)
+        if mapped_mat == "Other/Unsure" and mat:
+            gt_unmapped_materials.add(mat)
+
+    result["ginatricot"] = {
+        "unmapped_clothing_types": [
+            {"clothing_type": ct, "distinct_products": count}
+            for ct, count in sorted(gt_unmapped_types.items())
+        ],
+        "unmapped_materials": sorted(gt_unmapped_materials),
+    }
+
+    # Also include reference: valid QFix categories for mapping
+    result["qfix_valid_clothing_types"] = {name: id for name, id in sorted(QFIX_CLOTHING_TYPE_IDS.items())}
+    result["qfix_valid_materials"] = {
+        ct_id: {str(mat_id): mat_name for mat_id, mat_name in mats.items()}
+        for ct_id, mats in VALID_MATERIAL_IDS.items()
+    }
+
+    conn.close()
+    return jsonify(result)
+
+
+@app.route("/unmapped/add", methods=["POST"])
+def add_mapping():
+    """Add a new clothing type or material mapping.
+
+    JSON body:
+      {"type": "clothing_type", "from": "kjolar > langkjolar", "to": "Skirt / Dress"}
+      {"type": "material", "from": "neopren", "to": "Standard textile"}
+    """
+    from mapping import CLOTHING_TYPE_MAP, MATERIAL_MAP
+
+    data = request.get_json()
+    if not data:
+        return jsonify({"error": "JSON body required"}), 400
+
+    mapping_type = data.get("type")
+    from_val = data.get("from", "").strip().lower()
+    to_val = data.get("to", "").strip()
+
+    if not mapping_type or not from_val or not to_val:
+        return jsonify({"error": "Required fields: type, from, to"}), 400
+
+    if mapping_type == "clothing_type":
+        if to_val not in QFIX_CLOTHING_TYPE_IDS:
+            return jsonify({
+                "error": f"Invalid QFix clothing type: '{to_val}'",
+                "valid_types": sorted(QFIX_CLOTHING_TYPE_IDS.keys()),
+            }), 400
+        CLOTHING_TYPE_MAP[from_val] = to_val
+        return jsonify({"status": "ok", "mapped": f"'{from_val}' -> '{to_val}' (id={QFIX_CLOTHING_TYPE_IDS[to_val]})"})
+
+    elif mapping_type == "material":
+        valid_materials = {"Standard textile", "Linen/Wool", "Cashmere", "Silk", "Leather/Suede", "Down", "Fur", "Other/Unsure"}
+        if to_val not in valid_materials:
+            return jsonify({
+                "error": f"Invalid QFix material: '{to_val}'",
+                "valid_materials": sorted(valid_materials),
+            }), 400
+        MATERIAL_MAP[from_val] = to_val
+        return jsonify({"status": "ok", "mapped": f"'{from_val}' -> '{to_val}'"})
+
+    else:
+        return jsonify({"error": "type must be 'clothing_type' or 'material'"}), 400
 
 
 if __name__ == "__main__":

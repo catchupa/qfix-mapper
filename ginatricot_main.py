@@ -1,8 +1,9 @@
 import logging
 import sys
+import threading
 from dotenv import load_dotenv
 
-from database import get_connection, create_table_ginatricot, upsert_product_ginatricot
+from database import get_connection, create_table_ginatricot, migrate_ginatricot_table, upsert_product_ginatricot
 from ginatricot_scraper import fetch_product_urls, scrape_all
 
 load_dotenv()
@@ -19,6 +20,7 @@ def main():
     logger.info("Connecting to database...")
     conn = get_connection()
     create_table_ginatricot(conn)
+    migrate_ginatricot_table(conn)
 
     logger.info("Fetching Gina Tricot product URLs from sitemap...")
     urls = fetch_product_urls()
@@ -29,14 +31,14 @@ def main():
 
     logger.info("Starting to scrape %d products...", len(urls))
     count = {"saved": 0}
+    lock = threading.Lock()
 
     def on_product(product):
-        upsert_product_ginatricot(conn, product)
-        count["saved"] += 1
-        if count["saved"] % 50 == 0:
-            logger.info("Saved %d products so far", count["saved"])
+        with lock:
+            upsert_product_ginatricot(conn, product)
+            count["saved"] += 1
 
-    scrape_all(urls, callback=on_product)
+    scrape_all(urls, callback=on_product, workers=10)
 
     logger.info("Done! Saved %d products total.", count["saved"])
     conn.close()

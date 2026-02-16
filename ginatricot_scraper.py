@@ -4,6 +4,7 @@ import re
 import time
 import json
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import requests
 from bs4 import BeautifulSoup
 from lxml import etree
@@ -234,9 +235,10 @@ def _extract_material(soup):
     return None
 
 
-def scrape_product(url):
+def scrape_product(url, session=None):
     """Scrape a single Gina Tricot product page and return a dict."""
-    resp = requests.get(url, headers=HEADERS, timeout=30)
+    getter = session or requests
+    resp = getter.get(url, headers=HEADERS, timeout=30)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "html.parser")
 
@@ -263,15 +265,32 @@ def scrape_product(url):
     }
 
 
-def scrape_all(urls, callback=None):
-    """Scrape all product URLs, calling callback(product_dict) for each."""
+def scrape_all(urls, callback=None, workers=5):
+    """Scrape all product URLs concurrently, calling callback(product_dict) for each."""
     total = len(urls)
-    for i, url in enumerate(urls, 1):
-        logger.info("[%d/%d] Scraping %s", i, total, url)
+    done = 0
+    session = requests.Session()
+    session.headers.update(HEADERS)
+    adapter = requests.adapters.HTTPAdapter(pool_connections=workers, pool_maxsize=workers)
+    session.mount("https://", adapter)
+
+    def _scrape_one(url):
         try:
-            product = scrape_product(url)
-            if product and callback:
-                callback(product)
+            return scrape_product(url, session=session)
         except requests.RequestException as e:
             logger.error("Failed to scrape %s: %s", url, e)
-        time.sleep(REQUEST_DELAY)
+            return None
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        # Process in batches to avoid submitting all at once
+        batch_size = workers * 4
+        for batch_start in range(0, total, batch_size):
+            batch = urls[batch_start:batch_start + batch_size]
+            futures = [pool.submit(_scrape_one, url) for url in batch]
+            for future in futures:
+                result = future.result()
+                done += 1
+                if done % 100 == 0 or done == total:
+                    logger.info("[%d/%d] Progress update", done, total)
+                if result and callback:
+                    callback(result)
