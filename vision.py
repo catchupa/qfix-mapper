@@ -1,10 +1,12 @@
 """Vision-based product identification using Claude Vision API."""
 import base64
+import io
 import json
 import logging
 import os
 
 import anthropic
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,17 @@ def identify_product(image_bytes, media_type="image/jpeg"):
         dict with clothing_type, material, color, category
     """
     client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+
+    # Resize if image exceeds 5 MB API limit
+    MAX_BYTES = 5 * 1024 * 1024
+    if len(image_bytes) > MAX_BYTES:
+        img = Image.open(io.BytesIO(image_bytes))
+        img.thumbnail((2048, 2048), Image.LANCZOS)
+        buf = io.BytesIO()
+        img.save(buf, format="JPEG", quality=85)
+        image_bytes = buf.getvalue()
+        media_type = "image/jpeg"
+        logger.info("Resized image to %d bytes", len(image_bytes))
 
     image_b64 = base64.b64encode(image_bytes).decode("utf-8")
 
@@ -113,6 +126,8 @@ def classify_and_map(image_bytes, media_type="image/jpeg"):
     qfix_url = None
     if clothing_type_id and material_id:
         qfix_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={clothing_type_id}&material_id={material_id}"
+    elif clothing_type_id:
+        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={clothing_type_id}"
 
     return {
         "classification": classification,
