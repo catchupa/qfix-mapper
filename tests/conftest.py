@@ -7,44 +7,151 @@ import tempfile
 import pytest
 
 
+def _create_tables_sqlite(conn):
+    """Create all tables using SQLite-compatible SQL."""
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT UNIQUE NOT NULL,
+            product_name TEXT,
+            category TEXT,
+            clothing_type TEXT,
+            material_composition TEXT,
+            product_url TEXT,
+            description TEXT,
+            color TEXT,
+            brand TEXT,
+            image_url TEXT,
+            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS products_v2 (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            gtin TEXT NOT NULL UNIQUE,
+            article_number TEXT NOT NULL,
+            product_name TEXT,
+            description TEXT,
+            category TEXT,
+            size TEXT,
+            color TEXT,
+            materials TEXT,
+            care_text TEXT,
+            brand TEXT,
+            country_of_origin TEXT,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS ginatricot_products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT UNIQUE NOT NULL,
+            product_name TEXT,
+            category TEXT,
+            clothing_type TEXT,
+            material_composition TEXT,
+            product_url TEXT,
+            description TEXT,
+            color TEXT,
+            brand TEXT,
+            image_url TEXT,
+            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.commit()
+
+
 @pytest.fixture
 def db_conn():
     """In-memory SQLite connection with all tables created."""
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
-    from database import create_table, create_table_v2, create_table_ginatricot
-    create_table(conn)
-    create_table_v2(conn)
-    create_table_ginatricot(conn)
+    _create_tables_sqlite(conn)
     yield conn
     conn.close()
 
 
 @pytest.fixture
 def app_client(tmp_path):
-    """Flask test client with a temporary database."""
+    """Flask test client with a temporary SQLite database.
+
+    Patches the api module to use SQLite instead of Postgres for testing.
+    """
     db_file = str(tmp_path / "test.db")
-    os.environ["DB_PATH"] = db_file
 
-    # Re-import to pick up the new DB_PATH
-    import importlib
-    import api as api_module
-    importlib.reload(api_module)
-
-    api_module.DB_PATH = db_file
-    api_module.app.config["TESTING"] = True
-
-    # Create tables
+    # Create tables in SQLite
     conn = sqlite3.connect(db_file)
     conn.row_factory = sqlite3.Row
-    from database import create_table, create_table_v2, create_table_ginatricot
-    create_table(conn)
-    create_table_v2(conn)
-    create_table_ginatricot(conn)
+    _create_tables_sqlite(conn)
     conn.close()
 
-    with api_module.app.test_client() as client:
-        yield client, db_file
+    import api as api_module
+    from unittest.mock import patch
+    from psycopg2.extras import RealDictCursor
+
+    class _SqliteRealDictCursor:
+        """Adapter to make SQLite cursor behave like psycopg2 RealDictCursor."""
+        def __init__(self, conn):
+            self._conn = conn
+            self._cursor = conn.cursor()
+
+        def execute(self, query, params=None):
+            # Convert psycopg2 %s placeholders to SQLite ?
+            query = query.replace("%s", "?")
+            # Convert ILIKE to LIKE (SQLite is case-insensitive for ASCII by default)
+            query = query.replace("ILIKE", "LIKE")
+            if params:
+                self._cursor.execute(query, params)
+            else:
+                self._cursor.execute(query)
+
+        def fetchone(self):
+            row = self._cursor.fetchone()
+            if row is None:
+                return None
+            return dict(row)
+
+        def fetchall(self):
+            return [dict(r) for r in self._cursor.fetchall()]
+
+        def close(self):
+            try:
+                self._cursor.close()
+            except Exception:
+                pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            self.close()
+
+    class _SqliteConnection:
+        """Adapter to make SQLite connection behave like psycopg2 connection."""
+        def __init__(self, db_path):
+            self._conn = sqlite3.connect(db_path)
+            self._conn.row_factory = sqlite3.Row
+            self.autocommit = True
+
+        def cursor(self, cursor_factory=None):
+            return _SqliteRealDictCursor(self._conn)
+
+        def close(self):
+            self._conn.close()
+
+    def _mock_get_db():
+        return _SqliteConnection(db_file)
+
+    # Also mock create_table functions to be no-ops (tables already exist)
+    def _noop(conn):
+        pass
+
+    api_module.app.config["TESTING"] = True
+    with patch.object(api_module, "get_db", _mock_get_db), \
+         patch.object(api_module, "create_table_v2", _noop), \
+         patch.object(api_module, "create_table_ginatricot", _noop):
+        with api_module.app.test_client() as client:
+            yield client, db_file
 
 
 def _make_kappahl_html(

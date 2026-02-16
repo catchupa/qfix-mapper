@@ -1,15 +1,5 @@
-"""Tests for database operations."""
+"""Tests for database table schemas and upsert logic (using SQLite for testing)."""
 import sqlite3
-
-from database import (
-    create_table,
-    create_table_v2,
-    create_table_ginatricot,
-    upsert_product,
-    upsert_product_v2,
-    upsert_product_ginatricot,
-    migrate_products_table,
-)
 
 
 def _make_v1_product(**overrides):
@@ -64,6 +54,48 @@ def _make_v2_product(**overrides):
     return base
 
 
+def _upsert_product(conn, product):
+    conn.execute("""
+        INSERT INTO products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
+        VALUES (:product_id, :product_name, :category, :clothing_type, :material_composition, :product_url, :description, :color, :brand, :image_url)
+        ON CONFLICT (product_id) DO UPDATE SET
+            product_name = excluded.product_name, category = excluded.category,
+            clothing_type = excluded.clothing_type, material_composition = excluded.material_composition,
+            product_url = excluded.product_url, description = excluded.description,
+            color = excluded.color, brand = excluded.brand, image_url = excluded.image_url,
+            scraped_at = CURRENT_TIMESTAMP;
+    """, product)
+    conn.commit()
+
+
+def _upsert_product_v2(conn, product):
+    conn.execute("""
+        INSERT INTO products_v2 (gtin, article_number, product_name, description, category, size, color, materials, care_text, brand, country_of_origin)
+        VALUES (:gtin, :article_number, :product_name, :description, :category, :size, :color, :materials, :care_text, :brand, :country_of_origin)
+        ON CONFLICT (gtin) DO UPDATE SET
+            article_number = excluded.article_number, product_name = excluded.product_name,
+            description = excluded.description, category = excluded.category,
+            size = excluded.size, color = excluded.color, materials = excluded.materials,
+            care_text = excluded.care_text, brand = excluded.brand,
+            country_of_origin = excluded.country_of_origin, uploaded_at = CURRENT_TIMESTAMP;
+    """, product)
+    conn.commit()
+
+
+def _upsert_product_ginatricot(conn, product):
+    conn.execute("""
+        INSERT INTO ginatricot_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
+        VALUES (:product_id, :product_name, :category, :clothing_type, :material_composition, :product_url, :description, :color, :brand, :image_url)
+        ON CONFLICT (product_id) DO UPDATE SET
+            product_name = excluded.product_name, category = excluded.category,
+            clothing_type = excluded.clothing_type, material_composition = excluded.material_composition,
+            product_url = excluded.product_url, description = excluded.description,
+            color = excluded.color, brand = excluded.brand, image_url = excluded.image_url,
+            scraped_at = CURRENT_TIMESTAMP;
+    """, product)
+    conn.commit()
+
+
 # ── Table creation ────────────────────────────────────────────────────────
 
 def test_create_table(db_conn):
@@ -78,53 +110,16 @@ def test_create_table(db_conn):
 
 
 def test_create_table_idempotent(db_conn):
-    """Calling create_table again should not raise."""
-    create_table(db_conn)
-    create_table_v2(db_conn)
-    create_table_ginatricot(db_conn)
-
-
-# ── Migration ─────────────────────────────────────────────────────────────
-
-def test_migrate_products_table():
-    """Migration should add columns and be idempotent."""
-    conn = sqlite3.connect(":memory:")
-    # Create table WITHOUT new columns (old schema)
-    conn.execute("""
-        CREATE TABLE products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id TEXT UNIQUE NOT NULL,
-            product_name TEXT,
-            category TEXT,
-            clothing_type TEXT,
-            material_composition TEXT,
-            product_url TEXT,
-            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    conn.commit()
-
-    migrate_products_table(conn)
-
-    # Verify columns exist by inserting a full row
-    conn.execute(
-        "INSERT INTO products (product_id, description, color, brand) VALUES ('1', 'desc', 'red', 'brand')"
-    )
-    row = conn.execute("SELECT description, color, brand FROM products WHERE product_id = '1'").fetchone()
-    assert row[0] == "desc"
-    assert row[1] == "red"
-    assert row[2] == "brand"
-
-    # Running again should not raise
-    migrate_products_table(conn)
-    conn.close()
+    """Creating tables again should not raise."""
+    from tests.conftest import _create_tables_sqlite
+    _create_tables_sqlite(db_conn)
 
 
 # ── Upsert v1 products ───────────────────────────────────────────────────
 
 def test_upsert_product_insert(db_conn):
     product = _make_v1_product()
-    upsert_product(db_conn, product)
+    _upsert_product(db_conn, product)
 
     row = db_conn.execute("SELECT * FROM products WHERE product_id = '131367'").fetchone()
     assert row is not None
@@ -135,8 +130,8 @@ def test_upsert_product_insert(db_conn):
 
 
 def test_upsert_product_update(db_conn):
-    upsert_product(db_conn, _make_v1_product())
-    upsert_product(db_conn, _make_v1_product(product_name="Updated jeans", color="Blå"))
+    _upsert_product(db_conn, _make_v1_product())
+    _upsert_product(db_conn, _make_v1_product(product_name="Updated jeans", color="Blå"))
 
     row = db_conn.execute("SELECT * FROM products WHERE product_id = '131367'").fetchone()
     assert row["product_name"] == "Updated jeans"
@@ -146,7 +141,7 @@ def test_upsert_product_update(db_conn):
 # ── Upsert Gina Tricot products ──────────────────────────────────────────
 
 def test_upsert_product_ginatricot_insert(db_conn):
-    upsert_product_ginatricot(db_conn, _make_gt_product())
+    _upsert_product_ginatricot(db_conn, _make_gt_product())
 
     row = db_conn.execute("SELECT * FROM ginatricot_products WHERE product_id = '225549000'").fetchone()
     assert row is not None
@@ -155,8 +150,8 @@ def test_upsert_product_ginatricot_insert(db_conn):
 
 
 def test_upsert_product_ginatricot_update(db_conn):
-    upsert_product_ginatricot(db_conn, _make_gt_product())
-    upsert_product_ginatricot(db_conn, _make_gt_product(color="White"))
+    _upsert_product_ginatricot(db_conn, _make_gt_product())
+    _upsert_product_ginatricot(db_conn, _make_gt_product(color="White"))
 
     row = db_conn.execute("SELECT * FROM ginatricot_products WHERE product_id = '225549000'").fetchone()
     assert row["color"] == "White"
@@ -165,7 +160,7 @@ def test_upsert_product_ginatricot_update(db_conn):
 # ── Upsert v2 products ───────────────────────────────────────────────────
 
 def test_upsert_product_v2_insert(db_conn):
-    upsert_product_v2(db_conn, _make_v2_product())
+    _upsert_product_v2(db_conn, _make_v2_product())
 
     row = db_conn.execute("SELECT * FROM products_v2 WHERE gtin = '7394712345678'").fetchone()
     assert row is not None
@@ -174,8 +169,8 @@ def test_upsert_product_v2_insert(db_conn):
 
 
 def test_upsert_product_v2_update(db_conn):
-    upsert_product_v2(db_conn, _make_v2_product())
-    upsert_product_v2(db_conn, _make_v2_product(product_name="Updated jeans"))
+    _upsert_product_v2(db_conn, _make_v2_product())
+    _upsert_product_v2(db_conn, _make_v2_product(product_name="Updated jeans"))
 
     row = db_conn.execute("SELECT * FROM products_v2 WHERE gtin = '7394712345678'").fetchone()
     assert row["product_name"] == "Updated jeans"

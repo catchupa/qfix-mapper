@@ -3,7 +3,7 @@ import sys
 import threading
 from dotenv import load_dotenv
 
-from database import get_connection, create_table_ginatricot, migrate_ginatricot_table, upsert_product_ginatricot
+from database import get_connection, create_table_ginatricot, upsert_product_ginatricot
 from ginatricot_scraper import fetch_product_urls, scrape_all
 
 load_dotenv()
@@ -20,7 +20,6 @@ def main():
     logger.info("Connecting to database...")
     conn = get_connection()
     create_table_ginatricot(conn)
-    migrate_ginatricot_table(conn)
 
     logger.info("Fetching Gina Tricot product URLs from sitemap...")
     urls = fetch_product_urls()

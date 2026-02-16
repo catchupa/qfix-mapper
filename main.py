@@ -2,7 +2,7 @@ import logging
 import sys
 from dotenv import load_dotenv
 
-from database import get_connection, create_table, migrate_products_table, upsert_product
+from database import get_connection, create_table, upsert_product
 from scraper import fetch_product_urls, scrape_all
 
 load_dotenv()
@@ -19,7 +19,6 @@ def main():
     logger.info("Connecting to database...")
     conn = get_connection()
     create_table(conn)
-    migrate_products_table(conn)
 
     logger.info("Fetching product URLs from sitemap...")
     urls = fetch_product_urls()

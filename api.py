@@ -1,22 +1,22 @@
 import os
-import sqlite3
 import tempfile
 
+import psycopg2
+from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request
 
 from mapping import map_product, map_clothing_type, map_material, QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS
 from mapping_v2 import map_product_v2
-from database import create_table_v2, upsert_product_v2, migrate_products_table, create_table_ginatricot
+from database import create_table_v2, upsert_product_v2, create_table_ginatricot, DATABASE_URL
 from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
 
 app = Flask(__name__)
-DB_PATH = os.environ.get("DB_PATH", os.path.join(os.path.dirname(__file__), "products.db"))
 
 
 def get_db():
-    conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row
+    conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = True
     return conn
 
 
@@ -25,10 +25,12 @@ def get_db():
 @app.route("/product/<product_id>")
 def get_product(product_id):
     conn = get_db()
-    row = conn.execute(
-        "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand FROM products WHERE product_id = ?",
-        (product_id,),
-    ).fetchone()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand FROM products WHERE product_id = %s",
+            (product_id,),
+        )
+        row = cur.fetchone()
     conn.close()
 
     if not row:
@@ -46,11 +48,13 @@ def get_product(product_id):
 @app.route("/products")
 def list_products():
     conn = get_db()
-    rows = conn.execute(
-        "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM products ORDER BY product_id LIMIT 100"
-    ).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM products ORDER BY product_id LIMIT 100"
+        )
+        rows = cur.fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify(rows)
 
 
 # ── v2 endpoints (T4V protocol xlsx) ─────────────────────────────────────
@@ -93,10 +97,12 @@ def v2_upload():
 def v2_get_by_gtin(gtin):
     conn = get_db()
     create_table_v2(conn)
-    row = conn.execute(
-        "SELECT gtin, article_number, product_name, description, category, size, color, materials, care_text, brand, country_of_origin FROM products_v2 WHERE gtin = ?",
-        (gtin,),
-    ).fetchone()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT gtin, article_number, product_name, description, category, size, color, materials, care_text, brand, country_of_origin FROM products_v2 WHERE gtin = %s",
+            (gtin,),
+        )
+        row = cur.fetchone()
     conn.close()
 
     if not row:
@@ -115,10 +121,12 @@ def v2_get_by_gtin(gtin):
 def v2_get_by_article(article_number):
     conn = get_db()
     create_table_v2(conn)
-    rows = conn.execute(
-        "SELECT gtin, article_number, product_name, description, category, size, color, materials, care_text, brand, country_of_origin FROM products_v2 WHERE article_number = ? ORDER BY size",
-        (article_number,),
-    ).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT gtin, article_number, product_name, description, category, size, color, materials, care_text, brand, country_of_origin FROM products_v2 WHERE article_number = %s ORDER BY size",
+            (article_number,),
+        )
+        rows = cur.fetchall()
     conn.close()
 
     if not rows:
@@ -140,11 +148,13 @@ def v2_get_by_article(article_number):
 def v2_list_products():
     conn = get_db()
     create_table_v2(conn)
-    rows = conn.execute(
-        "SELECT gtin, article_number, product_name, category, size, color, brand FROM products_v2 ORDER BY article_number, size LIMIT 200"
-    ).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT gtin, article_number, product_name, category, size, color, brand FROM products_v2 ORDER BY article_number, size LIMIT 200"
+        )
+        rows = cur.fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify(rows)
 
 
 # ── Gina Tricot endpoints (scraper-based) ─────────────────────────────────
@@ -152,11 +162,12 @@ def v2_list_products():
 @app.route("/ginatricot/product/<product_id>")
 def ginatricot_get_product(product_id):
     conn = get_db()
-    create_table_ginatricot(conn)
-    row = conn.execute(
-        "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand FROM ginatricot_products WHERE product_id = ?",
-        (product_id,),
-    ).fetchone()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand FROM ginatricot_products WHERE product_id = %s",
+            (product_id,),
+        )
+        row = cur.fetchone()
     conn.close()
 
     if not row:
@@ -174,12 +185,13 @@ def ginatricot_get_product(product_id):
 @app.route("/ginatricot/products")
 def ginatricot_list_products():
     conn = get_db()
-    create_table_ginatricot(conn)
-    rows = conn.execute(
-        "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM ginatricot_products ORDER BY product_id LIMIT 100"
-    ).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM ginatricot_products ORDER BY product_id LIMIT 100"
+        )
+        rows = cur.fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify(rows)
 
 
 # ── v3 endpoints (Gina Tricot scraper data) ───────────────────────────────
@@ -187,11 +199,12 @@ def ginatricot_list_products():
 @app.route("/v3/product/<product_id>")
 def v3_get_product(product_id):
     conn = get_db()
-    create_table_ginatricot(conn)
-    row = conn.execute(
-        "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand FROM ginatricot_products WHERE product_id = ?",
-        (product_id,),
-    ).fetchone()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand FROM ginatricot_products WHERE product_id = %s",
+            (product_id,),
+        )
+        row = cur.fetchone()
     conn.close()
 
     if not row:
@@ -209,12 +222,13 @@ def v3_get_product(product_id):
 @app.route("/v3/products")
 def v3_list_products():
     conn = get_db()
-    create_table_ginatricot(conn)
-    rows = conn.execute(
-        "SELECT product_id, product_name, category, clothing_type, material_composition, description, color, brand FROM ginatricot_products ORDER BY product_id LIMIT 200"
-    ).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, description, color, brand FROM ginatricot_products ORDER BY product_id LIMIT 200"
+        )
+        rows = cur.fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify(rows)
 
 
 @app.route("/v3/product/search")
@@ -224,13 +238,14 @@ def v3_search():
     if not q:
         return jsonify({"error": "Provide ?q= search term"}), 400
     conn = get_db()
-    create_table_ginatricot(conn)
-    rows = conn.execute(
-        "SELECT product_id, product_name, category, clothing_type, color, brand FROM ginatricot_products WHERE product_name LIKE ? ORDER BY product_id LIMIT 50",
-        (f"%{q}%",),
-    ).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, color, brand FROM ginatricot_products WHERE product_name ILIKE %s ORDER BY product_id LIMIT 50",
+            (f"%{q}%",),
+        )
+        rows = cur.fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify(rows)
 
 
 # ── v4 endpoints (aggregated: scraper + protocol merged) ──────────────────
@@ -274,27 +289,29 @@ def _merge_product(scraped, protocol):
 def v4_get_product(product_id):
     """Get a Gina Tricot product with aggregated data from scraper + protocol."""
     conn = get_db()
-    create_table_ginatricot(conn)
     create_table_v2(conn)
 
-    # Get scraped data
-    scraped_row = conn.execute(
-        "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand FROM ginatricot_products WHERE product_id = ?",
-        (product_id,),
-    ).fetchone()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # Get scraped data
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand FROM ginatricot_products WHERE product_id = %s",
+            (product_id,),
+        )
+        scraped_row = cur.fetchone()
 
-    if not scraped_row:
-        conn.close()
-        return jsonify({"error": f"Product {product_id} not found"}), 404
+        if not scraped_row:
+            conn.close()
+            return jsonify({"error": f"Product {product_id} not found"}), 404
 
-    scraped = dict(scraped_row)
+        scraped = dict(scraped_row)
 
-    # Try to find matching protocol data by product name
-    protocol = None
-    protocol_row = conn.execute(
-        "SELECT article_number, product_name, description, category, color, materials, care_text, brand, country_of_origin FROM products_v2 WHERE LOWER(product_name) = LOWER(?) LIMIT 1",
-        (scraped["product_name"],),
-    ).fetchone()
+        # Try to find matching protocol data by product name
+        cur.execute(
+            "SELECT article_number, product_name, description, category, color, materials, care_text, brand, country_of_origin FROM products_v2 WHERE LOWER(product_name) = LOWER(%s) LIMIT 1",
+            (scraped["product_name"],),
+        )
+        protocol_row = cur.fetchone()
+
     conn.close()
 
     if protocol_row:
@@ -316,27 +333,28 @@ def v4_get_product(product_id):
 def v4_list_products():
     """List Gina Tricot products, enriched with protocol data where available."""
     conn = get_db()
-    create_table_ginatricot(conn)
     create_table_v2(conn)
 
-    rows = conn.execute("""
-        SELECT
-            g.product_id, g.product_name, g.category, g.clothing_type,
-            g.material_composition, g.description, g.color, g.brand,
-            p.article_number AS protocol_article,
-            p.category AS protocol_category,
-            p.care_text, p.country_of_origin,
-            CASE WHEN p.article_number IS NOT NULL THEN 'merged' ELSE 'scraper_only' END AS source
-        FROM ginatricot_products g
-        LEFT JOIN (
-            SELECT DISTINCT article_number, product_name, category, care_text, country_of_origin
-            FROM products_v2
-        ) p ON LOWER(g.product_name) = LOWER(p.product_name)
-        ORDER BY g.product_id
-        LIMIT 200
-    """).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                g.product_id, g.product_name, g.category, g.clothing_type,
+                g.material_composition, g.description, g.color, g.brand,
+                p.article_number AS protocol_article,
+                p.category AS protocol_category,
+                p.care_text, p.country_of_origin,
+                CASE WHEN p.article_number IS NOT NULL THEN 'merged' ELSE 'scraper_only' END AS source
+            FROM ginatricot_products g
+            LEFT JOIN (
+                SELECT DISTINCT article_number, product_name, category, care_text, country_of_origin
+                FROM products_v2
+            ) p ON LOWER(g.product_name) = LOWER(p.product_name)
+            ORDER BY g.product_id
+            LIMIT 200
+        """)
+        rows = cur.fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify(rows)
 
 
 @app.route("/v4/product/search")
@@ -346,25 +364,26 @@ def v4_search():
     if not q:
         return jsonify({"error": "Provide ?q= search term"}), 400
     conn = get_db()
-    create_table_ginatricot(conn)
     create_table_v2(conn)
 
-    rows = conn.execute("""
-        SELECT
-            g.product_id, g.product_name, g.category, g.clothing_type,
-            g.color, g.brand,
-            CASE WHEN p.article_number IS NOT NULL THEN 'merged' ELSE 'scraper_only' END AS source
-        FROM ginatricot_products g
-        LEFT JOIN (
-            SELECT DISTINCT article_number, product_name
-            FROM products_v2
-        ) p ON LOWER(g.product_name) = LOWER(p.product_name)
-        WHERE g.product_name LIKE ?
-        ORDER BY g.product_id
-        LIMIT 50
-    """, (f"%{q}%",)).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT
+                g.product_id, g.product_name, g.category, g.clothing_type,
+                g.color, g.brand,
+                CASE WHEN p.article_number IS NOT NULL THEN 'merged' ELSE 'scraper_only' END AS source
+            FROM ginatricot_products g
+            LEFT JOIN (
+                SELECT DISTINCT article_number, product_name
+                FROM products_v2
+            ) p ON LOWER(g.product_name) = LOWER(p.product_name)
+            WHERE g.product_name ILIKE %s
+            ORDER BY g.product_id
+            LIMIT 50
+        """, (f"%{q}%",))
+        rows = cur.fetchall()
     conn.close()
-    return jsonify([dict(r) for r in rows])
+    return jsonify(rows)
 
 
 # ── Vision identification endpoint ────────────────────────────────────────
@@ -413,62 +432,65 @@ def unmapped_categories():
 
     result = {}
 
-    # KappAhl unmapped
-    kappahl_rows = conn.execute(
-        "SELECT DISTINCT clothing_type, material_composition, category FROM products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
-    ).fetchall()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # KappAhl unmapped
+        cur.execute(
+            "SELECT DISTINCT clothing_type, material_composition, category FROM products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
+        )
+        kappahl_rows = cur.fetchall()
 
-    kappahl_unmapped_types = {}
-    kappahl_unmapped_materials = set()
-    for row in kappahl_rows:
-        ct = row["clothing_type"]
-        mat = row["material_composition"]
-        mapped_type = map_clothing_type(ct)
-        if mapped_type is None and ct:
-            if ct not in kappahl_unmapped_types:
-                kappahl_unmapped_types[ct] = 0
-            kappahl_unmapped_types[ct] += 1
-        mapped_mat = map_material(mat)
-        if mapped_mat == "Other/Unsure" and mat:
-            kappahl_unmapped_materials.add(mat)
+        kappahl_unmapped_types = {}
+        kappahl_unmapped_materials = set()
+        for row in kappahl_rows:
+            ct = row["clothing_type"]
+            mat = row["material_composition"]
+            mapped_type = map_clothing_type(ct)
+            if mapped_type is None and ct:
+                if ct not in kappahl_unmapped_types:
+                    kappahl_unmapped_types[ct] = 0
+                kappahl_unmapped_types[ct] += 1
+            mapped_mat = map_material(mat)
+            if mapped_mat == "Other/Unsure" and mat:
+                kappahl_unmapped_materials.add(mat)
 
-    result["kappahl"] = {
-        "unmapped_clothing_types": [
-            {"clothing_type": ct, "distinct_products": count}
-            for ct, count in sorted(kappahl_unmapped_types.items())
-        ],
-        "unmapped_materials": sorted(kappahl_unmapped_materials),
-    }
+        result["kappahl"] = {
+            "unmapped_clothing_types": [
+                {"clothing_type": ct, "distinct_products": count}
+                for ct, count in sorted(kappahl_unmapped_types.items())
+            ],
+            "unmapped_materials": sorted(kappahl_unmapped_materials),
+        }
 
-    # Gina Tricot unmapped
-    try:
-        gt_rows = conn.execute(
-            "SELECT DISTINCT clothing_type, material_composition, category FROM ginatricot_products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
-        ).fetchall()
-    except Exception:
-        gt_rows = []
+        # Gina Tricot unmapped
+        try:
+            cur.execute(
+                "SELECT DISTINCT clothing_type, material_composition, category FROM ginatricot_products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
+            )
+            gt_rows = cur.fetchall()
+        except Exception:
+            gt_rows = []
 
-    gt_unmapped_types = {}
-    gt_unmapped_materials = set()
-    for row in gt_rows:
-        ct = row["clothing_type"]
-        mat = row["material_composition"]
-        mapped_type = map_clothing_type(ct)
-        if mapped_type is None and ct:
-            if ct not in gt_unmapped_types:
-                gt_unmapped_types[ct] = 0
-            gt_unmapped_types[ct] += 1
-        mapped_mat = map_material(mat)
-        if mapped_mat == "Other/Unsure" and mat:
-            gt_unmapped_materials.add(mat)
+        gt_unmapped_types = {}
+        gt_unmapped_materials = set()
+        for row in gt_rows:
+            ct = row["clothing_type"]
+            mat = row["material_composition"]
+            mapped_type = map_clothing_type(ct)
+            if mapped_type is None and ct:
+                if ct not in gt_unmapped_types:
+                    gt_unmapped_types[ct] = 0
+                gt_unmapped_types[ct] += 1
+            mapped_mat = map_material(mat)
+            if mapped_mat == "Other/Unsure" and mat:
+                gt_unmapped_materials.add(mat)
 
-    result["ginatricot"] = {
-        "unmapped_clothing_types": [
-            {"clothing_type": ct, "distinct_products": count}
-            for ct, count in sorted(gt_unmapped_types.items())
-        ],
-        "unmapped_materials": sorted(gt_unmapped_materials),
-    }
+        result["ginatricot"] = {
+            "unmapped_clothing_types": [
+                {"clothing_type": ct, "distinct_products": count}
+                for ct, count in sorted(gt_unmapped_types.items())
+            ],
+            "unmapped_materials": sorted(gt_unmapped_materials),
+        }
 
     # Also include reference: valid QFix categories for mapping
     result["qfix_valid_clothing_types"] = {name: id for name, id in sorted(QFIX_CLOTHING_TYPE_IDS.items())}
@@ -526,8 +548,9 @@ def add_mapping():
 
 
 if __name__ == "__main__":
-    # Run migration to add new columns to existing DB
-    _conn = get_db()
-    migrate_products_table(_conn)
-    _conn.close()
+    from dotenv import load_dotenv
+    load_dotenv()
+    # Re-read DATABASE_URL after loading .env
+    import database
+    database.DATABASE_URL = os.environ.get("DATABASE_URL")
     app.run(debug=True, port=8000)
