@@ -40,22 +40,38 @@ QFIX_CLOTHING_TYPE_IDS = {
     "Other": 105,
 }
 
-QFIX_MATERIAL_IDS = {
-    "Standard textile": 189,
-    "Linen/Wool": 166,
-    "Cashmere": 159,
-    "Silk": 213,
-    "Leather": 187,
-    "Leather/Suede": 71,
-    "Suede": 188,
-    "Down": 176,
-    "Fur": 72,
-    "Lace": 214,
-    "Tulle": 215,
-    "Galloon": 190,
-    "Highvis": 83,
-    "Flame resistant": 144,
-    "Other/Unsure": 191,
+# Valid material IDs per clothing type ID (from QFix API tree).
+# Clothing and shoe categories use DIFFERENT IDs for the same material name.
+# e.g. "Standard textile" = 69 for clothing, 189 for shoes.
+VALID_MATERIAL_IDS = {
+    60:  {69: "Standard textile", 71: "Leather/Suede", 72: "Fur", 73: "Other/Unsure"},
+    61:  {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 72: "Fur", 83: "Highvis", 73: "Other/Unsure"},
+    62:  {69: "Standard textile", 71: "Leather/Suede", 166: "Linen/Wool", 143: "Galloon", 83: "Highvis", 73: "Other/Unsure"},
+    66:  {69: "Standard textile", 71: "Leather/Suede", 166: "Linen/Wool", 213: "Silk", 73: "Other/Unsure"},
+    86:  {69: "Standard textile", 166: "Linen/Wool", 159: "Cashmere", 73: "Other/Unsure"},
+    89:  {69: "Standard textile", 166: "Linen/Wool", 213: "Silk", 73: "Other/Unsure"},
+    90:  {69: "Standard textile", 73: "Other/Unsure"},
+    98:  {69: "Standard textile", 72: "Fur", 73: "Other/Unsure"},
+    99:  {69: "Standard textile", 71: "Leather/Suede", 83: "Highvis", 73: "Other/Unsure"},
+    100: {69: "Standard textile", 71: "Leather/Suede", 213: "Silk", 73: "Other/Unsure"},
+    101: {69: "Standard textile", 166: "Linen/Wool", 159: "Cashmere", 72: "Fur", 213: "Silk", 73: "Other/Unsure"},
+    102: {69: "Standard textile", 71: "Leather/Suede", 73: "Other/Unsure"},
+    104: {69: "Standard textile", 73: "Other/Unsure"},
+    105: {166: "Linen/Wool", 213: "Silk", 214: "Lace", 215: "Tulle", 73: "Other/Unsure"},
+    123: {69: "Standard textile", 71: "Leather/Suede", 73: "Other/Unsure"},
+    142: {69: "Standard textile", 83: "Highvis", 73: "Other/Unsure"},
+    160: {69: "Standard textile", 176: "Down", 83: "Highvis", 144: "Flame resistant", 73: "Other/Unsure"},
+    161: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},
+    162: {69: "Standard textile", 73: "Other/Unsure"},
+    163: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},
+    168: {69: "Standard textile", 213: "Silk", 73: "Other/Unsure"},
+    169: {69: "Standard textile", 213: "Silk", 73: "Other/Unsure"},
+    171: {69: "Standard textile", 166: "Linen/Wool", 213: "Silk", 73: "Other/Unsure"},
+    173: {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 73: "Other/Unsure"},
+    174: {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 73: "Other/Unsure"},
+    175: {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 83: "Highvis", 73: "Other/Unsure"},
+    193: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},
+    # 196 (Sweatshirt/Hoodie) and 201 (Bikini) have no materials in QFix
 }
 
 QFIX_SUBCATEGORY_IDS = {
@@ -267,6 +283,27 @@ def map_category(kappahl_category):
     return CATEGORY_MAP.get(kappahl_category, "Women's Clothing")
 
 
+def _resolve_material_id(clothing_type_id, material_name):
+    """Find the correct QFix material ID for a clothing type + material combo.
+
+    Different QFix categories (clothing vs shoes) use different numeric IDs
+    for the same material name, so we look up the ID from the valid combos
+    for the specific clothing type.
+    """
+    if not clothing_type_id or not material_name:
+        return None
+    valid = VALID_MATERIAL_IDS.get(clothing_type_id, {})
+    # Reverse lookup: find the ID whose name matches
+    for mat_id, mat_name in valid.items():
+        if mat_name == material_name:
+            return mat_id
+    # Material not available for this clothing type — fall back to Other/Unsure
+    for mat_id, mat_name in valid.items():
+        if mat_name == "Other/Unsure":
+            return mat_id
+    return None
+
+
 def map_product(product):
     """Map a KappAhl product dict to QFix IDs.
 
@@ -277,7 +314,7 @@ def map_product(product):
     subcategory_name = map_category(product.get("category"))
 
     clothing_type_id = QFIX_CLOTHING_TYPE_IDS.get(clothing_name) if clothing_name else None
-    material_id = QFIX_MATERIAL_IDS.get(material_name)
+    material_id = _resolve_material_id(clothing_type_id, material_name)
 
     qfix_url = None
     if clothing_type_id and material_id:
