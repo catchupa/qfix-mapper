@@ -36,6 +36,23 @@ def _make_gt_product(**overrides):
     return base
 
 
+def _make_eton_product(**overrides):
+    base = {
+        "product_id": "2567-00-10",
+        "product_name": "Vit poplinskjorta",
+        "category": "businesskjortor",
+        "clothing_type": "Businesskjortor > Vita skjortor",
+        "material_composition": "100% Bomull",
+        "product_url": "https://www.etonshirts.com/se/sv/product/white-poplin-shirt",
+        "description": "Ikonisk businesskjorta i bomullspoplin",
+        "color": "Vit",
+        "brand": "Eton",
+        "image_url": "https://api.etonshirts.com/v1/retail/image/1080/white-poplin-shirt.webp",
+    }
+    base.update(overrides)
+    return base
+
+
 def _make_v2_product(**overrides):
     base = {
         "gtin": "7394712345678",
@@ -82,6 +99,20 @@ def _upsert_product_v2(conn, product):
     conn.commit()
 
 
+def _upsert_product_eton(conn, product):
+    conn.execute("""
+        INSERT INTO eton_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
+        VALUES (:product_id, :product_name, :category, :clothing_type, :material_composition, :product_url, :description, :color, :brand, :image_url)
+        ON CONFLICT (product_id) DO UPDATE SET
+            product_name = excluded.product_name, category = excluded.category,
+            clothing_type = excluded.clothing_type, material_composition = excluded.material_composition,
+            product_url = excluded.product_url, description = excluded.description,
+            color = excluded.color, brand = excluded.brand, image_url = excluded.image_url,
+            scraped_at = CURRENT_TIMESTAMP;
+    """, product)
+    conn.commit()
+
+
 def _upsert_product_ginatricot(conn, product):
     conn.execute("""
         INSERT INTO ginatricot_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
@@ -107,6 +138,7 @@ def test_create_table(db_conn):
     assert "products" in names
     assert "products_v2" in names
     assert "ginatricot_products" in names
+    assert "eton_products" in names
 
 
 def test_create_table_idempotent(db_conn):
@@ -155,6 +187,26 @@ def test_upsert_product_ginatricot_update(db_conn):
 
     row = db_conn.execute("SELECT * FROM ginatricot_products WHERE product_id = '225549000'").fetchone()
     assert row["color"] == "White"
+
+
+# ── Upsert Eton products ─────────────────────────────────────────────────
+
+def test_upsert_product_eton_insert(db_conn):
+    _upsert_product_eton(db_conn, _make_eton_product())
+
+    row = db_conn.execute("SELECT * FROM eton_products WHERE product_id = '2567-00-10'").fetchone()
+    assert row is not None
+    assert row["product_name"] == "Vit poplinskjorta"
+    assert row["brand"] == "Eton"
+    assert row["material_composition"] == "100% Bomull"
+
+
+def test_upsert_product_eton_update(db_conn):
+    _upsert_product_eton(db_conn, _make_eton_product())
+    _upsert_product_eton(db_conn, _make_eton_product(color="Blå"))
+
+    row = db_conn.execute("SELECT * FROM eton_products WHERE product_id = '2567-00-10'").fetchone()
+    assert row["color"] == "Blå"
 
 
 # ── Upsert v2 products ───────────────────────────────────────────────────

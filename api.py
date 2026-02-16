@@ -7,7 +7,7 @@ from flask import Flask, jsonify, request
 
 from mapping import map_product, map_clothing_type, map_material, QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS
 from mapping_v2 import map_product_v2
-from database import create_table_v2, upsert_product_v2, create_table_ginatricot, DATABASE_URL
+from database import create_table_v2, upsert_product_v2, create_table_ginatricot, create_table_eton, DATABASE_URL
 from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
 
@@ -381,6 +381,45 @@ def v4_search():
             ORDER BY g.product_id
             LIMIT 50
         """, (f"%{q}%",))
+        rows = cur.fetchall()
+    conn.close()
+    return jsonify(rows)
+
+
+# ── Eton endpoints (scraper-based) ────────────────────────────────────────
+
+@app.route("/eton/product/<product_id>")
+def eton_get_product(product_id):
+    conn = get_db()
+    create_table_eton(conn)
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url FROM eton_products WHERE product_id = %s",
+            (product_id,),
+        )
+        row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"error": f"Product {product_id} not found"}), 404
+
+    product = dict(row)
+    qfix = map_product(product)
+
+    return jsonify({
+        "eton": product,
+        "qfix": qfix,
+    })
+
+
+@app.route("/eton/products")
+def eton_list_products():
+    conn = get_db()
+    create_table_eton(conn)
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM eton_products ORDER BY product_id LIMIT 100"
+        )
         rows = cur.fetchall()
     conn.close()
     return jsonify(rows)

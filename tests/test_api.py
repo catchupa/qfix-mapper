@@ -25,6 +25,16 @@ def _seed_gt_product(db_path):
     conn.close()
 
 
+def _seed_eton_product(db_path):
+    conn = sqlite3.connect(db_path)
+    conn.execute("""
+        INSERT INTO eton_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
+        VALUES ('2567-00-10', 'Vit poplinskjorta', 'businesskjortor', 'Businesskjortor > Vita skjortor', '100% Bomull', 'https://www.etonshirts.com/se/sv/product/white-poplin-shirt', 'Ikonisk businesskjorta', 'Vit', 'Eton')
+    """)
+    conn.commit()
+    conn.close()
+
+
 def _seed_v2_product(db_path):
     conn = sqlite3.connect(db_path)
     conn.execute("""
@@ -212,6 +222,38 @@ def test_v4_search(app_client):
     assert resp.status_code == 200
     data = resp.get_json()
     assert len(data) >= 1
+
+
+# ── Eton endpoints ──────────────────────────────────────────────────────
+
+def test_eton_get_product(app_client):
+    client, db_path = app_client
+    _seed_eton_product(db_path)
+
+    resp = client.get("/eton/product/2567-00-10")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["eton"]["product_id"] == "2567-00-10"
+    assert data["eton"]["product_name"] == "Vit poplinskjorta"
+    assert data["eton"]["brand"] == "Eton"
+    assert "qfix" in data
+
+
+def test_eton_get_product_not_found(app_client):
+    client, db_path = app_client
+    resp = client.get("/eton/product/0000-00-00")
+    assert resp.status_code == 404
+
+
+def test_eton_list_products(app_client):
+    client, db_path = app_client
+    _seed_eton_product(db_path)
+
+    resp = client.get("/eton/products")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) >= 1
+    assert data[0]["product_name"] == "Vit poplinskjorta"
 
 
 # ── Vision identify endpoint ─────────────────────────────────────────────

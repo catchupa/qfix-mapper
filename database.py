@@ -112,6 +112,45 @@ def upsert_product_v2(conn, product):
         """, product)
 
 
+def create_table_eton(conn):
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS eton_products (
+                id SERIAL PRIMARY KEY,
+                product_id TEXT UNIQUE NOT NULL,
+                product_name TEXT,
+                category TEXT,
+                clothing_type TEXT,
+                material_composition TEXT,
+                product_url TEXT,
+                description TEXT,
+                color TEXT,
+                brand TEXT,
+                image_url TEXT,
+                scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            );
+        """)
+
+
+def upsert_product_eton(conn, product):
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO eton_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
+            VALUES (%(product_id)s, %(product_name)s, %(category)s, %(clothing_type)s, %(material_composition)s, %(product_url)s, %(description)s, %(color)s, %(brand)s, %(image_url)s)
+            ON CONFLICT (product_id) DO UPDATE SET
+                product_name = EXCLUDED.product_name,
+                category = EXCLUDED.category,
+                clothing_type = EXCLUDED.clothing_type,
+                material_composition = EXCLUDED.material_composition,
+                product_url = EXCLUDED.product_url,
+                description = EXCLUDED.description,
+                color = EXCLUDED.color,
+                brand = EXCLUDED.brand,
+                image_url = EXCLUDED.image_url,
+                scraped_at = CURRENT_TIMESTAMP;
+        """, product)
+
+
 def upsert_product_ginatricot(conn, product):
     with conn.cursor() as cur:
         cur.execute("""
