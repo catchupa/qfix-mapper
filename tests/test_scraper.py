@@ -12,6 +12,7 @@ from scraper import (
     _extract_clothing_type,
     _extract_material,
     _extract_material_from_text,
+    _extract_image_url,
     scrape_product,
 )
 
@@ -148,8 +149,21 @@ def test_extract_material_from_script(sample_kappahl_html):
 
 # ── Full scrape_product with mocked HTTP ──────────────────────────────────
 
+def test_extract_image_url(sample_kappahl_html):
+    html = sample_kappahl_html(image_url="https://static.kappahl.com/img/131367.jpg")
+    soup = BeautifulSoup(html, "html.parser")
+    assert _extract_image_url(soup) == "https://static.kappahl.com/img/131367.jpg"
+
+
+def test_extract_image_url_missing():
+    html = "<html><body></body></html>"
+    soup = BeautifulSoup(html, "html.parser")
+    assert _extract_image_url(soup) is None
+
+
+@patch("scraper._download_image")
 @patch("scraper.requests.get")
-def test_scrape_product(mock_get, sample_kappahl_html):
+def test_scrape_product(mock_get, mock_dl, sample_kappahl_html):
     html = sample_kappahl_html(
         name="Bootcut jeans",
         description="Snygga jeans",
@@ -173,10 +187,12 @@ def test_scrape_product(mock_get, sample_kappahl_html):
     assert result["color"] == "Svart"
     assert "98% Bomull" in result["material_composition"]
     assert result["product_url"] == "https://www.kappahl.com/sv-se/dam/jeans/bootcut/131367"
+    assert result["image_url"] == "https://static.kappahl.com/productimages/131367_f_4.jpg"
 
 
+@patch("scraper._download_image")
 @patch("scraper.requests.get")
-def test_scrape_product_no_id(mock_get):
+def test_scrape_product_no_id(mock_get, mock_dl):
     mock_resp = MagicMock()
     mock_resp.text = "<html><body></body></html>"
     mock_resp.raise_for_status = MagicMock()

@@ -23,6 +23,7 @@ def _make_v1_product(**overrides):
         "description": "Snygga jeans",
         "color": "Svart",
         "brand": "KappAhl",
+        "image_url": "https://static.kappahl.com/productimages/131367_f_4.jpg",
     }
     base.update(overrides)
     return base
@@ -39,6 +40,7 @@ def _make_gt_product(**overrides):
         "description": "En fin kjol",
         "color": "Black",
         "brand": "Gina Tricot",
+        "image_url": "https://ginatricot-pim.imgix.net/225549000/22554900001.jpg",
     }
     base.update(overrides)
     return base

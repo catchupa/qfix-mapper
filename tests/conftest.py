@@ -54,15 +54,19 @@ def _make_kappahl_html(
     color_text="Svart / enfärgad",
     material_desc="Huvudmaterial: 75% Bomull, 21% Polyester, 4% Elastan",
     breadcrumbs=None,
+    image_url="https://static.kappahl.com/productimages/131367_f_4.jpg",
 ):
     """Build a fake KappAhl product page HTML."""
-    product_json = json.dumps({
+    product_data = {
         "@context": "http://schema.org",
         "@type": "Product",
         "name": name,
         "description": description,
         "brand": {"@type": "Brand", "name": brand_name},
-    })
+    }
+    if image_url:
+        product_data["image"] = [image_url]
+    product_json = json.dumps(product_data)
 
     breadcrumb_html = ""
     if breadcrumbs:
@@ -89,6 +93,7 @@ def _make_ginatricot_html(
     brand="Gina Tricot",
     color="Black (9000)",
     material="Bomull 57%, Polyamid 42%, Elastan 1%",
+    image_url="https://ginatricot-pim.imgix.net/225549000/22554900001.jpg",
 ):
     """Build a fake Gina Tricot product page with HTML-encoded JSON-LD."""
     product_data = {
@@ -101,6 +106,8 @@ def _make_ginatricot_html(
         "material": material,
         "mpn": "225549000",
     }
+    if image_url:
+        product_data["image"] = [image_url]
     # Gina Tricot HTML-encodes the JSON-LD
     encoded = html.escape(json.dumps(product_data))
 

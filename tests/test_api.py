@@ -1,6 +1,8 @@
 """Integration tests for API endpoints using Flask test client."""
+import io
 import json
 import sqlite3
+from unittest.mock import patch
 
 
 def _seed_v1_product(db_path):
@@ -210,3 +212,40 @@ def test_v4_search(app_client):
     assert resp.status_code == 200
     data = resp.get_json()
     assert len(data) >= 1
+
+
+# ── Vision identify endpoint ─────────────────────────────────────────────
+
+@patch("api.classify_and_map")
+def test_identify(mock_classify, app_client):
+    client, db_path = app_client
+    mock_classify.return_value = {
+        "classification": {
+            "clothing_type": "Trousers",
+            "material": "Standard textile",
+            "color": "Blue",
+            "category": "Women's Clothing",
+        },
+        "qfix": {
+            "qfix_clothing_type": "Trousers",
+            "qfix_clothing_type_id": 174,
+            "qfix_material": "Standard textile",
+            "qfix_material_id": 69,
+            "qfix_subcategory": "Women's Clothing",
+            "qfix_subcategory_id": 55,
+            "qfix_url": "https://kappahl.dev.qfixr.me/sv/?category_id=174&material_id=69",
+        },
+    }
+
+    data = {"image": (io.BytesIO(b"fake image data"), "test.jpg", "image/jpeg")}
+    resp = client.post("/identify", data=data, content_type="multipart/form-data")
+    assert resp.status_code == 200
+    result = resp.get_json()
+    assert result["classification"]["clothing_type"] == "Trousers"
+    assert result["qfix"]["qfix_url"] is not None
+
+
+def test_identify_no_image(app_client):
+    client, db_path = app_client
+    resp = client.post("/identify")
+    assert resp.status_code == 400

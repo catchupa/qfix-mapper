@@ -8,6 +8,7 @@ from mapping import map_product
 from mapping_v2 import map_product_v2
 from database import create_table_v2, upsert_product_v2, migrate_products_table, create_table_ginatricot
 from protocol_parser import parse_protocol_xlsx
+from vision import classify_and_map
 
 app = Flask(__name__)
 DB_PATH = os.environ.get("DB_PATH", os.path.join(os.path.dirname(__file__), "products.db"))
@@ -364,6 +365,43 @@ def v4_search():
     """, (f"%{q}%",)).fetchall()
     conn.close()
     return jsonify([dict(r) for r in rows])
+
+
+# ── Vision identification endpoint ────────────────────────────────────────
+
+ALLOWED_IMAGE_TYPES = {
+    "image/jpeg": "image/jpeg",
+    "image/png": "image/png",
+    "image/webp": "image/webp",
+    "image/gif": "image/gif",
+    "image/jpg": "image/jpeg",
+}
+
+
+@app.route("/identify", methods=["POST"])
+def identify():
+    """Upload an image to identify the garment and get a QFix repair link."""
+    if "image" not in request.files:
+        return jsonify({"error": "No image provided. Use multipart form with key 'image'."}), 400
+
+    file = request.files["image"]
+    if not file.filename:
+        return jsonify({"error": "Empty filename"}), 400
+
+    media_type = ALLOWED_IMAGE_TYPES.get(file.content_type)
+    if not media_type:
+        return jsonify({"error": f"Unsupported image type: {file.content_type}. Use JPEG, PNG, WebP, or GIF."}), 400
+
+    image_bytes = file.read()
+    if len(image_bytes) > 20 * 1024 * 1024:  # 20MB limit
+        return jsonify({"error": "Image too large (max 20MB)"}), 400
+
+    try:
+        result = classify_and_map(image_bytes, media_type)
+    except Exception as e:
+        return jsonify({"error": f"Vision API error: {e}"}), 500
+
+    return jsonify(result)
 
 
 if __name__ == "__main__":

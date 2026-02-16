@@ -11,6 +11,7 @@ from ginatricot_scraper import (
     _extract_brand,
     _extract_color,
     _extract_material,
+    _extract_image_url,
     _extract_clothing_type_from_url,
     scrape_product,
 )
@@ -141,6 +142,18 @@ def test_extract_material_null(sample_ginatricot_html):
 
 # ── Clothing type from URL ────────────────────────────────────────────────
 
+def test_extract_image_url(sample_ginatricot_html):
+    html = sample_ginatricot_html(image_url="https://ginatricot-pim.imgix.net/225549000/img.jpg")
+    soup = BeautifulSoup(html, "html.parser")
+    assert _extract_image_url(soup) == "https://ginatricot-pim.imgix.net/225549000/img.jpg"
+
+
+def test_extract_image_url_missing():
+    html = "<html><body></body></html>"
+    soup = BeautifulSoup(html, "html.parser")
+    assert _extract_image_url(soup) is None
+
+
 def test_clothing_type_from_url():
     url = "https://www.ginatricot.com/se/klader/kjolar/langkjolar/structure-maxi-skirt-225549000"
     assert _extract_clothing_type_from_url(url) == "kjolar > langkjolar"
@@ -158,8 +171,9 @@ def test_clothing_type_from_url_shallow():
 
 # ── Full scrape_product with mocked HTTP ──────────────────────────────────
 
+@patch("ginatricot_scraper._download_image")
 @patch("ginatricot_scraper.requests.get")
-def test_scrape_product(mock_get, sample_ginatricot_html):
+def test_scrape_product(mock_get, mock_dl, sample_ginatricot_html):
     html = sample_ginatricot_html(
         name="Structure maxi skirt",
         description="Lågmidjad långkjol",
@@ -185,10 +199,12 @@ def test_scrape_product(mock_get, sample_ginatricot_html):
     assert result["color"] == "Black"
     assert result["brand"] == "Gina Tricot"
     assert result["product_url"] == url
+    assert result["image_url"] == "https://ginatricot-pim.imgix.net/225549000/22554900001.jpg"
 
 
+@patch("ginatricot_scraper._download_image")
 @patch("ginatricot_scraper.requests.get")
-def test_scrape_product_no_id(mock_get):
+def test_scrape_product_no_id(mock_get, mock_dl):
     mock_resp = MagicMock()
     mock_resp.text = "<html><body></body></html>"
     mock_resp.raise_for_status = MagicMock()

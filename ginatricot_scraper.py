@@ -1,4 +1,5 @@
 import html
+import os
 import re
 import time
 import json
@@ -188,6 +189,41 @@ def _extract_color(soup):
     return None
 
 
+def _extract_image_url(soup):
+    """Extract first product image URL from JSON-LD Product.image."""
+    product = _extract_json_ld_product(soup)
+    if product:
+        img = product.get("image")
+        if isinstance(img, list) and img:
+            return img[0]
+        elif isinstance(img, str) and img:
+            return img
+    return None
+
+
+def _download_image(url, product_id, store="ginatricot"):
+    """Download product image to images/{store}/{product_id}.jpg."""
+    img_dir = os.path.join(os.path.dirname(__file__), "images", store)
+    os.makedirs(img_dir, exist_ok=True)
+    ext = ".jpg"
+    if ".png" in url.lower():
+        ext = ".png"
+    elif ".webp" in url.lower():
+        ext = ".webp"
+    path = os.path.join(img_dir, f"{product_id}{ext}")
+    if os.path.exists(path):
+        return path
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=15)
+        resp.raise_for_status()
+        with open(path, "wb") as f:
+            f.write(resp.content)
+        return path
+    except requests.RequestException as e:
+        logger.warning("Failed to download image for %s: %s", product_id, e)
+        return None
+
+
 def _extract_material(soup):
     """Extract material composition from JSON-LD Product.material."""
     product = _extract_json_ld_product(soup)
@@ -209,6 +245,10 @@ def scrape_product(url):
         logger.warning("Could not extract product ID from %s, skipping", url)
         return None
 
+    image_url = _extract_image_url(soup)
+    if image_url:
+        _download_image(image_url, product_id, store="ginatricot")
+
     return {
         "product_id": product_id,
         "product_name": _extract_product_name(soup),
@@ -219,6 +259,7 @@ def scrape_product(url):
         "description": _extract_description(soup),
         "color": _extract_color(soup),
         "brand": _extract_brand(soup),
+        "image_url": image_url,
     }
 
 
