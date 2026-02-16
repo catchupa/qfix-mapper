@@ -122,6 +122,63 @@ def _extract_product_name(soup):
     return None
 
 
+def _extract_json_ld_product(soup):
+    """Find and return the JSON-LD Product object from the page, or None."""
+    for script in soup.select('script[type="application/ld+json"]'):
+        try:
+            data = json.loads(script.string)
+            if isinstance(data, dict) and data.get("@type") == "Product":
+                return data
+            if isinstance(data, list):
+                for entry in data:
+                    if isinstance(entry, dict) and entry.get("@type") == "Product":
+                        return entry
+        except (json.JSONDecodeError, TypeError):
+            continue
+    return None
+
+
+def _extract_description(soup):
+    """Extract product description from JSON-LD Product.description."""
+    product = _extract_json_ld_product(soup)
+    if product:
+        desc = product.get("description")
+        if desc:
+            return desc.strip()
+    return None
+
+
+def _extract_brand(soup):
+    """Extract brand from JSON-LD Product.brand.name."""
+    product = _extract_json_ld_product(soup)
+    if product:
+        brand = product.get("brand")
+        if isinstance(brand, dict):
+            name = brand.get("name")
+            if name:
+                return name.strip()
+        elif isinstance(brand, str) and brand:
+            return brand.strip()
+    return None
+
+
+def _extract_color(soup):
+    """Extract color from visible page text matching 'Färg: ...' pattern."""
+    # Look for "Färg:" in visible text
+    text = soup.get_text(" ", strip=True)
+    match = re.search(r'Färg:\s*([A-Za-zÀ-ÿ0-9 /&-]+?)(?:\s+Storlek|\s+Material|\s+Detaljer|\s*$)', text)
+    if match:
+        return match.group(1).strip()
+
+    # Fallback: look for JSON-LD Product.color
+    product = _extract_json_ld_product(soup)
+    if product:
+        color = product.get("color")
+        if color:
+            return color.strip()
+    return None
+
+
 KNOWN_MATERIALS = {
     "polyester", "bomull", "elastan", "polyamid", "viskos", "nylon", "akryl",
     "ull", "lin", "lyocell", "modal", "siden", "cupro", "kashmir", "kasjmir",
@@ -221,6 +278,9 @@ def scrape_product(url):
         "clothing_type": _extract_clothing_type(soup),
         "material_composition": _extract_material(soup),
         "product_url": url,
+        "description": _extract_description(soup),
+        "color": _extract_color(soup),
+        "brand": _extract_brand(soup),
     }
 
 

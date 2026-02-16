@@ -20,9 +20,22 @@ def create_table(conn):
             clothing_type TEXT,
             material_composition TEXT,
             product_url TEXT,
+            description TEXT,
+            color TEXT,
+            brand TEXT,
             scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         );
     """)
+    conn.commit()
+
+
+def migrate_products_table(conn):
+    """Add new columns to existing products table if they don't exist."""
+    for column in ("description TEXT", "color TEXT", "brand TEXT"):
+        try:
+            conn.execute(f"ALTER TABLE products ADD COLUMN {column}")
+        except sqlite3.OperationalError:
+            pass  # column already exists
     conn.commit()
 
 
@@ -68,16 +81,56 @@ def upsert_product_v2(conn, product):
     conn.commit()
 
 
-def upsert_product(conn, product):
+def create_table_ginatricot(conn):
     conn.execute("""
-        INSERT INTO products (product_id, product_name, category, clothing_type, material_composition, product_url)
-        VALUES (:product_id, :product_name, :category, :clothing_type, :material_composition, :product_url)
+        CREATE TABLE IF NOT EXISTS ginatricot_products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT UNIQUE NOT NULL,
+            product_name TEXT,
+            category TEXT,
+            clothing_type TEXT,
+            material_composition TEXT,
+            product_url TEXT,
+            description TEXT,
+            color TEXT,
+            brand TEXT,
+            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.commit()
+
+
+def upsert_product_ginatricot(conn, product):
+    conn.execute("""
+        INSERT INTO ginatricot_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
+        VALUES (:product_id, :product_name, :category, :clothing_type, :material_composition, :product_url, :description, :color, :brand)
         ON CONFLICT (product_id) DO UPDATE SET
             product_name = excluded.product_name,
             category = excluded.category,
             clothing_type = excluded.clothing_type,
             material_composition = excluded.material_composition,
             product_url = excluded.product_url,
+            description = excluded.description,
+            color = excluded.color,
+            brand = excluded.brand,
+            scraped_at = CURRENT_TIMESTAMP;
+    """, product)
+    conn.commit()
+
+
+def upsert_product(conn, product):
+    conn.execute("""
+        INSERT INTO products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
+        VALUES (:product_id, :product_name, :category, :clothing_type, :material_composition, :product_url, :description, :color, :brand)
+        ON CONFLICT (product_id) DO UPDATE SET
+            product_name = excluded.product_name,
+            category = excluded.category,
+            clothing_type = excluded.clothing_type,
+            material_composition = excluded.material_composition,
+            product_url = excluded.product_url,
+            description = excluded.description,
+            color = excluded.color,
+            brand = excluded.brand,
             scraped_at = CURRENT_TIMESTAMP;
     """, product)
     conn.commit()

@@ -2,8 +2,8 @@ import logging
 import sys
 from dotenv import load_dotenv
 
-from database import get_connection, create_table, migrate_products_table, upsert_product
-from scraper import fetch_product_urls, scrape_all
+from database import get_connection, create_table_ginatricot, upsert_product_ginatricot
+from ginatricot_scraper import fetch_product_urls, scrape_all
 
 load_dotenv()
 
@@ -18,10 +18,9 @@ logger = logging.getLogger(__name__)
 def main():
     logger.info("Connecting to database...")
     conn = get_connection()
-    create_table(conn)
-    migrate_products_table(conn)
+    create_table_ginatricot(conn)
 
-    logger.info("Fetching product URLs from sitemap...")
+    logger.info("Fetching Gina Tricot product URLs from sitemap...")
     urls = fetch_product_urls()
     if not urls:
         logger.warning("No product URLs found. Exiting.")
@@ -32,7 +31,7 @@ def main():
     count = {"saved": 0}
 
     def on_product(product):
-        upsert_product(conn, product)
+        upsert_product_ginatricot(conn, product)
         count["saved"] += 1
         if count["saved"] % 50 == 0:
             logger.info("Saved %d products so far", count["saved"])
