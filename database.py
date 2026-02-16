@@ -26,6 +26,48 @@ def create_table(conn):
     conn.commit()
 
 
+def create_table_v2(conn):
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS products_v2 (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            gtin TEXT NOT NULL,
+            article_number TEXT NOT NULL,
+            product_name TEXT,
+            description TEXT,
+            category TEXT,
+            size TEXT,
+            color TEXT,
+            materials TEXT,
+            care_text TEXT,
+            brand TEXT,
+            country_of_origin TEXT,
+            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE(gtin)
+        );
+    """)
+    conn.commit()
+
+
+def upsert_product_v2(conn, product):
+    conn.execute("""
+        INSERT INTO products_v2 (gtin, article_number, product_name, description, category, size, color, materials, care_text, brand, country_of_origin)
+        VALUES (:gtin, :article_number, :product_name, :description, :category, :size, :color, :materials, :care_text, :brand, :country_of_origin)
+        ON CONFLICT (gtin) DO UPDATE SET
+            article_number = excluded.article_number,
+            product_name = excluded.product_name,
+            description = excluded.description,
+            category = excluded.category,
+            size = excluded.size,
+            color = excluded.color,
+            materials = excluded.materials,
+            care_text = excluded.care_text,
+            brand = excluded.brand,
+            country_of_origin = excluded.country_of_origin,
+            uploaded_at = CURRENT_TIMESTAMP;
+    """, product)
+    conn.commit()
+
+
 def upsert_product(conn, product):
     conn.execute("""
         INSERT INTO products (product_id, product_name, category, clothing_type, material_composition, product_url)
