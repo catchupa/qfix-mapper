@@ -3,10 +3,10 @@ import sys
 import threading
 from dotenv import load_dotenv
 
+load_dotenv()
+
 from database import get_connection, create_table_ginatricot, upsert_product_ginatricot
 from ginatricot_scraper import fetch_product_urls, scrape_all
-
-load_dotenv()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -37,7 +37,7 @@ def main():
             upsert_product_ginatricot(conn, product)
             count["saved"] += 1
 
-    scrape_all(urls, callback=on_product, workers=10)
+    scrape_all(urls, callback=on_product, workers=3)
 
     logger.info("Done! Saved %d products total.", count["saved"])
     conn.close()
