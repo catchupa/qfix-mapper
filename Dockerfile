@@ -9,4 +9,4 @@ COPY api.py mapping.py mapping_v2.py database.py protocol_parser.py products.db 
 
 EXPOSE 8080
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "api:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--timeout", "120", "api:app"]

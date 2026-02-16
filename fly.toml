@@ -11,6 +11,6 @@ primary_region = 'arn'
   min_machines_running = 0
 
 [vm]
-  memory = '256mb'
+  memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
