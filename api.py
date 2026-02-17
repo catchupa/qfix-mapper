@@ -7,7 +7,7 @@ from flask import Flask, jsonify, request
 
 from mapping import map_product, map_clothing_type, map_material, QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS
 from mapping_v2 import map_product_v2
-from database import create_table_v2, upsert_product_v2, create_table_ginatricot, create_table_eton, DATABASE_URL
+from database import create_table_v2, upsert_product_v2, create_table_ginatricot, create_table_eton, create_table_nudie, create_table_lindex, DATABASE_URL
 from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
 
@@ -419,6 +419,84 @@ def eton_list_products():
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
             "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM eton_products ORDER BY product_id LIMIT 100"
+        )
+        rows = cur.fetchall()
+    conn.close()
+    return jsonify(rows)
+
+
+# ── Lindex endpoints (scraper-based) ──────────────────────────────────────
+
+@app.route("/lindex/product/<product_id>")
+def lindex_get_product(product_id):
+    conn = get_db()
+    create_table_lindex(conn)
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url FROM lindex_products WHERE product_id = %s",
+            (product_id,),
+        )
+        row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"error": f"Product {product_id} not found"}), 404
+
+    product = dict(row)
+    qfix = map_product(product)
+
+    return jsonify({
+        "lindex": product,
+        "qfix": qfix,
+    })
+
+
+@app.route("/lindex/products")
+def lindex_list_products():
+    conn = get_db()
+    create_table_lindex(conn)
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM lindex_products ORDER BY product_id LIMIT 100"
+        )
+        rows = cur.fetchall()
+    conn.close()
+    return jsonify(rows)
+
+
+# ── Nudie Jeans endpoints (scraper-based) ─────────────────────────────────
+
+@app.route("/nudie/product/<product_id>")
+def nudie_get_product(product_id):
+    conn = get_db()
+    create_table_nudie(conn)
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url FROM nudie_products WHERE product_id = %s",
+            (product_id,),
+        )
+        row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"error": f"Product {product_id} not found"}), 404
+
+    product = dict(row)
+    qfix = map_product(product)
+
+    return jsonify({
+        "nudie": product,
+        "qfix": qfix,
+    })
+
+
+@app.route("/nudie/products")
+def nudie_list_products():
+    conn = get_db()
+    create_table_nudie(conn)
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM nudie_products ORDER BY product_id LIMIT 100"
         )
         rows = cur.fetchall()
     conn.close()

@@ -53,6 +53,40 @@ def _make_eton_product(**overrides):
     return base
 
 
+def _make_nudie_product(**overrides):
+    base = {
+        "product_id": "115053",
+        "product_name": "Steady Eddie II Sand Storm",
+        "category": "men's jeans",
+        "clothing_type": "Men's Jeans > Regular Tapered",
+        "material_composition": "100% Cotton",
+        "product_url": "https://www.nudiejeans.com/en-SE/product/steady-eddie-ii-sand-storm",
+        "description": "Regular fit jeans with a tapered leg",
+        "color": None,
+        "brand": "Nudie Jeans",
+        "image_url": "https://nudie.centracdn.net/client/dynamic/images/115053.jpg",
+    }
+    base.update(overrides)
+    return base
+
+
+def _make_lindex_product(**overrides):
+    base = {
+        "product_id": "3010022",
+        "product_name": "Krinklad midi klänning",
+        "category": "dam",
+        "clothing_type": "Dam > Klänningar",
+        "material_composition": "70% viskos 30% polyamid",
+        "product_url": "https://www.lindex.com/se/p/3010022-7258",
+        "description": "Midiklänning med rynk, v-ringning och en böljande passform.",
+        "color": "Light Dusty Pink",
+        "brand": "Lindex",
+        "image_url": "https://i8.amplience.net/s/Lindex/3010022_7258_ProductVariant",
+    }
+    base.update(overrides)
+    return base
+
+
 def _make_v2_product(**overrides):
     base = {
         "gtin": "7394712345678",
@@ -113,6 +147,34 @@ def _upsert_product_eton(conn, product):
     conn.commit()
 
 
+def _upsert_product_lindex(conn, product):
+    conn.execute("""
+        INSERT INTO lindex_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
+        VALUES (:product_id, :product_name, :category, :clothing_type, :material_composition, :product_url, :description, :color, :brand, :image_url)
+        ON CONFLICT (product_id) DO UPDATE SET
+            product_name = excluded.product_name, category = excluded.category,
+            clothing_type = excluded.clothing_type, material_composition = excluded.material_composition,
+            product_url = excluded.product_url, description = excluded.description,
+            color = excluded.color, brand = excluded.brand, image_url = excluded.image_url,
+            scraped_at = CURRENT_TIMESTAMP;
+    """, product)
+    conn.commit()
+
+
+def _upsert_product_nudie(conn, product):
+    conn.execute("""
+        INSERT INTO nudie_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
+        VALUES (:product_id, :product_name, :category, :clothing_type, :material_composition, :product_url, :description, :color, :brand, :image_url)
+        ON CONFLICT (product_id) DO UPDATE SET
+            product_name = excluded.product_name, category = excluded.category,
+            clothing_type = excluded.clothing_type, material_composition = excluded.material_composition,
+            product_url = excluded.product_url, description = excluded.description,
+            color = excluded.color, brand = excluded.brand, image_url = excluded.image_url,
+            scraped_at = CURRENT_TIMESTAMP;
+    """, product)
+    conn.commit()
+
+
 def _upsert_product_ginatricot(conn, product):
     conn.execute("""
         INSERT INTO ginatricot_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
@@ -139,6 +201,8 @@ def test_create_table(db_conn):
     assert "products_v2" in names
     assert "ginatricot_products" in names
     assert "eton_products" in names
+    assert "nudie_products" in names
+    assert "lindex_products" in names
 
 
 def test_create_table_idempotent(db_conn):
@@ -207,6 +271,46 @@ def test_upsert_product_eton_update(db_conn):
 
     row = db_conn.execute("SELECT * FROM eton_products WHERE product_id = '2567-00-10'").fetchone()
     assert row["color"] == "Blå"
+
+
+# ── Upsert Lindex products ───────────────────────────────────────────────
+
+def test_upsert_product_lindex_insert(db_conn):
+    _upsert_product_lindex(db_conn, _make_lindex_product())
+
+    row = db_conn.execute("SELECT * FROM lindex_products WHERE product_id = '3010022'").fetchone()
+    assert row is not None
+    assert row["product_name"] == "Krinklad midi klänning"
+    assert row["brand"] == "Lindex"
+    assert row["material_composition"] == "70% viskos 30% polyamid"
+
+
+def test_upsert_product_lindex_update(db_conn):
+    _upsert_product_lindex(db_conn, _make_lindex_product())
+    _upsert_product_lindex(db_conn, _make_lindex_product(color="Dark Blue"))
+
+    row = db_conn.execute("SELECT * FROM lindex_products WHERE product_id = '3010022'").fetchone()
+    assert row["color"] == "Dark Blue"
+
+
+# ── Upsert Nudie products ────────────────────────────────────────────────
+
+def test_upsert_product_nudie_insert(db_conn):
+    _upsert_product_nudie(db_conn, _make_nudie_product())
+
+    row = db_conn.execute("SELECT * FROM nudie_products WHERE product_id = '115053'").fetchone()
+    assert row is not None
+    assert row["product_name"] == "Steady Eddie II Sand Storm"
+    assert row["brand"] == "Nudie Jeans"
+    assert row["material_composition"] == "100% Cotton"
+
+
+def test_upsert_product_nudie_update(db_conn):
+    _upsert_product_nudie(db_conn, _make_nudie_product())
+    _upsert_product_nudie(db_conn, _make_nudie_product(material_composition="98% Cotton 2% Elastane"))
+
+    row = db_conn.execute("SELECT * FROM nudie_products WHERE product_id = '115053'").fetchone()
+    assert row["material_composition"] == "98% Cotton 2% Elastane"
 
 
 # ── Upsert v2 products ───────────────────────────────────────────────────

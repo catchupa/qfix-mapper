@@ -59,6 +59,38 @@ def _create_tables_sqlite(conn):
         );
     """)
     conn.execute("""
+        CREATE TABLE IF NOT EXISTS nudie_products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT UNIQUE NOT NULL,
+            product_name TEXT,
+            category TEXT,
+            clothing_type TEXT,
+            material_composition TEXT,
+            product_url TEXT,
+            description TEXT,
+            color TEXT,
+            brand TEXT,
+            image_url TEXT,
+            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS lindex_products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            product_id TEXT UNIQUE NOT NULL,
+            product_name TEXT,
+            category TEXT,
+            clothing_type TEXT,
+            material_composition TEXT,
+            product_url TEXT,
+            description TEXT,
+            color TEXT,
+            brand TEXT,
+            image_url TEXT,
+            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
+    """)
+    conn.execute("""
         CREATE TABLE IF NOT EXISTS ginatricot_products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_id TEXT UNIQUE NOT NULL,
@@ -166,7 +198,9 @@ def app_client(tmp_path):
     with patch.object(api_module, "get_db", _mock_get_db), \
          patch.object(api_module, "create_table_v2", _noop), \
          patch.object(api_module, "create_table_ginatricot", _noop), \
-         patch.object(api_module, "create_table_eton", _noop):
+         patch.object(api_module, "create_table_eton", _noop), \
+         patch.object(api_module, "create_table_nudie", _noop), \
+         patch.object(api_module, "create_table_lindex", _noop):
         with api_module.app.test_client() as client:
             yield client, db_file
 

@@ -35,6 +35,26 @@ def _seed_eton_product(db_path):
     conn.close()
 
 
+def _seed_lindex_product(db_path):
+    conn = sqlite3.connect(db_path)
+    conn.execute("""
+        INSERT INTO lindex_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
+        VALUES ('3010022', 'Krinklad midi klänning', 'dam', 'Dam > Klänningar', '70% viskos 30% polyamid', 'https://www.lindex.com/se/p/3010022-7258', 'Midiklänning med rynk', 'Light Dusty Pink', 'Lindex')
+    """)
+    conn.commit()
+    conn.close()
+
+
+def _seed_nudie_product(db_path):
+    conn = sqlite3.connect(db_path)
+    conn.execute("""
+        INSERT INTO nudie_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
+        VALUES ('115053', 'Steady Eddie II Sand Storm', 'jeans', 'Men''s Jeans > Regular Tapered', '100% Cotton', 'https://www.nudiejeans.com/en-SE/product/steady-eddie-ii-sand-storm', 'Regular fit jeans', NULL, 'Nudie Jeans')
+    """)
+    conn.commit()
+    conn.close()
+
+
 def _seed_v2_product(db_path):
     conn = sqlite3.connect(db_path)
     conn.execute("""
@@ -254,6 +274,72 @@ def test_eton_list_products(app_client):
     data = resp.get_json()
     assert len(data) >= 1
     assert data[0]["product_name"] == "Vit poplinskjorta"
+
+
+# ── Lindex endpoints ────────────────────────────────────────────────────
+
+def test_lindex_get_product(app_client):
+    client, db_path = app_client
+    _seed_lindex_product(db_path)
+
+    resp = client.get("/lindex/product/3010022")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["lindex"]["product_id"] == "3010022"
+    assert data["lindex"]["product_name"] == "Krinklad midi klänning"
+    assert data["lindex"]["brand"] == "Lindex"
+    assert data["lindex"]["material_composition"] == "70% viskos 30% polyamid"
+    assert "qfix" in data
+
+
+def test_lindex_get_product_not_found(app_client):
+    client, db_path = app_client
+    resp = client.get("/lindex/product/000000")
+    assert resp.status_code == 404
+
+
+def test_lindex_list_products(app_client):
+    client, db_path = app_client
+    _seed_lindex_product(db_path)
+
+    resp = client.get("/lindex/products")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) >= 1
+    assert data[0]["product_name"] == "Krinklad midi klänning"
+
+
+# ── Nudie endpoints ─────────────────────────────────────────────────────
+
+def test_nudie_get_product(app_client):
+    client, db_path = app_client
+    _seed_nudie_product(db_path)
+
+    resp = client.get("/nudie/product/115053")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["nudie"]["product_id"] == "115053"
+    assert data["nudie"]["product_name"] == "Steady Eddie II Sand Storm"
+    assert data["nudie"]["brand"] == "Nudie Jeans"
+    assert data["nudie"]["material_composition"] == "100% Cotton"
+    assert "qfix" in data
+
+
+def test_nudie_get_product_not_found(app_client):
+    client, db_path = app_client
+    resp = client.get("/nudie/product/000000")
+    assert resp.status_code == 404
+
+
+def test_nudie_list_products(app_client):
+    client, db_path = app_client
+    _seed_nudie_product(db_path)
+
+    resp = client.get("/nudie/products")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) >= 1
+    assert data[0]["product_name"] == "Steady Eddie II Sand Storm"
 
 
 # ── Vision identify endpoint ─────────────────────────────────────────────
