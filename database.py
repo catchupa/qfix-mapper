@@ -7,7 +7,7 @@ DATABASE_URL = os.environ.get("DATABASE_URL")
 
 # All columns in products_unified (excluding id and updated_at)
 PRODUCT_COLUMNS = [
-    "product_id", "brand", "product_name", "description", "category",
+    "product_id", "brand", "sub_brand", "product_name", "description", "category",
     "clothing_type", "material_composition", "materials", "color", "size",
     "gtin", "article_number", "product_url", "image_url", "care_text",
     "country_of_origin",
@@ -27,6 +27,7 @@ def create_table(conn):
                 id SERIAL PRIMARY KEY,
                 product_id TEXT NOT NULL,
                 brand TEXT NOT NULL,
+                sub_brand TEXT,
                 product_name TEXT,
                 description TEXT,
                 category TEXT,
@@ -58,13 +59,14 @@ def upsert_product(conn, product):
 
     with conn.cursor() as cur:
         cur.execute("""
-            INSERT INTO products_unified (product_id, brand, product_name, description, category,
+            INSERT INTO products_unified (product_id, brand, sub_brand, product_name, description, category,
                 clothing_type, material_composition, materials, color, size,
                 gtin, article_number, product_url, image_url, care_text, country_of_origin)
-            VALUES (%(product_id)s, %(brand)s, %(product_name)s, %(description)s, %(category)s,
+            VALUES (%(product_id)s, %(brand)s, %(sub_brand)s, %(product_name)s, %(description)s, %(category)s,
                 %(clothing_type)s, %(material_composition)s, %(materials)s, %(color)s, %(size)s,
                 %(gtin)s, %(article_number)s, %(product_url)s, %(image_url)s, %(care_text)s, %(country_of_origin)s)
             ON CONFLICT (brand, product_id) DO UPDATE SET
+                sub_brand = EXCLUDED.sub_brand,
                 product_name = EXCLUDED.product_name,
                 description = EXCLUDED.description,
                 category = EXCLUDED.category,

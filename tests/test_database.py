@@ -26,7 +26,7 @@ def _upsert_product(conn, product):
     """SQLite version of the unified upsert."""
     # Ensure all columns have a value (default to None)
     cols = [
-        "product_id", "brand", "product_name", "description", "category",
+        "product_id", "brand", "sub_brand", "product_name", "description", "category",
         "clothing_type", "material_composition", "materials", "color", "size",
         "gtin", "article_number", "product_url", "image_url", "care_text",
         "country_of_origin",
@@ -34,13 +34,14 @@ def _upsert_product(conn, product):
     values = {col: product.get(col) for col in cols}
 
     conn.execute("""
-        INSERT INTO products_unified (product_id, brand, product_name, description, category,
+        INSERT INTO products_unified (product_id, brand, sub_brand, product_name, description, category,
             clothing_type, material_composition, materials, color, size,
             gtin, article_number, product_url, image_url, care_text, country_of_origin)
-        VALUES (:product_id, :brand, :product_name, :description, :category,
+        VALUES (:product_id, :brand, :sub_brand, :product_name, :description, :category,
             :clothing_type, :material_composition, :materials, :color, :size,
             :gtin, :article_number, :product_url, :image_url, :care_text, :country_of_origin)
         ON CONFLICT (brand, product_id) DO UPDATE SET
+            sub_brand = excluded.sub_brand,
             product_name = excluded.product_name, description = excluded.description,
             category = excluded.category, clothing_type = excluded.clothing_type,
             material_composition = excluded.material_composition, materials = excluded.materials,

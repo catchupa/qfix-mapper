@@ -33,6 +33,8 @@ def main():
     lock = threading.Lock()
 
     def on_product(product):
+        product["sub_brand"] = product.get("brand")
+        product["brand"] = "KappAhl"
         with lock:
             upsert_product(conn, product)
             count["saved"] += 1

@@ -34,6 +34,8 @@ def main():
     count = {"saved": 0}
 
     def on_product(product):
+        product["sub_brand"] = product.get("brand")
+        product["brand"] = "Lindex"
         upsert_product(conn, product)
         count["saved"] += 1
 

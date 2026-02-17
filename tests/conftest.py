@@ -14,6 +14,7 @@ def _create_tables_sqlite(conn):
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             product_id TEXT NOT NULL,
             brand TEXT NOT NULL,
+            sub_brand TEXT,
             product_name TEXT,
             description TEXT,
             category TEXT,
