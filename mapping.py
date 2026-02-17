@@ -473,7 +473,12 @@ def map_material(kappahl_material):
     if not kappahl_material:
         return "Other/Unsure"
 
-    matches = re.findall(r"(\d{1,3})%\s*(.+?)(?:,|$)", kappahl_material)
+    # Support both "75% Bomull, 21% Polyester" and "98% Cotton 2% Elastane"
+    matches = re.findall(r"(\d{1,3})%\s*(.+?)(?:,\s*|(?=\s+\d{1,3}%)|$)", kappahl_material)
+    # Also support reversed format: "Cotton 100%"
+    if not matches:
+        matches = re.findall(r"(.+?)\s+(\d{1,3})%", kappahl_material)
+        matches = [(pct, name) for name, pct in matches]
     if not matches:
         return "Other/Unsure"
 

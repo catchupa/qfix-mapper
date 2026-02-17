@@ -65,6 +65,22 @@ def test_map_material_empty():
     assert map_material("") == "Other/Unsure"
 
 
+def test_map_material_space_separated():
+    assert map_material("98% Cotton 2% Elastane") == "Standard textile"
+
+
+def test_map_material_space_separated_wool():
+    assert map_material("70% Wool 25% Polyamide 5% Other Fibre") == "Linen/Wool"
+
+
+def test_map_material_space_separated_silk():
+    assert map_material("92% Silk 8% Polyamide") == "Silk"
+
+
+def test_map_material_reversed_format():
+    assert map_material("Cotton 100%") == "Standard textile"
+
+
 def test_map_category_dam():
     assert map_category("dam") == "Women's Clothing"
 
