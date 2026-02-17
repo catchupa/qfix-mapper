@@ -382,6 +382,7 @@ MATERIAL_MAP = {
     "hemp": "Standard textile",
     # Linen / Wool
     "lin": "Linen/Wool",
+    "linne": "Linen/Wool",
     "ull": "Linen/Wool",
     "certifierad ull": "Linen/Wool",
     "återvunnen ull": "Linen/Wool",
