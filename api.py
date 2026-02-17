@@ -1,12 +1,19 @@
+import json
+import logging
 import os
 import tempfile
 
+import anthropic
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request
 from flasgger import Swagger
 
-from mapping import map_product, map_product_legacy, map_clothing_type, map_material, QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS
+from mapping import (
+    map_product, map_product_legacy, map_clothing_type, map_material,
+    QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS,
+    CLOTHING_TYPE_MAP, MATERIAL_MAP, _KEYWORD_CLOTHING_MAP,
+)
 from mapping_v2 import map_product_v2
 from database import create_table, upsert_product, DATABASE_URL
 from protocol_parser import parse_protocol_xlsx
@@ -790,6 +797,266 @@ def add_mapping():
 
     else:
         return jsonify({"error": "type must be 'clothing_type' or 'material'"}), 400
+
+
+logger = logging.getLogger(__name__)
+
+REMAP_PROMPT = """You are a mapping assistant for a clothing repair service (QFix). You will be given a list of unmapped {type_label} values from scraped product data. Your job is to map each value to the correct QFix category, or mark it as "skip" if it's not a repairable clothing/textile item.
+
+## Valid QFix target values
+
+{valid_targets}
+
+## Existing mapping patterns (for reference)
+
+{existing_patterns}
+
+## Unmapped values to process
+
+{unmapped_values}
+
+## Instructions
+
+For each unmapped value:
+1. Determine if it represents a repairable clothing/textile item
+2. If yes, map it to the closest valid QFix target value from the list above
+3. If no (e.g. jewelry, sunglasses, posters, books, non-textile materials like metal/rubber), mark as "skip"
+4. For clothing_type mappings, decide if the rule should match the exact category string ("exact") or a keyword within product names ("keyword")
+
+Respond with ONLY a JSON object, no other text:
+{{
+  "suggestions": [
+    {{"from": "the unmapped value (lowercased)", "to": "Valid QFix Target", "match_type": "exact|keyword", "reasoning": "brief explanation"}},
+    ...
+  ],
+  "skipped": [
+    {{"value": "the unmapped value", "reasoning": "why it's not mappable"}},
+    ...
+  ]
+}}"""
+
+
+@app.route("/remap")
+def remap_suggestions():
+    """Use Claude AI to analyze unmapped items and suggest new mapping rules.
+    ---
+    tags:
+      - Mapping
+    parameters:
+      - name: type
+        in: query
+        type: string
+        enum: [clothing_type, material]
+        default: clothing_type
+        description: Type of mapping to analyze
+      - name: brand
+        in: query
+        type: string
+        description: Filter by brand slug (e.g. "eton", "nudie"). Omit for all brands.
+    responses:
+      200:
+        description: AI-generated mapping suggestions with reasoning
+      500:
+        description: Claude API error
+    """
+    mapping_type = request.args.get("type", "clothing_type")
+    brand_filter = request.args.get("brand")
+
+    if mapping_type not in ("clothing_type", "material"):
+        return jsonify({"error": "type must be 'clothing_type' or 'material'"}), 400
+
+    # Gather unmapped items (reuse /unmapped logic)
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT DISTINCT brand, clothing_type, material_composition, category "
+            "FROM products_unified WHERE clothing_type IS NOT NULL "
+            "ORDER BY brand, clothing_type"
+        )
+        all_rows = cur.fetchall()
+    conn.close()
+
+    unmapped_items = {}  # value -> {"count": N, "brands": set, "samples": []}
+
+    for row in all_rows:
+        brand_name = row["brand"]
+        slug = BRAND_SLUG.get(brand_name, brand_name.lower().replace(" ", ""))
+        if brand_filter and slug != brand_filter:
+            continue
+
+        if mapping_type == "clothing_type":
+            val = row["clothing_type"]
+            mapped = map_clothing_type(val)
+            if mapped is None and val:
+                key = val
+                if key not in unmapped_items:
+                    unmapped_items[key] = {"count": 0, "brands": set()}
+                unmapped_items[key]["count"] += 1
+                unmapped_items[key]["brands"].add(slug)
+        else:
+            val = row["material_composition"]
+            mapped = map_material(val)
+            if mapped == "Other/Unsure" and val:
+                key = val
+                if key not in unmapped_items:
+                    unmapped_items[key] = {"count": 0, "brands": set()}
+                unmapped_items[key]["count"] += 1
+                unmapped_items[key]["brands"].add(slug)
+
+    if not unmapped_items:
+        return jsonify({"suggestions": [], "skipped": [], "message": "Nothing unmapped!"})
+
+    # Build prompt context
+    if mapping_type == "clothing_type":
+        valid_targets = ", ".join(sorted(QFIX_CLOTHING_TYPE_IDS.keys()))
+        sample_patterns = list(CLOTHING_TYPE_MAP.items())[:20]
+        existing_patterns = "\n".join(f'  "{k}" -> "{v}"' for k, v in sample_patterns)
+        keyword_samples = _KEYWORD_CLOTHING_MAP[:15]
+        existing_patterns += "\n\nKeyword rules (match anywhere in string):\n"
+        existing_patterns += "\n".join(f'  keyword "{k}" -> "{v}"' for k, v in keyword_samples)
+        type_label = "clothing type"
+    else:
+        valid_targets = "Standard textile, Linen/Wool, Cashmere, Silk, Leather/Suede, Down, Fur, Other/Unsure"
+        sample_patterns = list(MATERIAL_MAP.items())[:20]
+        existing_patterns = "\n".join(f'  "{k}" -> "{v}"' for k, v in sample_patterns if v)
+        type_label = "material"
+
+    unmapped_lines = []
+    for val, info in sorted(unmapped_items.items(), key=lambda x: -x[1]["count"]):
+        brands = ", ".join(sorted(info["brands"]))
+        unmapped_lines.append(f'  - "{val}" ({info["count"]} products, brands: {brands})')
+
+    prompt = REMAP_PROMPT.format(
+        type_label=type_label,
+        valid_targets=valid_targets,
+        existing_patterns=existing_patterns,
+        unmapped_values="\n".join(unmapped_lines),
+    )
+
+    # Call Claude API
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return jsonify({"error": "ANTHROPIC_API_KEY not configured"}), 500
+
+    try:
+        client = anthropic.Anthropic(api_key=api_key)
+        message = client.messages.create(
+            model="claude-sonnet-4-5-20250929",
+            max_tokens=4096,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        response_text = message.content[0].text.strip()
+
+        # Parse JSON (handle markdown code blocks)
+        if response_text.startswith("```"):
+            lines = response_text.split("\n")
+            response_text = "\n".join(lines[1:-1])
+
+        result = json.loads(response_text)
+
+        # Enrich suggestions with product counts
+        for s in result.get("suggestions", []):
+            from_val = s.get("from", "")
+            # Try case-insensitive match
+            for orig_val, info in unmapped_items.items():
+                if orig_val.lower() == from_val.lower():
+                    s["products_affected"] = info["count"]
+                    s["brands"] = sorted(info["brands"])
+                    break
+
+        return jsonify(result)
+
+    except json.JSONDecodeError:
+        logger.error("Failed to parse remap response: %s", response_text)
+        return jsonify({"error": "Failed to parse AI response", "raw": response_text}), 500
+    except Exception as e:
+        logger.error("Remap API error: %s", e)
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/remap/apply", methods=["POST"])
+def remap_apply():
+    """Apply AI-suggested mapping rules (in-memory, resets on redeploy).
+    ---
+    tags:
+      - Mapping
+    consumes:
+      - application/json
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - suggestions
+          properties:
+            suggestions:
+              type: array
+              items:
+                type: object
+                properties:
+                  from:
+                    type: string
+                  to:
+                    type: string
+                  rule_type:
+                    type: string
+                    enum: [clothing_type, material]
+                  match_type:
+                    type: string
+                    enum: [exact, keyword]
+    responses:
+      200:
+        description: Mappings applied successfully
+      400:
+        description: Invalid input
+    """
+    data = request.get_json()
+    if not data or "suggestions" not in data:
+        return jsonify({"error": "JSON body with 'suggestions' array required"}), 400
+
+    valid_materials = {"Standard textile", "Linen/Wool", "Cashmere", "Silk",
+                       "Leather/Suede", "Down", "Fur", "Other/Unsure"}
+    applied = []
+    errors = []
+
+    for s in data["suggestions"]:
+        from_val = s.get("from", "").strip().lower()
+        to_val = s.get("to", "").strip()
+        rule_type = s.get("rule_type", "clothing_type")
+        match_type = s.get("match_type", "exact")
+
+        if not from_val or not to_val:
+            errors.append({"from": from_val, "error": "Missing from or to"})
+            continue
+
+        if rule_type == "clothing_type":
+            if to_val not in QFIX_CLOTHING_TYPE_IDS:
+                errors.append({"from": from_val, "error": f"Invalid QFix type: '{to_val}'"})
+                continue
+            if match_type == "keyword":
+                _KEYWORD_CLOTHING_MAP.append((from_val, to_val))
+                applied.append({"from": from_val, "to": to_val, "type": "keyword_rule"})
+            else:
+                CLOTHING_TYPE_MAP[from_val] = to_val
+                applied.append({"from": from_val, "to": to_val, "type": "exact_rule"})
+
+        elif rule_type == "material":
+            if to_val not in valid_materials:
+                errors.append({"from": from_val, "error": f"Invalid material: '{to_val}'"})
+                continue
+            MATERIAL_MAP[from_val] = to_val
+            applied.append({"from": from_val, "to": to_val, "type": "material_rule"})
+
+        else:
+            errors.append({"from": from_val, "error": f"Invalid rule_type: '{rule_type}'"})
+
+    return jsonify({
+        "applied": applied,
+        "applied_count": len(applied),
+        "errors": errors,
+    })
 
 
 if __name__ == "__main__":
