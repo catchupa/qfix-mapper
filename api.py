@@ -23,6 +23,7 @@ def get_db():
 # ── v1 endpoints (scraper-based) ─────────────────────────────────────────
 
 @app.route("/product/<product_id>")
+@app.route("/kappahl/product/<product_id>")
 def get_product(product_id):
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -46,6 +47,7 @@ def get_product(product_id):
 
 
 @app.route("/products")
+@app.route("/kappahl/products")
 def list_products():
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:

@@ -99,6 +99,35 @@ def test_list_products(app_client):
     assert data[0]["product_id"] == "131367"
 
 
+def test_kappahl_get_product(app_client):
+    client, db_path = app_client
+    _seed_v1_product(db_path)
+
+    resp = client.get("/kappahl/product/131367")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert data["kappahl"]["product_id"] == "131367"
+    assert data["kappahl"]["brand"] == "KappAhl"
+    assert "qfix" in data
+
+
+def test_kappahl_get_product_not_found(app_client):
+    client, db_path = app_client
+    resp = client.get("/kappahl/product/999999")
+    assert resp.status_code == 404
+
+
+def test_kappahl_list_products(app_client):
+    client, db_path = app_client
+    _seed_v1_product(db_path)
+
+    resp = client.get("/kappahl/products")
+    assert resp.status_code == 200
+    data = resp.get_json()
+    assert len(data) >= 1
+    assert data[0]["product_id"] == "131367"
+
+
 # ── v2 protocol endpoints ────────────────────────────────────────────────
 
 def test_v2_get_by_gtin(app_client):
