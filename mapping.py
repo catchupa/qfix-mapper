@@ -326,6 +326,11 @@ CLOTHING_TYPE_MAP = {
     "polo shirts": "Top / T-shirt",
     "t-shirt": "T-shirt",
     "vests": "Unlined Jacket / Vest",
+    # Nudie category prefixes (used as first segment before ">")
+    "men's jeans": "Trousers",
+    "women's jeans": "Trousers",
+    "women's pants": "Trousers",
+    "women's socks": "Underwear",
     # Accessories
     "accessoarer": None,
     "mössor, hattar & kepsar": "Hat",
@@ -447,6 +452,68 @@ CATEGORY_MAP = {
 
 SKIP_SEGMENTS = {"dam", "herr", "barn", "baby"}
 
+# Keyword fallback for product names (checked in order, first match wins).
+# Used when direct CLOTHING_TYPE_MAP lookup fails (e.g. Nudie product names).
+_KEYWORD_CLOTHING_MAP = [
+    ("dungarees", "Overall"),
+    ("boilersuit", "Overall"),
+    ("hoodie", "Sweatshirt / Hoodie"),
+    ("sweatshirt", "Sweatshirt / Hoodie"),
+    ("denim jacket", "Jacket"),
+    ("blazer", "Suit"),
+    ("jacket", "Jacket"),
+    ("t-shirt", "T-shirt"),
+    ("tee ", "T-shirt"),
+    (" tee", "T-shirt"),
+    ("tank top", "Top / T-shirt"),
+    ("henley", "Top / T-shirt"),
+    ("shirt", "Shirt / Blouse"),
+    ("knit", "Knitted Jumper"),
+    ("sweater", "Sweater"),
+    ("shorts", "Trousers / Shorts"),
+    ("jeans", "Trousers"),
+    ("pants", "Trousers"),
+    ("skirt", "Skirt / Dress"),
+    ("dress", "Skirt / Dress"),
+    ("belt", "Belt"),
+    ("wallet", "Handbags"),
+    ("bag", "Handbags"),
+    ("beanie", "Hat"),
+    ("bucket hat", "Hat"),
+    ("bandana", "Scarf / Shawl"),
+    ("socks", "Underwear"),
+    ("boxer", "Underwear"),
+    ("briefs", "Underwear"),
+    ("sweat ", "Sweatshirt / Hoodie"),
+    (" zip ", "Sweatshirt / Hoodie"),
+    # Nudie jeans model names (no clothing keyword in name)
+    ("easy alvin", "Trousers"),
+    ("grim tim", "Trousers"),
+    ("gritty jackson", "Trousers"),
+    ("lean dean", "Trousers"),
+    ("loud larry", "Trousers"),
+    ("rad rufus", "Trousers"),
+    ("slim jim", "Trousers"),
+    ("solid ollie", "Trousers"),
+    ("steady eddie", "Trousers"),
+    ("tight terry", "Trousers"),
+    ("tuff tony", "Trousers"),
+    ("flare glenn", "Trousers"),
+    ("breezy britt", "Trousers"),
+    ("clean eileen", "Trousers"),
+    ("dusty dee", "Trousers"),
+    ("lofty lo", "Trousers"),
+    ("sonic sue", "Trousers"),
+    ("wide heidi", "Trousers"),
+    ("tiny tony", "Trousers"),
+    ("tiny turner", "Trousers"),
+    ("denim", "Trousers"),
+    # Nudie T-shirt model names
+    ("joni ", "T-shirt"),
+    ("roger slub", "T-shirt"),
+    ("roffe slub", "T-shirt"),
+]
+
 
 def map_clothing_type(kappahl_clothing_type):
     """Map clothing_type string to QFix L3 clothing type name."""
@@ -475,7 +542,19 @@ def map_clothing_type(kappahl_clothing_type):
     if len(parts) > 1 and "hoodies" in parts[1]:
         return "Sweatshirt / Hoodie"
 
-    return CLOTHING_TYPE_MAP.get(first)
+    result = CLOTHING_TYPE_MAP.get(first)
+    if result is not None:
+        return result
+
+    # Keyword fallback: match English keywords in the full string
+    # (handles product names like "Roy Sunburns T-Shirt Antracite")
+    if first not in CLOTHING_TYPE_MAP:
+        full = kappahl_clothing_type.lower()
+        for keyword, qfix_type in _KEYWORD_CLOTHING_MAP:
+            if keyword in full:
+                return qfix_type
+
+    return None
 
 
 def map_material(kappahl_material):
