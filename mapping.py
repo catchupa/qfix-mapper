@@ -481,7 +481,7 @@ _KEYWORD_CLOTHING_MAP = [
     ("beanie", "Hat"),
     ("bucket hat", "Hat"),
     ("bandana", "Scarf / Shawl"),
-    ("socks", "Underwear"),
+    ("sock", "Underwear"),
     ("boxer", "Underwear"),
     ("briefs", "Underwear"),
     ("sweat ", "Sweatshirt / Hoodie"),
