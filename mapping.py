@@ -1,15 +1,23 @@
 """
-Maps KappAhl products to QFix repair service categories.
+Maps scraped products to QFix repair service categories.
 
-KappAhl hierarchy: category (dam/herr) > clothing_type > material
+Scraper hierarchy: category (dam/herr) > clothing_type > material
 QFix hierarchy:    L1 (Clothing/Shoes/Bags) > L2 (Outerwear/Women's/Men's) >
                    L3 (clothing type) > L4 (material) > L5 (service type)
+
+The complete QFix catalog is fetched from:
+  https://dev.qfixr.me/wp-json/qfix/v1/product-categories?parent=23
+
+Legacy dicts (suffix _LEGACY) preserve the original hand-curated mapping
+for comparison and fallback.
 """
 import re
 
-# ── QFix IDs ────────────────────────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════
+# LEGACY QFix IDs (original hand-curated mapping)
+# ══════════════════════════════════════════════════════════════════════════
 
-QFIX_CLOTHING_TYPE_IDS = {
+QFIX_CLOTHING_TYPE_IDS_LEGACY = {
     "Jacket": 173,
     "Unlined Jacket / Vest": 62,
     "Lined Jacket / Vest": 61,
@@ -40,10 +48,7 @@ QFIX_CLOTHING_TYPE_IDS = {
     "Other": 105,
 }
 
-# Valid material IDs per clothing type ID (from QFix API tree).
-# Clothing and shoe categories use DIFFERENT IDs for the same material name.
-# e.g. "Standard textile" = 69 for clothing, 189 for shoes.
-VALID_MATERIAL_IDS = {
+VALID_MATERIAL_IDS_LEGACY = {
     60:  {69: "Standard textile", 71: "Leather/Suede", 72: "Fur", 73: "Other/Unsure"},
     61:  {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 72: "Fur", 83: "Highvis", 73: "Other/Unsure"},
     62:  {69: "Standard textile", 71: "Leather/Suede", 166: "Linen/Wool", 143: "Galloon", 83: "Highvis", 73: "Other/Unsure"},
@@ -71,10 +76,9 @@ VALID_MATERIAL_IDS = {
     174: {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 73: "Other/Unsure"},
     175: {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 83: "Highvis", 73: "Other/Unsure"},
     193: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},
-    # 196 (Sweatshirt/Hoodie) and 201 (Bikini) have no materials in QFix
 }
 
-QFIX_SUBCATEGORY_IDS = {
+QFIX_SUBCATEGORY_IDS_LEGACY = {
     "Outerwear": 54,
     "Women's Clothing": 55,
     "Men's Clothing": 56,
@@ -83,7 +87,183 @@ QFIX_SUBCATEGORY_IDS = {
     "Swimwear / Wet suits": 167,
 }
 
-# ── KappAhl → QFix name mappings ────────────────────────────────────────
+# ══════════════════════════════════════════════════════════════════════════
+# COMPLETE QFix IDs (from API, all 88 clothing types)
+# ══════════════════════════════════════════════════════════════════════════
+
+# When a name appears in multiple subcategories (e.g. "Boots" in Men's/Women's/
+# Children's/Workwear Shoes), one representative ID is kept here. All IDs are
+# present in VALID_MATERIAL_IDS for correct material resolution.
+QFIX_CLOTHING_TYPE_IDS = {
+    "Ancle boots": 205,
+    "Backpack": 121,
+    "Belt": 102,
+    "Bikini": 201,
+    "Boots": 110,              # also: 113 (Women's), 138 (Workwear), 182 (MC)
+    "Briefcase": 122,
+    "Cap": 99,
+    "Coat": 60,
+    "Dress Shoes": 111,        # also: 116 (Women's)
+    "Gloves": 100,
+    "Handbags": 123,
+    "Hat": 98,
+    "High heels": 114,
+    "Highvis jacket": 81,
+    "Jacket": 173,             # also: 85 (Women's), 93 (Men's), 103 (Children's)
+    "Knee-high boots": 206,
+    "Knitted Jumper": 87,      # also: 95 (Men's), 193 (Children's)
+    "Large (more than 6sqm)": 130,
+    "Larger Bag / Duffel": 124,
+    "Lined Jacket / Vest": 61,
+    "Medium (3 to 6sqm)": 129,
+    "Midlayer": 161,
+    "Other": 105,
+    "Other shoes": 146,
+    "Others": 200,             # also: 202 (Workwear), 203 (MC)
+    "Overall": 198,            # also: 199 (Children's), 175 (MC)
+    "Overalls": 160,
+    "Rain Jacket": 142,
+    "Rain Trousers": 185,
+    "Rain boots": 148,         # also: 149 (Women's), 150 (Workwear), 147 (Children's)
+    "Sandals": 165,            # also: 164 (Women's), 141 (Workwear)
+    "Scarf / Shawl": 101,
+    "Shirt / Blouse": 89,
+    "Shirt / t-shirt / Body": 194,
+    "Shirts/t-shirts": 96,
+    "Shoes": 140,              # also: 183 (MC)
+    "Ski / Shell Trousers": 80,
+    "Ski / Shell jacket": 78,
+    "Skirt / Dress": 66,
+    "Small (less than 3sqm)": 128,
+    "Sneakers": 112,           # also: 115 (Women's)
+    "Suit": 86,
+    "Suit / Smoking": 92,      # also: 195 (Children's)
+    "Sweater": 162,
+    "Sweatshirt / Hoodie": 88, # also: 94 (Men's), 196 (Children's)
+    "Swimming trunks": 169,
+    "Swimsuit": 168,
+    "T-shirt": 163,
+    "Top / T-shirt": 90,
+    "Trousers": 174,           # also: 82 (Workwear)
+    "Trousers / Shorts": 84,   # also: 91 (Men's), 104 (Children's)
+    "Underwear": 171,
+    "Unlined Jacket / Vest": 62,
+    "Weekend Bag": 125,
+    "Wet suit": 170,
+    "Winter boots": 145,
+}
+
+# Valid material IDs per clothing type ID (from QFix API tree).
+# Clothing and shoe categories use DIFFERENT IDs for the same material name.
+# e.g. "Standard textile" = 69 for clothing, 189 for shoes.
+VALID_MATERIAL_IDS = {
+    60:  {69: "Standard textile", 71: "Leather/Suede", 72: "Fur", 73: "Other/Unsure"},                                           # Coat (Outerwear)
+    61:  {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 72: "Fur", 83: "Highvis", 73: "Other/Unsure"},                # Lined Jacket / Vest (Outerwear)
+    62:  {69: "Standard textile", 71: "Leather/Suede", 166: "Linen/Wool", 143: "Galloon", 83: "Highvis", 73: "Other/Unsure"},     # Unlined Jacket / Vest (Outerwear)
+    66:  {69: "Standard textile", 71: "Leather/Suede", 166: "Linen/Wool", 213: "Silk", 73: "Other/Unsure"},                       # Skirt / Dress (Women's)
+    78:  {69: "Standard textile", 176: "Down", 73: "Other/Unsure"},                                                               # Ski / Shell jacket (Outerwear)
+    80:  {69: "Standard textile", 176: "Down", 73: "Other/Unsure"},                                                               # Ski / Shell Trousers (Outerwear)
+    81:  {69: "Standard textile", 176: "Down", 143: "Galloon", 83: "Highvis", 73: "Other/Unsure"},                                # Highvis jacket (Workwear)
+    82:  {69: "Standard textile", 83: "Highvis", 144: "Flame resistant", 73: "Other/Unsure"},                                     # Trousers (Workwear)
+    84:  {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Trousers / Shorts (Women's)
+    85:  {69: "Standard textile", 166: "Linen/Wool", 159: "Cashmere", 73: "Other/Unsure"},                                        # Jacket (Women's)
+    86:  {69: "Standard textile", 166: "Linen/Wool", 159: "Cashmere", 73: "Other/Unsure"},                                        # Suit (Women's)
+    87:  {69: "Standard textile", 166: "Linen/Wool", 159: "Cashmere", 73: "Other/Unsure"},                                        # Knitted Jumper (Women's)
+    88:  {69: "Standard textile", 73: "Other/Unsure"},                                                                            # Sweatshirt / Hoodie (Women's)
+    89:  {69: "Standard textile", 166: "Linen/Wool", 213: "Silk", 73: "Other/Unsure"},                                            # Shirt / Blouse (Women's)
+    90:  {69: "Standard textile", 73: "Other/Unsure"},                                                                            # Top / T-shirt (Women's)
+    91:  {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Trousers / Shorts (Men's)
+    92:  {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Suit / Smoking (Men's)
+    93:  {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Jacket (Men's)
+    94:  {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Sweatshirt / Hoodie (Men's)
+    95:  {69: "Standard textile", 166: "Linen/Wool", 159: "Cashmere", 73: "Other/Unsure"},                                        # Knitted Jumper (Men's)
+    96:  {69: "Standard textile", 166: "Linen/Wool", 159: "Cashmere", 213: "Silk", 73: "Other/Unsure"},                           # Shirts/t-shirts (Men's)
+    98:  {69: "Standard textile", 72: "Fur", 73: "Other/Unsure"},                                                                 # Hat (Accessories)
+    99:  {69: "Standard textile", 71: "Leather/Suede", 83: "Highvis", 73: "Other/Unsure"},                                        # Cap (Accessories)
+    100: {69: "Standard textile", 71: "Leather/Suede", 213: "Silk", 73: "Other/Unsure"},                                          # Gloves (Accessories)
+    101: {69: "Standard textile", 166: "Linen/Wool", 159: "Cashmere", 72: "Fur", 213: "Silk", 73: "Other/Unsure"},                # Scarf / Shawl (Accessories)
+    102: {69: "Standard textile", 71: "Leather/Suede", 73: "Other/Unsure"},                                                       # Belt (Accessories)
+    103: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Jacket (Children's)
+    104: {69: "Standard textile", 73: "Other/Unsure"},                                                                            # Trousers / Shorts (Children's)
+    105: {166: "Linen/Wool", 213: "Silk", 214: "Lace", 215: "Tulle", 73: "Other/Unsure"},                                        # Other (Children's)
+    110: {189: "Standard textile", 187: "Leather", 191: "Other/Unsure"},                                                          # Boots (Men's Shoes)
+    111: {187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                                                     # Dress Shoes (Men's Shoes)
+    112: {189: "Standard textile", 188: "Suede", 191: "Other/Unsure"},                                                            # Sneakers (Men's Shoes)
+    113: {189: "Standard textile", 187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                            # Boots (Women's Shoes)
+    114: {187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                                                     # High heels (Women's Shoes)
+    115: {189: "Standard textile", 188: "Suede", 191: "Other/Unsure"},                                                            # Sneakers (Women's Shoes)
+    116: {187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                                                     # Dress Shoes (Women's Shoes)
+    121: {69: "Standard textile", 71: "Leather/Suede", 73: "Other/Unsure"},                                                          # Backpack
+    122: {69: "Standard textile", 71: "Leather/Suede", 73: "Other/Unsure"},                                                          # Briefcase
+    123: {69: "Standard textile", 71: "Leather/Suede", 73: "Other/Unsure"},                                                          # Handbags
+    124: {69: "Standard textile", 71: "Leather/Suede", 73: "Other/Unsure"},                                                          # Larger Bag / Duffel
+    125: {69: "Standard textile", 71: "Leather/Suede", 73: "Other/Unsure"},                                                          # Weekend Bag
+    138: {189: "Standard textile", 187: "Leather", 191: "Other/Unsure"},                                                          # Boots (Workwear Shoes)
+    140: {189: "Standard textile", 187: "Leather", 191: "Other/Unsure"},                                                          # Shoes (Workwear Shoes)
+    141: {189: "Standard textile", 187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                            # Sandals (Workwear Shoes)
+    142: {69: "Standard textile", 83: "Highvis", 73: "Other/Unsure"},                                                             # Rain Jacket (Outerwear)
+    145: {189: "Standard textile", 187: "Leather", 191: "Other/Unsure"},                                                          # Winter boots (Children's Shoes)
+    146: {189: "Standard textile", 187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                            # Other shoes (Children's Shoes)
+    147: {190: "Galloon", 191: "Other/Unsure"},                                                                                   # Rain boots (Children's Shoes)
+    148: {190: "Galloon", 191: "Other/Unsure"},                                                                                   # Rain boots (Men's Shoes)
+    149: {190: "Galloon", 191: "Other/Unsure"},                                                                                   # Rain boots (Women's Shoes)
+    150: {190: "Galloon", 191: "Other/Unsure"},                                                                                   # Rain boots (Workwear Shoes)
+    160: {69: "Standard textile", 176: "Down", 83: "Highvis", 144: "Flame resistant", 73: "Other/Unsure"},                        # Overalls (Workwear)
+    161: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Midlayer (Workwear)
+    162: {69: "Standard textile", 73: "Other/Unsure"},                                                                            # Sweater (Workwear)
+    163: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # T-shirt (Workwear)
+    164: {189: "Standard textile", 187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                            # Sandals (Women's Shoes)
+    165: {189: "Standard textile", 187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                            # Sandals (Men's Shoes)
+    168: {69: "Standard textile", 213: "Silk", 73: "Other/Unsure"},                                                               # Swimsuit
+    169: {69: "Standard textile", 213: "Silk", 73: "Other/Unsure"},                                                               # Swimming trunks
+    170: {69: "Standard textile", 73: "Other/Unsure"},                                                                            # Wet suit
+    171: {69: "Standard textile", 166: "Linen/Wool", 213: "Silk", 73: "Other/Unsure"},                                            # Underwear (Accessories)
+    173: {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 73: "Other/Unsure"},                                          # Jacket (MC)
+    174: {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 73: "Other/Unsure"},                                          # Trousers (MC)
+    175: {69: "Standard textile", 176: "Down", 71: "Leather/Suede", 83: "Highvis", 73: "Other/Unsure"},                           # Overall (MC)
+    182: {189: "Standard textile", 187: "Leather", 191: "Other/Unsure"},                                                          # Boots (MC Shoes)
+    183: {189: "Standard textile", 187: "Leather", 191: "Other/Unsure"},                                                          # Shoes (MC Shoes)
+    185: {69: "Standard textile", 143: "Galloon", 83: "Highvis", 73: "Other/Unsure"},                                             # Rain Trousers (Outerwear)
+    193: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Knitted Jumper (Children's)
+    194: {69: "Standard textile", 73: "Other/Unsure"},                                                                            # Shirt / t-shirt / Body (Children's)
+    195: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Suit / Smoking (Children's)
+    196: {69: "Standard textile", 73: "Other/Unsure"},                                                                            # Sweatshirt / Hoodie (Children's)
+    198: {69: "Standard textile", 176: "Down", 83: "Highvis", 144: "Flame resistant", 73: "Other/Unsure"},                        # Overall (Outerwear)
+    199: {69: "Standard textile", 166: "Linen/Wool", 73: "Other/Unsure"},                                                         # Overall (Children's)
+    200: {69: "Standard textile", 71: "Leather/Suede", 166: "Linen/Wool", 72: "Fur", 144: "Flame resistant", 73: "Other/Unsure"}, # Others (Accessories)
+    201: {69: "Standard textile", 213: "Silk", 73: "Other/Unsure"},                                                               # Bikini
+    202: {71: "Leather/Suede", 166: "Linen/Wool", 83: "Highvis", 144: "Flame resistant", 73: "Other/Unsure"},                     # Others (Workwear)
+    203: {71: "Leather/Suede", 83: "Highvis", 144: "Flame resistant", 73: "Other/Unsure"},                                        # Others (MC)
+    205: {189: "Standard textile", 187: "Leather", 188: "Suede", 191: "Other/Unsure"},                                            # Ancle boots (Riding)
+    206: {189: "Standard textile", 187: "Leather", 188: "Suede"},                                                                 # Knee-high boots (Riding)
+}
+
+QFIX_SUBCATEGORY_IDS = {
+    "Outerwear": 54,
+    "Women's Clothing": 55,
+    "Men's Clothing": 56,
+    "Accessories": 57,
+    "Children's Clothing": 58,
+    "Workwear": 59,
+    "Backpack": 75,
+    "Men's Shoes": 106,
+    "Women's Shoes": 107,
+    "Children's Shoes": 108,
+    "Workwear Shoes": 109,
+    "Briefcase": 117,
+    "Handbags": 118,
+    "Larger bag / Duffel": 119,
+    "Weekend Bag": 120,
+    "Handmade carpet": 126,
+    "Other Carpet": 127,
+    "Swimwear / Wet suits": 167,
+    "Protective / MC wear": 172,
+    "Carpet with rubber bottom": 177,
+    "Protective / MC shoes": 181,
+    "Riding boots": 204,
+}
+
+# ── Scraper → QFix name mappings ─────────────────────────────────────────
 
 CLOTHING_TYPE_MAP = {
     # Outerwear
@@ -191,20 +371,38 @@ MATERIAL_MAP = {
     "rayon": "Standard textile",
     "hampa": "Standard textile",
     "ramie": "Standard textile",
+    # English names (from other brand scrapers)
+    "cotton": "Standard textile",
+    "organic cotton": "Standard textile",
+    "recycled cotton": "Standard textile",
+    "polyamide": "Standard textile",
+    "elastane": "Standard textile",
+    "viscose": "Standard textile",
+    "acrylic": "Standard textile",
+    "hemp": "Standard textile",
     # Linen / Wool
     "lin": "Linen/Wool",
     "ull": "Linen/Wool",
     "certifierad ull": "Linen/Wool",
     "återvunnen ull": "Linen/Wool",
+    "linen": "Linen/Wool",
+    "wool": "Linen/Wool",
     # Premium materials
     "kashmir": "Cashmere",
     "kasjmir": "Cashmere",
+    "cashmere": "Cashmere",
     "siden": "Silk",
     "silke": "Silk",
+    "silk": "Silk",
     # Leather
-    "läder": "Leather",
+    "läder": "Leather/Suede",
     "skinn": "Leather/Suede",
-    "vegetabiliskt garvat": "Leather",
+    "vegetabiliskt garvat": "Leather/Suede",
+    "leather": "Leather/Suede",
+    "suede": "Leather/Suede",
+    # Down
+    "dun": "Down",
+    "down": "Down",
     # Metals (jewelry — no QFix match)
     "metall": None,
     "återvunnen metall": None,
@@ -221,6 +419,17 @@ CATEGORY_MAP = {
     "herr": "Men's Clothing",
     "barn": "Children's Clothing",
     "baby": "Children's Clothing",
+    # English categories (from other brand scrapers)
+    "women": "Women's Clothing",
+    "men": "Men's Clothing",
+    "men's jeans": "Men's Clothing",
+    "women's jeans": "Women's Clothing",
+    "kids": "Children's Clothing",
+    "jeans": "Men's Clothing",
+    # Eton
+    "businesskjortor": "Men's Clothing",
+    "casualskjortor": "Men's Clothing",
+    "accessoarer": "Accessories",
 }
 
 
@@ -230,7 +439,7 @@ SKIP_SEGMENTS = {"dam", "herr", "barn", "baby"}
 
 
 def map_clothing_type(kappahl_clothing_type):
-    """Map KappAhl clothing_type string to QFix L3 clothing type name."""
+    """Map clothing_type string to QFix L3 clothing type name."""
     if not kappahl_clothing_type:
         return None
 
@@ -260,7 +469,7 @@ def map_clothing_type(kappahl_clothing_type):
 
 
 def map_material(kappahl_material):
-    """Map KappAhl material composition to QFix L4 material category name."""
+    """Map material composition to QFix L4 material category name."""
     if not kappahl_material:
         return "Other/Unsure"
 
@@ -279,8 +488,10 @@ def map_material(kappahl_material):
 
 
 def map_category(kappahl_category):
-    """Map KappAhl category (dam/herr) to QFix L2 name."""
-    return CATEGORY_MAP.get(kappahl_category, "Women's Clothing")
+    """Map category (dam/herr) to QFix L2 name."""
+    if not kappahl_category:
+        return "Women's Clothing"
+    return CATEGORY_MAP.get(kappahl_category.lower(), "Women's Clothing")
 
 
 def _resolve_material_id(clothing_type_id, material_name):
@@ -305,7 +516,7 @@ def _resolve_material_id(clothing_type_id, material_name):
 
 
 def map_product(product):
-    """Map a KappAhl product dict to QFix IDs.
+    """Map a product dict to QFix IDs using the complete catalog.
 
     Returns dict with qfix names and numeric IDs.
     """
@@ -327,5 +538,45 @@ def map_product(product):
         "qfix_material_id": material_id,
         "qfix_subcategory": subcategory_name,
         "qfix_subcategory_id": QFIX_SUBCATEGORY_IDS.get(subcategory_name),
+        "qfix_url": qfix_url,
+    }
+
+
+def map_product_legacy(product):
+    """Map a product dict to QFix IDs using the original hand-curated mapping.
+
+    Same interface as map_product() but uses _LEGACY dicts.
+    """
+    clothing_name = map_clothing_type(product.get("clothing_type"))
+    material_name = map_material(product.get("material_composition"))
+    subcategory_name = map_category(product.get("category"))
+
+    clothing_type_id = QFIX_CLOTHING_TYPE_IDS_LEGACY.get(clothing_name) if clothing_name else None
+
+    # Use legacy material IDs
+    material_id = None
+    if clothing_type_id and material_name:
+        valid = VALID_MATERIAL_IDS_LEGACY.get(clothing_type_id, {})
+        for mat_id, mat_name in valid.items():
+            if mat_name == material_name:
+                material_id = mat_id
+                break
+        if material_id is None:
+            for mat_id, mat_name in valid.items():
+                if mat_name == "Other/Unsure":
+                    material_id = mat_id
+                    break
+
+    qfix_url = None
+    if clothing_type_id and material_id:
+        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={clothing_type_id}&material_id={material_id}"
+
+    return {
+        "qfix_clothing_type": clothing_name,
+        "qfix_clothing_type_id": clothing_type_id,
+        "qfix_material": material_name,
+        "qfix_material_id": material_id,
+        "qfix_subcategory": subcategory_name,
+        "qfix_subcategory_id": QFIX_SUBCATEGORY_IDS_LEGACY.get(subcategory_name),
         "qfix_url": qfix_url,
     }

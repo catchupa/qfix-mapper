@@ -6,7 +6,7 @@ from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request
 from flasgger import Swagger
 
-from mapping import map_product, map_clothing_type, map_material, QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS
+from mapping import map_product, map_product_legacy, map_clothing_type, map_material, QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS
 from mapping_v2 import map_product_v2
 from database import create_table, upsert_product, DATABASE_URL
 from protocol_parser import parse_protocol_xlsx
@@ -72,6 +72,13 @@ def get_db():
     return conn
 
 
+def _get_mapper():
+    """Return map_product or map_product_legacy based on ?mapping= query param."""
+    if request.args.get("mapping") == "legacy":
+        return map_product_legacy
+    return map_product
+
+
 # ── Parameterized brand endpoints ─────────────────────────────────────────
 
 @app.route("/<brand_slug>/product/<product_id>")
@@ -118,7 +125,7 @@ def get_brand_product(brand_slug, product_id):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = map_product(product)
+    qfix = _get_mapper()(product)
 
     return jsonify({
         brand_slug: product,
@@ -385,7 +392,7 @@ def v3_get_product(product_id):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = map_product(product)
+    qfix = _get_mapper()(product)
 
     return jsonify({
         "product": product,
@@ -521,7 +528,7 @@ def v4_get_product(product_id):
     if product.get("article_number"):
         qfix = map_product_v2(product, materials=materials_list)
     else:
-        qfix = map_product(product)
+        qfix = _get_mapper()(product)
 
     return jsonify({
         "product": merged,
