@@ -317,6 +317,15 @@ CLOTHING_TYPE_MAP = {
     "mammakläder": "Trousers",
     # Shoes
     "skor & tofflor": "Sneakers",
+    # Eton clothing types
+    "businesskjortor": "Shirt / Blouse",
+    "casualskjortor": "Shirt / Blouse",
+    "frack- och smokingskjortor": "Shirt / Blouse",
+    "jackor & overshirts": "Jacket",
+    "knitwear": "Knitted Jumper",
+    "polo shirts": "Top / T-shirt",
+    "t-shirt": "T-shirt",
+    "vests": "Unlined Jacket / Vest",
     # Accessories
     "accessoarer": None,
     "mössor, hattar & kepsar": "Hat",
