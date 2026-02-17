@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from database import get_connection, create_table, upsert_product
+from database import get_connection, create_table, upsert_product  # noqa: unified schema
 from scraper import fetch_product_urls, scrape_all
 
 logging.basicConfig(

@@ -8,102 +8,28 @@ import pytest
 
 
 def _create_tables_sqlite(conn):
-    """Create all tables using SQLite-compatible SQL."""
+    """Create the unified table using SQLite-compatible SQL."""
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS products (
+        CREATE TABLE IF NOT EXISTS products_unified (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id TEXT UNIQUE NOT NULL,
+            product_id TEXT NOT NULL,
+            brand TEXT NOT NULL,
             product_name TEXT,
+            description TEXT,
             category TEXT,
             clothing_type TEXT,
             material_composition TEXT,
-            product_url TEXT,
-            description TEXT,
-            color TEXT,
-            brand TEXT,
-            image_url TEXT,
-            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS products_v2 (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            gtin TEXT NOT NULL UNIQUE,
-            article_number TEXT NOT NULL,
-            product_name TEXT,
-            description TEXT,
-            category TEXT,
-            size TEXT,
-            color TEXT,
             materials TEXT,
+            color TEXT,
+            size TEXT,
+            gtin TEXT,
+            article_number TEXT,
+            product_url TEXT,
+            image_url TEXT,
             care_text TEXT,
-            brand TEXT,
             country_of_origin TEXT,
-            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS eton_products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id TEXT UNIQUE NOT NULL,
-            product_name TEXT,
-            category TEXT,
-            clothing_type TEXT,
-            material_composition TEXT,
-            product_url TEXT,
-            description TEXT,
-            color TEXT,
-            brand TEXT,
-            image_url TEXT,
-            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS nudie_products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id TEXT UNIQUE NOT NULL,
-            product_name TEXT,
-            category TEXT,
-            clothing_type TEXT,
-            material_composition TEXT,
-            product_url TEXT,
-            description TEXT,
-            color TEXT,
-            brand TEXT,
-            image_url TEXT,
-            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS lindex_products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id TEXT UNIQUE NOT NULL,
-            product_name TEXT,
-            category TEXT,
-            clothing_type TEXT,
-            material_composition TEXT,
-            product_url TEXT,
-            description TEXT,
-            color TEXT,
-            brand TEXT,
-            image_url TEXT,
-            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        );
-    """)
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS ginatricot_products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id TEXT UNIQUE NOT NULL,
-            product_name TEXT,
-            category TEXT,
-            clothing_type TEXT,
-            material_composition TEXT,
-            product_url TEXT,
-            description TEXT,
-            color TEXT,
-            brand TEXT,
-            image_url TEXT,
-            scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE (brand, product_id)
         );
     """)
     conn.commit()
@@ -111,7 +37,7 @@ def _create_tables_sqlite(conn):
 
 @pytest.fixture
 def db_conn():
-    """In-memory SQLite connection with all tables created."""
+    """In-memory SQLite connection with products_unified table created."""
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
     _create_tables_sqlite(conn)
@@ -127,7 +53,6 @@ def app_client(tmp_path):
     """
     db_file = str(tmp_path / "test.db")
 
-    # Create tables in SQLite
     conn = sqlite3.connect(db_file)
     conn.row_factory = sqlite3.Row
     _create_tables_sqlite(conn)
@@ -144,9 +69,7 @@ def app_client(tmp_path):
             self._cursor = conn.cursor()
 
         def execute(self, query, params=None):
-            # Convert psycopg2 %s placeholders to SQLite ?
             query = query.replace("%s", "?")
-            # Convert ILIKE to LIKE (SQLite is case-insensitive for ASCII by default)
             query = query.replace("ILIKE", "LIKE")
             if params:
                 self._cursor.execute(query, params)
@@ -190,17 +113,12 @@ def app_client(tmp_path):
     def _mock_get_db():
         return _SqliteConnection(db_file)
 
-    # Also mock create_table functions to be no-ops (tables already exist)
     def _noop(conn):
         pass
 
     api_module.app.config["TESTING"] = True
     with patch.object(api_module, "get_db", _mock_get_db), \
-         patch.object(api_module, "create_table_v2", _noop), \
-         patch.object(api_module, "create_table_ginatricot", _noop), \
-         patch.object(api_module, "create_table_eton", _noop), \
-         patch.object(api_module, "create_table_nudie", _noop), \
-         patch.object(api_module, "create_table_lindex", _noop):
+         patch.object(api_module, "create_table", _noop):
         with api_module.app.test_client() as client:
             yield client, db_file
 
@@ -266,7 +184,6 @@ def _make_ginatricot_html(
     }
     if image_url:
         product_data["image"] = [image_url]
-    # Gina Tricot HTML-encodes the JSON-LD
     encoded = html.escape(json.dumps(product_data))
 
     return f"""

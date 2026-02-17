@@ -5,71 +5,90 @@ import sqlite3
 from unittest.mock import patch
 
 
-def _seed_v1_product(db_path):
+def _seed_product(db_path, product_id, brand, product_name, category, clothing_type,
+                  material_composition, product_url, description, color,
+                  gtin=None, article_number=None, size=None, materials=None,
+                  care_text=None, country_of_origin=None, image_url=None):
     conn = sqlite3.connect(db_path)
     conn.execute("""
-        INSERT INTO products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
-        VALUES ('131367', 'Bootcut jeans', 'dam', 'Jeans > Bootcut', '75% Bomull', 'https://kappahl.com/131367', 'Snygga jeans', 'Svart', 'KappAhl')
-    """)
+        INSERT INTO products_unified (product_id, brand, product_name, category, clothing_type,
+            material_composition, product_url, description, color, gtin, article_number, size,
+            materials, care_text, country_of_origin, image_url)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (product_id, brand, product_name, category, clothing_type,
+          material_composition, product_url, description, color, gtin, article_number, size,
+          materials, care_text, country_of_origin, image_url))
     conn.commit()
     conn.close()
+
+
+def _seed_kappahl_product(db_path):
+    _seed_product(db_path,
+        product_id='131367', brand='KappAhl', product_name='Bootcut jeans',
+        category='dam', clothing_type='Jeans > Bootcut',
+        material_composition='75% Bomull', product_url='https://kappahl.com/131367',
+        description='Snygga jeans', color='Svart')
 
 
 def _seed_gt_product(db_path):
-    conn = sqlite3.connect(db_path)
-    conn.execute("""
-        INSERT INTO ginatricot_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
-        VALUES ('225549000', 'Structure maxi skirt', 'klader', 'kjolar > langkjolar', 'Bomull 57%', 'https://ginatricot.com/225549000', 'En fin kjol', 'Black', 'Gina Tricot')
-    """)
-    conn.commit()
-    conn.close()
+    _seed_product(db_path,
+        product_id='225549000', brand='Gina Tricot', product_name='Structure maxi skirt',
+        category='klader', clothing_type='kjolar > langkjolar',
+        material_composition='Bomull 57%', product_url='https://ginatricot.com/225549000',
+        description='En fin kjol', color='Black')
 
 
 def _seed_eton_product(db_path):
-    conn = sqlite3.connect(db_path)
-    conn.execute("""
-        INSERT INTO eton_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
-        VALUES ('2567-00-10', 'Vit poplinskjorta', 'businesskjortor', 'Businesskjortor > Vita skjortor', '100% Bomull', 'https://www.etonshirts.com/se/sv/product/white-poplin-shirt', 'Ikonisk businesskjorta', 'Vit', 'Eton')
-    """)
-    conn.commit()
-    conn.close()
+    _seed_product(db_path,
+        product_id='2567-00-10', brand='Eton', product_name='Vit poplinskjorta',
+        category='businesskjortor', clothing_type='Businesskjortor > Vita skjortor',
+        material_composition='100% Bomull', product_url='https://www.etonshirts.com/se/sv/product/white-poplin-shirt',
+        description='Ikonisk businesskjorta', color='Vit')
 
 
 def _seed_lindex_product(db_path):
-    conn = sqlite3.connect(db_path)
-    conn.execute("""
-        INSERT INTO lindex_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
-        VALUES ('3010022', 'Krinklad midi klänning', 'dam', 'Dam > Klänningar', '70% viskos 30% polyamid', 'https://www.lindex.com/se/p/3010022-7258', 'Midiklänning med rynk', 'Light Dusty Pink', 'Lindex')
-    """)
-    conn.commit()
-    conn.close()
+    _seed_product(db_path,
+        product_id='3010022', brand='Lindex', product_name='Krinklad midi klänning',
+        category='dam', clothing_type='Dam > Klänningar',
+        material_composition='70% viskos 30% polyamid', product_url='https://www.lindex.com/se/p/3010022-7258',
+        description='Midiklänning med rynk', color='Light Dusty Pink')
 
 
 def _seed_nudie_product(db_path):
-    conn = sqlite3.connect(db_path)
-    conn.execute("""
-        INSERT INTO nudie_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand)
-        VALUES ('115053', 'Steady Eddie II Sand Storm', 'jeans', 'Men''s Jeans > Regular Tapered', '100% Cotton', 'https://www.nudiejeans.com/en-SE/product/steady-eddie-ii-sand-storm', 'Regular fit jeans', NULL, 'Nudie Jeans')
-    """)
-    conn.commit()
-    conn.close()
+    _seed_product(db_path,
+        product_id='115053', brand='Nudie Jeans', product_name='Steady Eddie II Sand Storm',
+        category='jeans', clothing_type="Men's Jeans > Regular Tapered",
+        material_composition='100% Cotton', product_url='https://www.nudiejeans.com/en-SE/product/steady-eddie-ii-sand-storm',
+        description='Regular fit jeans', color=None)
 
 
 def _seed_v2_product(db_path):
-    conn = sqlite3.connect(db_path)
-    conn.execute("""
-        INSERT INTO products_v2 (gtin, article_number, product_name, description, category, size, color, materials, care_text, brand, country_of_origin)
-        VALUES ('7394712345678', '26414', 'Structure maxi skirt', 'English description', 'Knitwear', 'M', 'Black', '[{"name": "Cotton", "percentage": 0.57}]', 'Wash at 40', 'Gina Tricot', 'Bangladesh')
-    """)
-    conn.commit()
-    conn.close()
+    _seed_product(db_path,
+        product_id='v2-7394712345678', brand='Gina Tricot', product_name='Structure maxi skirt',
+        category='Knitwear', clothing_type=None,
+        material_composition=None, product_url=None,
+        description='English description', color='Black',
+        gtin='7394712345678', article_number='26414', size='M',
+        materials='[{"name": "Cotton", "percentage": 0.57}]',
+        care_text='Wash at 40', country_of_origin='Bangladesh')
+
+
+def _seed_gt_product_with_protocol(db_path):
+    """Seed a Gina Tricot product that has both scraped and protocol data in one row."""
+    _seed_product(db_path,
+        product_id='225549000', brand='Gina Tricot', product_name='Structure maxi skirt',
+        category='klader', clothing_type='kjolar > langkjolar',
+        material_composition='Bomull 57%', product_url='https://ginatricot.com/225549000',
+        description='En fin kjol', color='Black',
+        article_number='26414', care_text='Wash at 40', country_of_origin='Bangladesh',
+        materials='[{"name": "Cotton", "percentage": 0.57}]')
 
 
 # ── v1 KappAhl endpoints ─────────────────────────────────────────────────
 
 def test_get_product(app_client):
     client, db_path = app_client
-    _seed_v1_product(db_path)
+    _seed_kappahl_product(db_path)
 
     resp = client.get("/product/131367")
     assert resp.status_code == 200
@@ -90,7 +109,7 @@ def test_get_product_not_found(app_client):
 
 def test_list_products(app_client):
     client, db_path = app_client
-    _seed_v1_product(db_path)
+    _seed_kappahl_product(db_path)
 
     resp = client.get("/products")
     assert resp.status_code == 200
@@ -101,7 +120,7 @@ def test_list_products(app_client):
 
 def test_kappahl_get_product(app_client):
     client, db_path = app_client
-    _seed_v1_product(db_path)
+    _seed_kappahl_product(db_path)
 
     resp = client.get("/kappahl/product/131367")
     assert resp.status_code == 200
@@ -119,7 +138,7 @@ def test_kappahl_get_product_not_found(app_client):
 
 def test_kappahl_list_products(app_client):
     client, db_path = app_client
-    _seed_v1_product(db_path)
+    _seed_kappahl_product(db_path)
 
     resp = client.get("/kappahl/products")
     assert resp.status_code == 200
@@ -220,17 +239,14 @@ def test_v3_search_no_query(app_client):
 # ── v4 aggregated endpoints ──────────────────────────────────────────────
 
 def test_v4_get_product_merged(app_client):
-    """When both scraper and protocol data exist, should merge."""
+    """When product has protocol data (article_number), should show merged."""
     client, db_path = app_client
-    _seed_gt_product(db_path)
-    _seed_v2_product(db_path)  # Same product_name "Structure maxi skirt"
+    _seed_gt_product_with_protocol(db_path)
 
     resp = client.get("/v4/product/225549000")
     assert resp.status_code == 200
     data = resp.get_json()
     assert data["product"]["source"] == "merged"
-    assert data["product"]["description_sv"] == "En fin kjol"
-    assert data["product"]["description_en"] == "English description"
     assert data["product"]["care_text"] == "Wash at 40"
     assert data["product"]["country_of_origin"] == "Bangladesh"
     assert data["product"]["clothing_type"] == "kjolar > langkjolar"

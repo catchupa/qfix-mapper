@@ -5,6 +5,14 @@ from psycopg2.extras import RealDictCursor
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
+# All columns in products_unified (excluding id and updated_at)
+PRODUCT_COLUMNS = [
+    "product_id", "brand", "product_name", "description", "category",
+    "clothing_type", "material_composition", "materials", "color", "size",
+    "gtin", "article_number", "product_url", "image_url", "care_text",
+    "country_of_origin",
+]
+
 
 def get_connection():
     conn = psycopg2.connect(DATABASE_URL)
@@ -15,234 +23,61 @@ def get_connection():
 def create_table(conn):
     with conn.cursor() as cur:
         cur.execute("""
-            CREATE TABLE IF NOT EXISTS products (
+            CREATE TABLE IF NOT EXISTS products_unified (
                 id SERIAL PRIMARY KEY,
-                product_id TEXT UNIQUE NOT NULL,
+                product_id TEXT NOT NULL,
+                brand TEXT NOT NULL,
                 product_name TEXT,
+                description TEXT,
                 category TEXT,
                 clothing_type TEXT,
                 material_composition TEXT,
-                product_url TEXT,
-                description TEXT,
-                color TEXT,
-                brand TEXT,
-                image_url TEXT,
-                scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-
-def create_table_v2(conn):
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS products_v2 (
-                id SERIAL PRIMARY KEY,
-                gtin TEXT NOT NULL UNIQUE,
-                article_number TEXT NOT NULL,
-                product_name TEXT,
-                description TEXT,
-                category TEXT,
-                size TEXT,
-                color TEXT,
                 materials TEXT,
-                care_text TEXT,
-                brand TEXT,
-                country_of_origin TEXT,
-                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-
-def create_table_ginatricot(conn):
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS ginatricot_products (
-                id SERIAL PRIMARY KEY,
-                product_id TEXT UNIQUE NOT NULL,
-                product_name TEXT,
-                category TEXT,
-                clothing_type TEXT,
-                material_composition TEXT,
-                product_url TEXT,
-                description TEXT,
                 color TEXT,
-                brand TEXT,
+                size TEXT,
+                gtin TEXT,
+                article_number TEXT,
+                product_url TEXT,
                 image_url TEXT,
-                scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                care_text TEXT,
+                country_of_origin TEXT,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE (brand, product_id)
             );
         """)
 
 
 def upsert_product(conn, product):
+    """Upsert a product into products_unified.
+
+    product must be a dict with at least 'brand' and 'product_id'.
+    All other fields are optional and will be set to NULL if missing.
+    """
+    # Build the dict with defaults for missing keys
+    values = {col: product.get(col) for col in PRODUCT_COLUMNS}
+
     with conn.cursor() as cur:
         cur.execute("""
-            INSERT INTO products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
-            VALUES (%(product_id)s, %(product_name)s, %(category)s, %(clothing_type)s, %(material_composition)s, %(product_url)s, %(description)s, %(color)s, %(brand)s, %(image_url)s)
-            ON CONFLICT (product_id) DO UPDATE SET
+            INSERT INTO products_unified (product_id, brand, product_name, description, category,
+                clothing_type, material_composition, materials, color, size,
+                gtin, article_number, product_url, image_url, care_text, country_of_origin)
+            VALUES (%(product_id)s, %(brand)s, %(product_name)s, %(description)s, %(category)s,
+                %(clothing_type)s, %(material_composition)s, %(materials)s, %(color)s, %(size)s,
+                %(gtin)s, %(article_number)s, %(product_url)s, %(image_url)s, %(care_text)s, %(country_of_origin)s)
+            ON CONFLICT (brand, product_id) DO UPDATE SET
                 product_name = EXCLUDED.product_name,
+                description = EXCLUDED.description,
                 category = EXCLUDED.category,
                 clothing_type = EXCLUDED.clothing_type,
                 material_composition = EXCLUDED.material_composition,
-                product_url = EXCLUDED.product_url,
-                description = EXCLUDED.description,
-                color = EXCLUDED.color,
-                brand = EXCLUDED.brand,
-                image_url = EXCLUDED.image_url,
-                scraped_at = CURRENT_TIMESTAMP;
-        """, product)
-
-
-def upsert_product_v2(conn, product):
-    with conn.cursor() as cur:
-        cur.execute("""
-            INSERT INTO products_v2 (gtin, article_number, product_name, description, category, size, color, materials, care_text, brand, country_of_origin)
-            VALUES (%(gtin)s, %(article_number)s, %(product_name)s, %(description)s, %(category)s, %(size)s, %(color)s, %(materials)s, %(care_text)s, %(brand)s, %(country_of_origin)s)
-            ON CONFLICT (gtin) DO UPDATE SET
-                article_number = EXCLUDED.article_number,
-                product_name = EXCLUDED.product_name,
-                description = EXCLUDED.description,
-                category = EXCLUDED.category,
-                size = EXCLUDED.size,
-                color = EXCLUDED.color,
                 materials = EXCLUDED.materials,
+                color = EXCLUDED.color,
+                size = EXCLUDED.size,
+                gtin = EXCLUDED.gtin,
+                article_number = EXCLUDED.article_number,
+                product_url = EXCLUDED.product_url,
+                image_url = EXCLUDED.image_url,
                 care_text = EXCLUDED.care_text,
-                brand = EXCLUDED.brand,
                 country_of_origin = EXCLUDED.country_of_origin,
-                uploaded_at = CURRENT_TIMESTAMP;
-        """, product)
-
-
-def create_table_eton(conn):
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS eton_products (
-                id SERIAL PRIMARY KEY,
-                product_id TEXT UNIQUE NOT NULL,
-                product_name TEXT,
-                category TEXT,
-                clothing_type TEXT,
-                material_composition TEXT,
-                product_url TEXT,
-                description TEXT,
-                color TEXT,
-                brand TEXT,
-                image_url TEXT,
-                scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-
-def upsert_product_eton(conn, product):
-    with conn.cursor() as cur:
-        cur.execute("""
-            INSERT INTO eton_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
-            VALUES (%(product_id)s, %(product_name)s, %(category)s, %(clothing_type)s, %(material_composition)s, %(product_url)s, %(description)s, %(color)s, %(brand)s, %(image_url)s)
-            ON CONFLICT (product_id) DO UPDATE SET
-                product_name = EXCLUDED.product_name,
-                category = EXCLUDED.category,
-                clothing_type = EXCLUDED.clothing_type,
-                material_composition = EXCLUDED.material_composition,
-                product_url = EXCLUDED.product_url,
-                description = EXCLUDED.description,
-                color = EXCLUDED.color,
-                brand = EXCLUDED.brand,
-                image_url = EXCLUDED.image_url,
-                scraped_at = CURRENT_TIMESTAMP;
-        """, product)
-
-
-def create_table_nudie(conn):
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS nudie_products (
-                id SERIAL PRIMARY KEY,
-                product_id TEXT UNIQUE NOT NULL,
-                product_name TEXT,
-                category TEXT,
-                clothing_type TEXT,
-                material_composition TEXT,
-                product_url TEXT,
-                description TEXT,
-                color TEXT,
-                brand TEXT,
-                image_url TEXT,
-                scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-
-def upsert_product_nudie(conn, product):
-    with conn.cursor() as cur:
-        cur.execute("""
-            INSERT INTO nudie_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
-            VALUES (%(product_id)s, %(product_name)s, %(category)s, %(clothing_type)s, %(material_composition)s, %(product_url)s, %(description)s, %(color)s, %(brand)s, %(image_url)s)
-            ON CONFLICT (product_id) DO UPDATE SET
-                product_name = EXCLUDED.product_name,
-                category = EXCLUDED.category,
-                clothing_type = EXCLUDED.clothing_type,
-                material_composition = EXCLUDED.material_composition,
-                product_url = EXCLUDED.product_url,
-                description = EXCLUDED.description,
-                color = EXCLUDED.color,
-                brand = EXCLUDED.brand,
-                image_url = EXCLUDED.image_url,
-                scraped_at = CURRENT_TIMESTAMP;
-        """, product)
-
-
-def create_table_lindex(conn):
-    with conn.cursor() as cur:
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS lindex_products (
-                id SERIAL PRIMARY KEY,
-                product_id TEXT UNIQUE NOT NULL,
-                product_name TEXT,
-                category TEXT,
-                clothing_type TEXT,
-                material_composition TEXT,
-                product_url TEXT,
-                description TEXT,
-                color TEXT,
-                brand TEXT,
-                image_url TEXT,
-                scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        """)
-
-
-def upsert_product_lindex(conn, product):
-    with conn.cursor() as cur:
-        cur.execute("""
-            INSERT INTO lindex_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
-            VALUES (%(product_id)s, %(product_name)s, %(category)s, %(clothing_type)s, %(material_composition)s, %(product_url)s, %(description)s, %(color)s, %(brand)s, %(image_url)s)
-            ON CONFLICT (product_id) DO UPDATE SET
-                product_name = EXCLUDED.product_name,
-                category = EXCLUDED.category,
-                clothing_type = EXCLUDED.clothing_type,
-                material_composition = EXCLUDED.material_composition,
-                product_url = EXCLUDED.product_url,
-                description = EXCLUDED.description,
-                color = EXCLUDED.color,
-                brand = EXCLUDED.brand,
-                image_url = EXCLUDED.image_url,
-                scraped_at = CURRENT_TIMESTAMP;
-        """, product)
-
-
-def upsert_product_ginatricot(conn, product):
-    with conn.cursor() as cur:
-        cur.execute("""
-            INSERT INTO ginatricot_products (product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url)
-            VALUES (%(product_id)s, %(product_name)s, %(category)s, %(clothing_type)s, %(material_composition)s, %(product_url)s, %(description)s, %(color)s, %(brand)s, %(image_url)s)
-            ON CONFLICT (product_id) DO UPDATE SET
-                product_name = EXCLUDED.product_name,
-                category = EXCLUDED.category,
-                clothing_type = EXCLUDED.clothing_type,
-                material_composition = EXCLUDED.material_composition,
-                product_url = EXCLUDED.product_url,
-                description = EXCLUDED.description,
-                color = EXCLUDED.color,
-                brand = EXCLUDED.brand,
-                image_url = EXCLUDED.image_url,
-                scraped_at = CURRENT_TIMESTAMP;
-        """, product)
+                updated_at = CURRENT_TIMESTAMP;
+        """, values)

@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from curl_cffi import requests as cffi_requests
-from database import get_connection, create_table_lindex, upsert_product_lindex
+from database import get_connection, create_table, upsert_product
 from lindex_scraper import fetch_product_urls, scrape_all
 
 logging.basicConfig(
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 def main():
     logger.info("Connecting to database...")
     conn = get_connection()
-    create_table_lindex(conn)
+    create_table(conn)
 
     session = cffi_requests.Session(impersonate="chrome")
 
@@ -34,7 +34,7 @@ def main():
     count = {"saved": 0}
 
     def on_product(product):
-        upsert_product_lindex(conn, product)
+        upsert_product(conn, product)
         count["saved"] += 1
 
     scrape_all(urls, callback=on_product, session=session, workers=3, delay=0.3)
