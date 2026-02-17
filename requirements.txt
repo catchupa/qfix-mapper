@@ -7,5 +7,6 @@ flask
 openpyxl
 anthropic
 Pillow
+flasgger
 pytest
 pytest-mock

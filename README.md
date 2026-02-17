@@ -1,30 +1,50 @@
-# KappAhl & Gina Tricot → QFix API
+# QFix Product API
 
-Maps products from KappAhl and Gina Tricot to [QFix](https://kappahl.dev.qfixr.me) repair service categories, generating ready-to-use repair booking URLs. Also supports image-based product identification via Claude Vision.
+Maps products from Swedish clothing brands to [QFix](https://kappahl.dev.qfixr.me) repair service categories, generating ready-to-use repair booking URLs. Also supports image-based product identification via Claude Vision.
 
 **Live API:** https://kappahl-qfix.fly.dev
 
+**Swagger UI:** https://kappahl-qfix.fly.dev/apidocs
+
+## Supported brands
+
+| Brand | Endpoint prefix | Products |
+|-------|----------------|----------|
+| KappAhl | `/kappahl/` | ~3,148 |
+| Gina Tricot | `/ginatricot/` | ~20,597 |
+| Eton | `/eton/` | ~350 |
+| Nudie Jeans | `/nudie/` | ~300 |
+| Lindex | `/lindex/` | ~2,960 |
+
 ## Endpoints
 
-### v1 — KappAhl (scraper data)
+### Brand product endpoints
 
-#### `GET /product/<product_id>`
+All five brands follow the same pattern:
 
-Look up a KappAhl product by its product ID and get the corresponding QFix repair category and booking URL.
+#### `GET /<brand>/product/<product_id>`
+
+Look up a product by ID with QFix repair category mapping.
 
 ```
-GET /product/534008
+GET /kappahl/product/534008
+GET /ginatricot/product/225549000
+GET /eton/product/2567-00-10
+GET /nudie/product/115053
+GET /lindex/product/3010022
 ```
+
+Response:
 
 ```json
 {
-  "kappahl": {
+  "<brand>": {
     "product_id": "534008",
     "product_name": "Jacka i bomullstwill",
     "category": "herr",
     "clothing_type": "Jackor & rockar > Vårjackor",
     "material_composition": "99% Bomull, 1% Elastan",
-    "product_url": "https://www.kappahl.com/sv-se/herr/jackor--rockar/varjackor/534008",
+    "product_url": "https://www.kappahl.com/...",
     "description": "En snygg jacka",
     "color": "Svart",
     "brand": "KappAhl"
@@ -41,15 +61,35 @@ GET /product/534008
 }
 ```
 
-#### `GET /products`
+#### `GET /<brand>/products`
 
-List the first 100 KappAhl products.
+List products for a brand (limit 100).
 
-### v2 — T4V Protocol (xlsx upload)
+```
+GET /kappahl/products
+GET /ginatricot/products
+GET /eton/products
+GET /nudie/products
+GET /lindex/products
+```
+
+### Legacy endpoints
+
+KappAhl and Gina Tricot also have legacy route aliases:
+
+| Legacy route | Same as |
+|-------------|---------|
+| `GET /product/<id>` | `GET /kappahl/product/<id>` |
+| `GET /products` | `GET /kappahl/products` |
+| `GET /v3/product/<id>` | `GET /ginatricot/product/<id>` (different response format) |
+| `GET /v3/products` | `GET /ginatricot/products` |
+| `GET /v3/product/search?q=` | Gina Tricot product search |
+
+### T4V Protocol (v2)
 
 #### `POST /v2/upload`
 
-Upload a T4V protocol `.xlsx` file to import product data.
+Upload a T4V protocol `.xlsx` file to import structured product data.
 
 #### `GET /v2/product/gtin/<gtin>`
 
@@ -63,39 +103,27 @@ Look up all size variants for an article number.
 
 List protocol products (limit 200).
 
-### v3 — Gina Tricot (scraper data)
+### Aggregated data (v4)
 
-#### `GET /v3/product/<product_id>`
-
-Look up a Gina Tricot product with QFix mapping.
-
-#### `GET /v3/products`
-
-List Gina Tricot products (limit 200).
-
-#### `GET /v3/product/search?q=<query>`
-
-Search Gina Tricot products by name.
-
-### v4 — Aggregated (scraper + protocol merged)
+Merges Gina Tricot scraper data with T4V protocol data when both sources match by product name.
 
 #### `GET /v4/product/<product_id>`
 
-Get a Gina Tricot product with merged data from both scraper and protocol sources. Returns Swedish description (scraper) + English description (protocol) + care text + country of origin when both sources match.
+Returns merged data: Swedish description (scraper) + English description (protocol) + care text + country of origin. The `source` field is `"merged"` or `"scraper_only"`.
 
 #### `GET /v4/products`
 
-List aggregated products with merge status (`merged` or `scraper_only`).
+List aggregated products with merge status.
 
 #### `GET /v4/product/search?q=<query>`
 
 Search aggregated products by name.
 
-### Vision — Image-based identification
+### Vision — Image identification
 
 #### `POST /identify`
 
-Upload an image of a garment to identify its type, material, and color using Claude Vision, then get a QFix repair booking URL.
+Upload a garment image to identify its type, material, and color using Claude Vision, then get a QFix repair booking URL.
 
 ```bash
 curl -X POST -F "image=@photo.jpg" https://kappahl-qfix.fly.dev/identify
@@ -121,32 +149,13 @@ curl -X POST -F "image=@photo.jpg" https://kappahl-qfix.fly.dev/identify
 }
 ```
 
-Supports JPEG, PNG, WebP, and GIF. Images over 5 MB are automatically resized.
+Supports JPEG, PNG, WebP, and GIF. Max 20 MB.
 
 ### Unmapped categories
 
 #### `GET /unmapped`
 
-Returns all clothing types and materials from both KappAhl and Gina Tricot that don't currently map to a QFix category. Useful for identifying gaps in the mapping. Also includes the full list of valid QFix categories as reference.
-
-```json
-{
-  "kappahl": {
-    "unmapped_clothing_types": [
-      {"clothing_type": "Accessoarer > Smycken > Örhängen", "distinct_products": 4}
-    ],
-    "unmapped_materials": ["..."]
-  },
-  "ginatricot": {
-    "unmapped_clothing_types": [
-      {"clothing_type": "coatsjackets > kappor", "distinct_products": 9}
-    ],
-    "unmapped_materials": ["..."]
-  },
-  "qfix_valid_clothing_types": {"Jacket": 173, "Coat": 104, "...": "..."},
-  "qfix_valid_materials": {"173": {"69": "Standard textile", "71": "Leather/Suede"}}
-}
-```
+Returns clothing types and materials from all brands that don't currently map to a QFix category. Includes the full list of valid QFix categories as reference. Useful for identifying gaps in the mapping.
 
 #### `POST /unmapped/add`
 
@@ -166,39 +175,36 @@ curl -X POST -H "Content-Type: application/json" \
 
 Note: Mappings added via this endpoint are in-memory only and will be reset on redeploy.
 
-## Data coverage
-
-- **~3,148 products** scraped from kappahl.com (dam, herr, barn, baby)
-- **~20,597 products** scraped from ginatricot.com (klader, accessoarer)
-- **4 products** from T4V protocol xlsx
-
 ## How it works
 
-1. **Scrapers** (`scraper.py`, `ginatricot_scraper.py`) fetch product URLs from sitemaps and extract product data (name, clothing type, material, color, brand, images) from each page
+1. **Scrapers** (`scraper.py`, `ginatricot_scraper.py`, `eton_scraper.py`, `nudie_scraper.py`, `lindex_scraper.py`) fetch product URLs and extract product data (name, clothing type, material, color, brand, images) from each brand's website
 2. **Protocol parser** (`protocol_parser.py`) imports structured product data from T4V protocol xlsx files
 3. **Mapping** (`mapping.py`, `mapping_v2.py`) translates Swedish/English categories and materials to QFix repair categories with numeric IDs
 4. **Vision** (`vision.py`) uses Claude Vision API to classify uploaded garment images into QFix categories
-5. **API** (`api.py`) serves everything via Flask, combining product data with QFix mapping on each request
+5. **API** (`api.py`) serves everything via Flask with Swagger documentation, combining product data with QFix mapping on each request
 
 ## Running locally
 
 ```bash
 pip install -r requirements.txt
+cp .env.example .env  # Add DATABASE_URL and ANTHROPIC_API_KEY
 python api.py
 # API available at http://localhost:8000
+# Swagger UI at http://localhost:8000/apidocs
 ```
 
 To re-scrape products:
 
 ```bash
-cp .env.example .env  # Add ANTHROPIC_API_KEY for vision endpoint
 python main.py              # KappAhl
 python ginatricot_main.py   # Gina Tricot
+python eton_main.py         # Eton
+python nudie_main.py        # Nudie Jeans
+python lindex_main.py       # Lindex
 ```
 
 ## Tests
 
 ```bash
 python -m pytest tests/ -v
-# 108 tests covering scrapers, database, mapping, API, and vision
 ```

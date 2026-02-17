@@ -4,6 +4,7 @@ import tempfile
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request
+from flasgger import Swagger
 
 from mapping import map_product, map_clothing_type, map_material, QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS
 from mapping_v2 import map_product_v2
@@ -12,6 +13,44 @@ from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
 
 app = Flask(__name__)
+
+swagger_config = {
+    "headers": [],
+    "specs": [
+        {
+            "endpoint": "apispec",
+            "route": "/apispec.json",
+            "rule_filter": lambda rule: True,
+            "model_filter": lambda tag: True,
+        }
+    ],
+    "static_url_path": "/flasgger_static",
+    "swagger_ui": True,
+    "specs_route": "/apidocs/",
+}
+
+swagger_template = {
+    "info": {
+        "title": "QFix Product API",
+        "description": "Maps products from Swedish clothing brands (KappAhl, Gina Tricot, Eton, Nudie Jeans, Lindex) to QFix repair service categories.",
+        "version": "1.0",
+    },
+    "basePath": "/",
+    "schemes": ["https", "http"],
+    "tags": [
+        {"name": "KappAhl", "description": "KappAhl product endpoints"},
+        {"name": "Gina Tricot", "description": "Gina Tricot product endpoints"},
+        {"name": "Eton", "description": "Eton product endpoints"},
+        {"name": "Nudie Jeans", "description": "Nudie Jeans product endpoints"},
+        {"name": "Lindex", "description": "Lindex product endpoints"},
+        {"name": "T4V Protocol", "description": "T4V protocol data endpoints"},
+        {"name": "Aggregated", "description": "Merged scraper + protocol data"},
+        {"name": "Vision", "description": "Image-based garment identification"},
+        {"name": "Mapping", "description": "Unmapped categories and mapping management"},
+    ],
+}
+
+swagger = Swagger(app, config=swagger_config, template=swagger_template)
 
 
 def get_db():
@@ -25,6 +64,22 @@ def get_db():
 @app.route("/product/<product_id>")
 @app.route("/kappahl/product/<product_id>")
 def get_product(product_id):
+    """Look up a KappAhl product by ID with QFix mapping.
+    ---
+    tags:
+      - KappAhl
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: KappAhl product ID
+    responses:
+      200:
+        description: Product data with QFix repair category mapping
+      404:
+        description: Product not found
+    """
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
@@ -49,6 +104,14 @@ def get_product(product_id):
 @app.route("/products")
 @app.route("/kappahl/products")
 def list_products():
+    """List KappAhl products (limit 100).
+    ---
+    tags:
+      - KappAhl
+    responses:
+      200:
+        description: Array of KappAhl products
+    """
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
@@ -63,6 +126,24 @@ def list_products():
 
 @app.route("/v2/upload", methods=["POST"])
 def v2_upload():
+    """Upload a T4V protocol xlsx file.
+    ---
+    tags:
+      - T4V Protocol
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: file
+        in: formData
+        type: file
+        required: true
+        description: T4V protocol .xlsx file
+    responses:
+      200:
+        description: Import result with product count
+      400:
+        description: Invalid file or parse error
+    """
     if "file" not in request.files:
         return jsonify({"error": "No file provided. Use multipart form with key 'file'."}), 400
 
@@ -97,6 +178,22 @@ def v2_upload():
 
 @app.route("/v2/product/gtin/<gtin>")
 def v2_get_by_gtin(gtin):
+    """Look up a product by GTIN barcode.
+    ---
+    tags:
+      - T4V Protocol
+    parameters:
+      - name: gtin
+        in: path
+        type: string
+        required: true
+        description: GTIN barcode (13 digits)
+    responses:
+      200:
+        description: Product data with QFix mapping
+      404:
+        description: GTIN not found
+    """
     conn = get_db()
     create_table_v2(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -121,6 +218,22 @@ def v2_get_by_gtin(gtin):
 
 @app.route("/v2/product/article/<article_number>")
 def v2_get_by_article(article_number):
+    """Look up all size variants for an article number.
+    ---
+    tags:
+      - T4V Protocol
+    parameters:
+      - name: article_number
+        in: path
+        type: string
+        required: true
+        description: Article number
+    responses:
+      200:
+        description: Article with all size variants and QFix mapping
+      404:
+        description: Article not found
+    """
     conn = get_db()
     create_table_v2(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -148,6 +261,14 @@ def v2_get_by_article(article_number):
 
 @app.route("/v2/products")
 def v2_list_products():
+    """List T4V protocol products (limit 200).
+    ---
+    tags:
+      - T4V Protocol
+    responses:
+      200:
+        description: Array of protocol products
+    """
     conn = get_db()
     create_table_v2(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -163,6 +284,22 @@ def v2_list_products():
 
 @app.route("/ginatricot/product/<product_id>")
 def ginatricot_get_product(product_id):
+    """Look up a Gina Tricot product by ID with QFix mapping.
+    ---
+    tags:
+      - Gina Tricot
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Gina Tricot product ID
+    responses:
+      200:
+        description: Product data with QFix mapping
+      404:
+        description: Product not found
+    """
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
@@ -186,6 +323,14 @@ def ginatricot_get_product(product_id):
 
 @app.route("/ginatricot/products")
 def ginatricot_list_products():
+    """List Gina Tricot products (limit 100).
+    ---
+    tags:
+      - Gina Tricot
+    responses:
+      200:
+        description: Array of Gina Tricot products
+    """
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
@@ -200,6 +345,22 @@ def ginatricot_list_products():
 
 @app.route("/v3/product/<product_id>")
 def v3_get_product(product_id):
+    """Look up a Gina Tricot product (legacy v3 format).
+    ---
+    tags:
+      - Gina Tricot
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Gina Tricot product ID
+    responses:
+      200:
+        description: Product data with QFix mapping
+      404:
+        description: Product not found
+    """
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
@@ -223,6 +384,14 @@ def v3_get_product(product_id):
 
 @app.route("/v3/products")
 def v3_list_products():
+    """List Gina Tricot products (legacy v3, limit 200).
+    ---
+    tags:
+      - Gina Tricot
+    responses:
+      200:
+        description: Array of Gina Tricot products
+    """
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
@@ -235,7 +404,22 @@ def v3_list_products():
 
 @app.route("/v3/product/search")
 def v3_search():
-    """Search Gina Tricot scraped products by name."""
+    """Search Gina Tricot products by name.
+    ---
+    tags:
+      - Gina Tricot
+    parameters:
+      - name: q
+        in: query
+        type: string
+        required: true
+        description: Search term (matched against product name)
+    responses:
+      200:
+        description: Array of matching products
+      400:
+        description: Missing search term
+    """
     q = request.args.get("q", "")
     if not q:
         return jsonify({"error": "Provide ?q= search term"}), 400
@@ -289,7 +473,22 @@ def _merge_product(scraped, protocol):
 
 @app.route("/v4/product/<product_id>")
 def v4_get_product(product_id):
-    """Get a Gina Tricot product with aggregated data from scraper + protocol."""
+    """Get a Gina Tricot product with merged scraper + protocol data.
+    ---
+    tags:
+      - Aggregated
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Gina Tricot product ID
+    responses:
+      200:
+        description: Merged product data (source is 'merged' or 'scraper_only')
+      404:
+        description: Product not found
+    """
     conn = get_db()
     create_table_v2(conn)
 
@@ -333,7 +532,14 @@ def v4_get_product(product_id):
 
 @app.route("/v4/products")
 def v4_list_products():
-    """List Gina Tricot products, enriched with protocol data where available."""
+    """List aggregated Gina Tricot products (limit 200).
+    ---
+    tags:
+      - Aggregated
+    responses:
+      200:
+        description: Array of products with merge status
+    """
     conn = get_db()
     create_table_v2(conn)
 
@@ -361,7 +567,22 @@ def v4_list_products():
 
 @app.route("/v4/product/search")
 def v4_search():
-    """Search aggregated Gina Tricot products by name."""
+    """Search aggregated Gina Tricot products by name.
+    ---
+    tags:
+      - Aggregated
+    parameters:
+      - name: q
+        in: query
+        type: string
+        required: true
+        description: Search term
+    responses:
+      200:
+        description: Array of matching products with merge status
+      400:
+        description: Missing search term
+    """
     q = request.args.get("q", "")
     if not q:
         return jsonify({"error": "Provide ?q= search term"}), 400
@@ -392,6 +613,22 @@ def v4_search():
 
 @app.route("/eton/product/<product_id>")
 def eton_get_product(product_id):
+    """Look up an Eton product by ID with QFix mapping.
+    ---
+    tags:
+      - Eton
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Eton product ID
+    responses:
+      200:
+        description: Product data with QFix mapping
+      404:
+        description: Product not found
+    """
     conn = get_db()
     create_table_eton(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -416,6 +653,14 @@ def eton_get_product(product_id):
 
 @app.route("/eton/products")
 def eton_list_products():
+    """List Eton products (limit 100).
+    ---
+    tags:
+      - Eton
+    responses:
+      200:
+        description: Array of Eton products
+    """
     conn = get_db()
     create_table_eton(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -431,6 +676,22 @@ def eton_list_products():
 
 @app.route("/lindex/product/<product_id>")
 def lindex_get_product(product_id):
+    """Look up a Lindex product by ID with QFix mapping.
+    ---
+    tags:
+      - Lindex
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Lindex product ID (styleId)
+    responses:
+      200:
+        description: Product data with QFix mapping
+      404:
+        description: Product not found
+    """
     conn = get_db()
     create_table_lindex(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -455,6 +716,14 @@ def lindex_get_product(product_id):
 
 @app.route("/lindex/products")
 def lindex_list_products():
+    """List Lindex products (limit 100).
+    ---
+    tags:
+      - Lindex
+    responses:
+      200:
+        description: Array of Lindex products
+    """
     conn = get_db()
     create_table_lindex(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -470,6 +739,22 @@ def lindex_list_products():
 
 @app.route("/nudie/product/<product_id>")
 def nudie_get_product(product_id):
+    """Look up a Nudie Jeans product by ID with QFix mapping.
+    ---
+    tags:
+      - Nudie Jeans
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Nudie Jeans product ID
+    responses:
+      200:
+        description: Product data with QFix mapping
+      404:
+        description: Product not found
+    """
     conn = get_db()
     create_table_nudie(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -494,6 +779,14 @@ def nudie_get_product(product_id):
 
 @app.route("/nudie/products")
 def nudie_list_products():
+    """List Nudie Jeans products (limit 100).
+    ---
+    tags:
+      - Nudie Jeans
+    responses:
+      200:
+        description: Array of Nudie Jeans products
+    """
     conn = get_db()
     create_table_nudie(conn)
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -518,7 +811,26 @@ ALLOWED_IMAGE_TYPES = {
 
 @app.route("/identify", methods=["POST"])
 def identify():
-    """Upload an image to identify the garment and get a QFix repair link."""
+    """Upload a garment image for identification and QFix mapping.
+    ---
+    tags:
+      - Vision
+    consumes:
+      - multipart/form-data
+    parameters:
+      - name: image
+        in: formData
+        type: file
+        required: true
+        description: Garment image (JPEG, PNG, WebP, or GIF, max 20 MB)
+    responses:
+      200:
+        description: Classification result with QFix repair category mapping
+      400:
+        description: Missing or invalid image
+      500:
+        description: Vision API error
+    """
     if "image" not in request.files:
         return jsonify({"error": "No image provided. Use multipart form with key 'image'."}), 400
 
@@ -546,7 +858,14 @@ def identify():
 
 @app.route("/unmapped")
 def unmapped_categories():
-    """Return all clothing types and materials that don't map to QFix, grouped by brand."""
+    """Get all unmapped clothing types and materials across all brands.
+    ---
+    tags:
+      - Mapping
+    responses:
+      200:
+        description: Unmapped categories per brand plus valid QFix reference data
+    """
     conn = get_db()
 
     result = {}
@@ -717,11 +1036,38 @@ def unmapped_categories():
 
 @app.route("/unmapped/add", methods=["POST"])
 def add_mapping():
-    """Add a new clothing type or material mapping.
-
-    JSON body:
-      {"type": "clothing_type", "from": "kjolar > langkjolar", "to": "Skirt / Dress"}
-      {"type": "material", "from": "neopren", "to": "Standard textile"}
+    """Add a new clothing type or material mapping (in-memory, resets on redeploy).
+    ---
+    tags:
+      - Mapping
+    consumes:
+      - application/json
+    parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          type: object
+          required:
+            - type
+            - from
+            - to
+          properties:
+            type:
+              type: string
+              enum: [clothing_type, material]
+              description: Type of mapping to add
+            from:
+              type: string
+              description: Source value (e.g. "coatsjackets > kappor")
+            to:
+              type: string
+              description: Target QFix category (e.g. "Coat")
+    responses:
+      200:
+        description: Mapping added successfully
+      400:
+        description: Invalid input or unknown target category
     """
     from mapping import CLOTHING_TYPE_MAP, MATERIAL_MAP
 
