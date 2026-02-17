@@ -34,35 +34,28 @@ def _make_nuxt_data(
     color_name="Light Dusty Pink",
     color_group="Rosa",
 ):
-    """Build a simplified __NUXT_DATA__ array with indexed references."""
-    # Nuxt uses indexed references: keys at index i, value ref at i+1
-    # We build a minimal array: [header, key, ref_idx, key, ref_idx, ..., val, val, ...]
+    """Build a __NUXT_DATA__ array matching the real dict-based format.
+
+    The real Nuxt 3 format uses a flat array where some entries are dicts
+    with keys pointing to value indices in the same array.
+    """
+    # Values stored at specific indices
     arr = [
-        ["ShallowReactive", 1],  # 0: header
-        {},                       # 1: data object marker
-        "styleId",                # 2
-        7,                        # 3: ref -> index 7
-        "name",                   # 4
-        8,                        # 5: ref -> index 8
-        "description",            # 6
-        style_id,                 # 7: styleId value
-        name,                     # 8: name value
-    ]
-    desc_idx = len(arr)
-    arr.append(description)       # 9: description value
-    arr[6] = "description"
-    # Need to insert ref for description
-    arr.insert(7, desc_idx)
-    # Shift indices
-    # Let's just build it simply:
-    arr = [
-        ["ShallowReactive", 1],
-        "styleId", style_id,
-        "name", name,
-        "description", description,
-        "composition", composition,
-        "colorName", color_name,
-        "colorGroup", color_group,
+        "filler0",       # 0
+        style_id,        # 1
+        name,            # 2
+        description,     # 3
+        composition,     # 4
+        color_name,      # 5
+        color_group,     # 6
+        {                # 7: product dict with index refs
+            "styleId": 1,
+            "name": 2,
+            "description": 3,
+            "composition": 4,
+            "colorName": 5,
+            "colorGroup": 6,
+        },
     ]
     return f'<script type="application/json" id="__NUXT_DATA__">{json.dumps(arr)}</script>'
 
@@ -119,28 +112,40 @@ def test_parse_nuxt_data_missing():
     assert data == {}
 
 
-def test_parse_nuxt_data_no_composition():
+def test_parse_nuxt_data_no_lining():
+    """Product dict without optional liningComp key should omit it from result."""
     nuxt_arr = [
-        ["ShallowReactive", 1],
-        "styleId", "3010022",
-        "name", "Test product",
+        "3010022",         # 0
+        "Test product",    # 1
+        "TestColor",       # 2
+        "100% bomull",     # 3
+        {                  # 4: product dict - has required keys but no liningComp
+            "styleId": 0,
+            "name": 1,
+            "colorName": 2,
+            "composition": 3,
+        },
     ]
     html = f'<html><script type="application/json" id="__NUXT_DATA__">{json.dumps(nuxt_arr)}</script></html>'
     data = _parse_nuxt_data(html)
     assert data["styleId"] == "3010022"
-    assert "composition" not in data
+    assert data["composition"] == "100% bomull"
+    assert "liningComp" not in data
 
 
 def test_parse_nuxt_data_with_indexed_refs():
-    """Test that indexed references are resolved."""
-    # Index: 0=header, 1=key, 2=ref(->5), 3=key, 4=ref(->6), 5=value, 6=value
+    """Test that indexed references in dict values are resolved."""
     nuxt_arr = [
-        ["ShallowReactive", 1],
-        "styleId", 7,
-        "composition", 8,
-        "name", "Short product",
-        "3010022",           # index 7
-        "100% bomull",       # index 8
+        "3010022",         # 0
+        "100% bomull",     # 1
+        "Short product",   # 2
+        "Blue",            # 3
+        {                  # 4: product dict with index refs
+            "styleId": 0,
+            "composition": 1,
+            "name": 2,
+            "colorName": 3,
+        },
     ]
     html = f'<html><script type="application/json" id="__NUXT_DATA__">{json.dumps(nuxt_arr)}</script></html>'
     data = _parse_nuxt_data(html)
@@ -171,14 +176,16 @@ def test_extract_product_urls_empty():
 
 def test_extract_category_links():
     html = '''
-    <a href="/se/dam/klanningar/">Klänningar</a>
-    <a href="/se/dam/byxor/">Byxor</a>
+    <a href="/se/dam/klanningar">Klänningar</a>
+    <a href="/se/dam/byxor">Byxor</a>
+    <a href="/se/barn/toppar?hl=sv">Toppar</a>
     <a href="/se/p/12345-67890">Product</a>
     <a href="/se/checkout/">Checkout</a>
     '''
     links = _extract_category_links(html)
-    assert "/se/dam/klanningar/" in links
-    assert "/se/dam/byxor/" in links
+    assert "/se/dam/klanningar" in links
+    assert "/se/dam/byxor" in links
+    assert "/se/barn/toppar" in links
     assert "/se/p/12345-67890" not in links
     assert "/se/checkout/" not in links
 

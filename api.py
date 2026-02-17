@@ -609,6 +609,99 @@ def unmapped_categories():
             "unmapped_materials": sorted(gt_unmapped_materials),
         }
 
+        # Eton unmapped
+        try:
+            cur.execute(
+                "SELECT DISTINCT clothing_type, material_composition, category FROM eton_products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
+            )
+            eton_rows = cur.fetchall()
+        except Exception:
+            eton_rows = []
+
+        eton_unmapped_types = {}
+        eton_unmapped_materials = set()
+        for row in eton_rows:
+            ct = row["clothing_type"]
+            mat = row["material_composition"]
+            mapped_type = map_clothing_type(ct)
+            if mapped_type is None and ct:
+                if ct not in eton_unmapped_types:
+                    eton_unmapped_types[ct] = 0
+                eton_unmapped_types[ct] += 1
+            mapped_mat = map_material(mat)
+            if mapped_mat == "Other/Unsure" and mat:
+                eton_unmapped_materials.add(mat)
+
+        result["eton"] = {
+            "unmapped_clothing_types": [
+                {"clothing_type": ct, "distinct_products": count}
+                for ct, count in sorted(eton_unmapped_types.items())
+            ],
+            "unmapped_materials": sorted(eton_unmapped_materials),
+        }
+
+        # Nudie unmapped
+        try:
+            cur.execute(
+                "SELECT DISTINCT clothing_type, material_composition, category FROM nudie_products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
+            )
+            nudie_rows = cur.fetchall()
+        except Exception:
+            nudie_rows = []
+
+        nudie_unmapped_types = {}
+        nudie_unmapped_materials = set()
+        for row in nudie_rows:
+            ct = row["clothing_type"]
+            mat = row["material_composition"]
+            mapped_type = map_clothing_type(ct)
+            if mapped_type is None and ct:
+                if ct not in nudie_unmapped_types:
+                    nudie_unmapped_types[ct] = 0
+                nudie_unmapped_types[ct] += 1
+            mapped_mat = map_material(mat)
+            if mapped_mat == "Other/Unsure" and mat:
+                nudie_unmapped_materials.add(mat)
+
+        result["nudie"] = {
+            "unmapped_clothing_types": [
+                {"clothing_type": ct, "distinct_products": count}
+                for ct, count in sorted(nudie_unmapped_types.items())
+            ],
+            "unmapped_materials": sorted(nudie_unmapped_materials),
+        }
+
+        # Lindex unmapped
+        try:
+            cur.execute(
+                "SELECT DISTINCT clothing_type, material_composition, category FROM lindex_products WHERE clothing_type IS NOT NULL ORDER BY clothing_type"
+            )
+            lindex_rows = cur.fetchall()
+        except Exception:
+            lindex_rows = []
+
+        lindex_unmapped_types = {}
+        lindex_unmapped_materials = set()
+        for row in lindex_rows:
+            ct = row["clothing_type"]
+            mat = row["material_composition"]
+            mapped_type = map_clothing_type(ct)
+            if mapped_type is None and ct:
+                if ct not in lindex_unmapped_types:
+                    lindex_unmapped_types[ct] = 0
+                lindex_unmapped_types[ct] += 1
+            mapped_mat = map_material(mat)
+            if mapped_mat == "Other/Unsure" and mat:
+                lindex_unmapped_materials.add(mat)
+
+        result["lindex"] = {
+            "unmapped_clothing_types": [
+                {"clothing_type": ct, "distinct_products": count}
+                for ct, count in sorted(lindex_unmapped_types.items())
+            ],
+            "unmapped_materials": sorted(lindex_unmapped_materials),
+        }
+
     # Also include reference: valid QFix categories for mapping
     result["qfix_valid_clothing_types"] = {name: id for name, id in sorted(QFIX_CLOTHING_TYPE_IDS.items())}
     result["qfix_valid_materials"] = {

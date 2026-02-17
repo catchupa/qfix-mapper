@@ -2,10 +2,14 @@ import json
 import logging
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor
+
+from curl_cffi import requests as cffi_requests
 
 logger = logging.getLogger(__name__)
 
 BASE_URL = "https://www.lindex.com"
+HEADERS = {"Accept-Language": "sv-SE,sv;q=0.9,en;q=0.8"}
 _PRODUCT_URL_PATTERN = re.compile(r"/se/p/(\d+)-(\d+)")
 
 # Top-level category paths to crawl for product discovery
@@ -13,9 +17,20 @@ CATEGORY_PATHS = [
     "/se/dam/",
     "/se/barn/",
     "/se/baby/",
-    "/se/underklaeder/",
-    "/se/sport/",
+    "/se/underklader/",
 ]
+
+
+def _get(url, session=None):
+    """Fetch a URL using curl-cffi with Chrome TLS impersonation."""
+    getter = session or cffi_requests
+    return getter.get(
+        url,
+        impersonate="chrome",
+        headers=HEADERS,
+        timeout=30,
+        allow_redirects=True,
+    )
 
 
 def _extract_json_ld(html):
@@ -32,9 +47,9 @@ def _extract_json_ld(html):
 def _parse_nuxt_data(html):
     """Parse the __NUXT_DATA__ indexed reference array.
 
-    Nuxt 3 serialises page data as a flat JSON array where objects reference
-    values by array index.  We scan for known key names and resolve their
-    adjacent value references.
+    Nuxt 3 serialises page data as a flat JSON array where dict entries
+    reference values by array index.  We find the main product dict
+    (identified by having 'composition' + 'styleId' keys) and resolve refs.
     """
     m = re.search(r'id="__NUXT_DATA__"[^>]*>\s*(\[.*?\])\s*</script>', html, re.DOTALL)
     if not m:
@@ -45,47 +60,32 @@ def _parse_nuxt_data(html):
     except (json.JSONDecodeError, TypeError):
         return {}
 
-    result = {}
-    keys_of_interest = {
-        "composition", "colorName", "colorGroup", "styleId",
-        "washingInstructions", "liningComp", "description", "name",
-    }
+    # Find the main product dict (has composition + styleId keys)
+    product_keys = {"composition", "styleId", "colorName"}
+    for item in arr:
+        if isinstance(item, dict) and product_keys.issubset(item.keys()):
+            result = {}
+            for key in ("styleId", "name", "description", "composition",
+                        "colorName", "colorGroup", "washingInstructions", "liningComp"):
+                if key not in item:
+                    continue
+                ref = item[key]
+                if isinstance(ref, int) and 0 <= ref < len(arr):
+                    result[key] = arr[ref]
+                else:
+                    result[key] = ref
+            return result
 
-    for i, v in enumerate(arr):
-        if not isinstance(v, str) or v not in keys_of_interest:
-            continue
-        if i + 1 >= len(arr):
-            continue
-
-        next_val = arr[i + 1]
-
-        # Resolve indexed reference
-        if isinstance(next_val, int) and 0 <= next_val < len(arr):
-            resolved = arr[next_val]
-        else:
-            resolved = next_val
-
-        # For 'name' and 'description', only keep the first meaningful one
-        if v == "name":
-            if "name" not in result and isinstance(resolved, str) and len(resolved) > 3:
-                result["name"] = resolved
-        elif v == "description":
-            if "description" not in result and isinstance(resolved, str) and len(resolved) > 5:
-                result["description"] = resolved
-        else:
-            if v not in result and resolved is not None:
-                result[v] = resolved
-
-    return result
+    return {}
 
 
 def _extract_category_links(html):
     """Extract sub-category links from a category page."""
     links = set()
-    for m in re.finditer(r'href="(/se/[^"]+/)"', html):
+    for m in re.finditer(r'href="(/se/(?:dam|barn|baby|underklader)/[^"?]+)', html):
         path = m.group(1)
-        # Skip non-category paths
-        if "/p/" in path or "/checkout" in path or "/login" in path:
+        # Skip product pages
+        if "/p/" in path:
             continue
         links.add(path)
     return links
@@ -101,11 +101,11 @@ def _extract_product_urls(html):
     return urls
 
 
-def fetch_product_urls(page, delay=1.0):
+def fetch_product_urls(session=None, delay=1.0):
     """Crawl category pages to discover product URLs.
 
     Args:
-        page: Playwright page object
+        session: curl-cffi Session object (optional)
         delay: seconds to wait between page loads
     """
     all_product_urls = set()
@@ -121,9 +121,9 @@ def fetch_product_urls(page, delay=1.0):
         url = f"{BASE_URL}{cat_path}"
         logger.info("Crawling category: %s", url)
         try:
-            resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
-            if resp and resp.status == 200:
-                html = page.content()
+            resp = _get(url, session=session)
+            if resp.status_code == 200:
+                html = resp.text
                 product_urls = _extract_product_urls(html)
                 all_product_urls.update(product_urls)
                 logger.info("  Found %d products, %d total so far",
@@ -135,8 +135,7 @@ def fetch_product_urls(page, delay=1.0):
                     if link not in visited_categories:
                         categories_to_visit.append(link)
             else:
-                status = resp.status if resp else "none"
-                logger.warning("  Got status %s for %s", status, url)
+                logger.warning("  Got status %s for %s", resp.status_code, url)
         except Exception as e:
             logger.error("  Error crawling %s: %s", url, e)
 
@@ -147,26 +146,22 @@ def fetch_product_urls(page, delay=1.0):
     return list(all_product_urls)
 
 
-def scrape_product(page, url):
-    """Scrape a single Lindex product page using Playwright.
-
-    Args:
-        page: Playwright page object
-        url: product URL to scrape
+def scrape_product(url, session=None):
+    """Scrape a single Lindex product page.
 
     Returns:
         Product dict or None if extraction fails.
     """
     try:
-        resp = page.goto(url, wait_until="domcontentloaded", timeout=30000)
-        if not resp or resp.status != 200:
-            logger.warning("Got status %s for %s", resp.status if resp else "none", url)
+        resp = _get(url, session=session)
+        if resp.status_code != 200:
+            logger.warning("Got status %s for %s", resp.status_code, url)
             return None
     except Exception as e:
         logger.error("Failed to load %s: %s", url, e)
         return None
 
-    html = page.content()
+    html = resp.text
 
     # Try NUXT_DATA first (richer data)
     nuxt = _parse_nuxt_data(html)
@@ -181,8 +176,8 @@ def scrape_product(page, url):
         # productID format is "styleId-colorId"
         product_id = pid.split("-")[0] if pid else None
     if not product_id:
-        m = _PRODUCT_URL_PATTERN.search(url)
-        product_id = m.group(1) if m else None
+        url_m = _PRODUCT_URL_PATTERN.search(url)
+        product_id = url_m.group(1) if url_m else None
 
     if not product_id:
         logger.warning("Could not extract product ID from %s, skipping", url)
@@ -200,7 +195,7 @@ def scrape_product(page, url):
         "category": None,
         "clothing_type": None,
         "material_composition": composition,
-        "product_url": str(page.url),
+        "product_url": str(resp.url),
         "description": description,
         "color": color,
         "brand": "Lindex",
@@ -208,23 +203,32 @@ def scrape_product(page, url):
     }
 
 
-def scrape_all(page, urls, callback=None, delay=0.5):
-    """Scrape all product URLs sequentially using a Playwright page.
+def scrape_all(urls, callback=None, session=None, workers=3, delay=0.3):
+    """Scrape all product URLs, calling callback(product_dict) for each.
 
-    Args:
-        page: Playwright page object
-        urls: list of product URLs
-        callback: function to call with each product dict
-        delay: seconds to wait between requests
+    Uses a small thread pool since curl-cffi is thread-safe and Lindex
+    requires Chrome TLS impersonation (no standard requests).
     """
     total = len(urls)
     done = 0
 
-    for url in urls:
-        result = scrape_product(page, url)
-        done += 1
-        if done % 50 == 0 or done == total:
-            logger.info("[%d/%d] Progress update", done, total)
-        if result and callback:
-            callback(result)
-        time.sleep(delay)
+    def _scrape_one(url):
+        try:
+            return scrape_product(url, session=session)
+        except Exception as e:
+            logger.error("Failed to scrape %s: %s", url, e)
+            return None
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        batch_size = workers * 4
+        for batch_start in range(0, total, batch_size):
+            batch = urls[batch_start:batch_start + batch_size]
+            futures = [pool.submit(_scrape_one, url) for url in batch]
+            for future in futures:
+                result = future.result()
+                done += 1
+                if done % 50 == 0 or done == total:
+                    logger.info("[%d/%d] Progress update", done, total)
+                if result and callback:
+                    callback(result)
+            time.sleep(delay)
