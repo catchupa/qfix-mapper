@@ -34,7 +34,7 @@ GET /nudie/product/115053
 GET /lindex/product/3010022
 ```
 
-Response:
+Response includes QFix catalog enrichment — item metadata, material info, and available repair services grouped by service category (Repair, Adjust measurements, Washing and Care, Other adjustments). Services are filtered by the specific (clothing type, material) combination, matching the QFix website behavior.
 
 ```json
 {
@@ -51,12 +51,43 @@ Response:
   },
   "qfix": {
     "qfix_clothing_type": "Jacket",
-    "qfix_clothing_type_id": 173,
+    "qfix_clothing_type_id": 93,
     "qfix_material": "Standard textile",
     "qfix_material_id": 69,
     "qfix_subcategory": "Men's Clothing",
     "qfix_subcategory_id": 56,
-    "qfix_url": "https://kappahl.dev.qfixr.me/sv/?category_id=173&material_id=69"
+    "qfix_url": "https://kappahl.dev.qfixr.me/sv/?category_id=93&material_id=69",
+    "qfix_item": {
+      "id": 93,
+      "name": "Jacket",
+      "slug": "jacket-mens",
+      "parent": { "id": 56, "name": "Men's Clothing" }
+    },
+    "qfix_subitem": {
+      "id": 69,
+      "name": "Standard textile",
+      "slug": "standardtextile"
+    },
+    "qfix_services": [
+      {
+        "id": 37,
+        "name": "Repair",
+        "services": [
+          {
+            "id": 1443,
+            "name": "Repair seam",
+            "price": 254,
+            "variants": [
+              { "id": 1444, "name": "Repair seam - <10 cm", "price": "254" },
+              { "id": 1445, "name": "Repair seam - 10-25 cm", "price": "294" }
+            ]
+          }
+        ]
+      },
+      { "id": 39, "name": "Adjust measurements", "services": ["..."] },
+      { "id": 42, "name": "Washing and Care", "services": ["..."] },
+      { "id": 40, "name": "Other adjustments", "services": ["..."] }
+    ]
   }
 }
 ```
@@ -179,9 +210,10 @@ Note: Mappings added via this endpoint are in-memory only and will be reset on r
 
 1. **Scrapers** (`scraper.py`, `ginatricot_scraper.py`, `eton_scraper.py`, `nudie_scraper.py`, `lindex_scraper.py`) fetch product URLs and extract product data (name, clothing type, material, color, brand, images) from each brand's website
 2. **Protocol parser** (`protocol_parser.py`) imports structured product data from T4V protocol xlsx files
-3. **Mapping** (`mapping.py`, `mapping_v2.py`) translates Swedish/English categories and materials to QFix repair categories with numeric IDs
-4. **Vision** (`vision.py`) uses Claude Vision API to classify uploaded garment images into QFix categories
-5. **API** (`api.py`) serves everything via Flask with Swagger documentation, combining product data with QFix mapping on each request
+3. **Mapping** (`mapping.py`, `mapping_v2.py`) translates Swedish/English categories and materials to QFix repair categories with numeric IDs, using gender-aware resolution (Men's/Women's/Children's clothing map to different QFix category IDs)
+4. **QFix catalog enrichment** — on first request, the API fetches the full QFix product-categories tree and caches it in memory. Each product response is enriched with item metadata, material info, and available repair services filtered by the exact (clothing type, material) pair
+5. **Vision** (`vision.py`) uses Claude Vision API to classify uploaded garment images into QFix categories
+6. **API** (`api.py`) serves everything via Flask with Swagger documentation, combining product data with QFix mapping and catalog enrichment on each request
 
 ## Running locally
 
