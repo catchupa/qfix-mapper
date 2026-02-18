@@ -76,7 +76,7 @@
           el.innerHTML =
             '<a class="' + btnClass + '" href="' + qfixUrl + '" target="_blank" rel="noopener">' +
             WRENCH_SVG +
-            "Repair this item" +
+            "Reparera" +
             "</a>";
         })
         .catch(function () {
