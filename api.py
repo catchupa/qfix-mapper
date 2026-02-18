@@ -7,7 +7,8 @@ import anthropic
 import psycopg2
 import requests as http_requests
 from psycopg2.extras import RealDictCursor
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
+from flask_cors import CORS
 from flasgger import Swagger
 
 from mapping import (
@@ -21,6 +22,32 @@ from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
 
 app = Flask(__name__)
+CORS(app)
+
+# ── API key authentication ────────────────────────────────────────────────
+# Format: "brand1:key1,brand2:key2"  — if unset, auth is disabled.
+_api_keys = {}
+_raw_keys = os.environ.get("API_KEYS", "")
+if _raw_keys:
+    for pair in _raw_keys.split(","):
+        pair = pair.strip()
+        if ":" in pair:
+            slug, key = pair.split(":", 1)
+            _api_keys[slug.strip()] = key.strip()
+
+
+def _check_api_key(brand_slug):
+    """Return an error response if API key auth is enabled and the key is invalid.
+    Returns None when the request is authorized."""
+    if not _api_keys:
+        return None  # auth disabled
+    expected = _api_keys.get(brand_slug)
+    if not expected:
+        return None  # no key configured for this brand
+    provided = request.headers.get("X-API-Key", "")
+    if provided != expected:
+        return jsonify({"error": "Invalid or missing API key"}), 401
+    return None
 
 swagger_config = {
     "headers": [],
@@ -226,6 +253,10 @@ def get_brand_product(brand_slug, product_id):
       404:
         description: Product or brand not found
     """
+    auth_error = _check_api_key(brand_slug)
+    if auth_error:
+        return auth_error
+
     brand_name = BRAND_ROUTES.get(brand_slug)
     if not brand_name:
         return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
@@ -273,6 +304,10 @@ def list_brand_products(brand_slug):
       404:
         description: Unknown brand
     """
+    auth_error = _check_api_key(brand_slug)
+    if auth_error:
+        return auth_error
+
     brand_name = BRAND_ROUTES.get(brand_slug)
     if not brand_name:
         return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
@@ -1168,6 +1203,22 @@ def remap_apply():
         "applied_count": len(applied),
         "errors": errors,
     })
+
+
+# --- QFix Widget Demo ---
+
+WIDGET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widget")
+
+
+@app.route("/widget.js")
+def widget_js():
+    return send_from_directory(WIDGET_DIR, "widget.js", mimetype="application/javascript")
+
+
+@app.route("/demo")
+@app.route("/demo/")
+def widget_demo():
+    return send_from_directory(os.path.join(WIDGET_DIR, "demo"), "index.html")
 
 
 if __name__ == "__main__":
