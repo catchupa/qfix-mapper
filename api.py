@@ -247,9 +247,16 @@ def get_brand_product(brand_slug, product_id):
         type: string
         required: true
         description: Product ID
+      - name: X-API-Key
+        in: header
+        type: string
+        required: true
+        description: Brand-specific API key
     responses:
       200:
         description: Product data with QFix repair category mapping
+      401:
+        description: Invalid or missing API key
       404:
         description: Product or brand not found
     """
@@ -298,9 +305,16 @@ def list_brand_products(brand_slug):
         type: string
         required: true
         description: "Brand slug (kappahl, ginatricot, eton, nudie, lindex)"
+      - name: X-API-Key
+        in: header
+        type: string
+        required: true
+        description: Brand-specific API key
     responses:
       200:
         description: Array of products
+      401:
+        description: Invalid or missing API key
       404:
         description: Unknown brand
     """
