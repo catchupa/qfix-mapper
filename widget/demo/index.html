@@ -212,6 +212,21 @@
     Demo page — QFix Repair Widget integration example
   </footer>
 
+  <!-- Override product ID via ?productId= query param -->
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var pid = params.get("productId");
+      if (pid) {
+        var el = document.getElementById("qfix-repair");
+        el.setAttribute("data-product-id", pid);
+        document.querySelector(".kh-title").textContent = "Product " + pid;
+        var artNr = document.querySelector(".kh-details:last-of-type p");
+        if (artNr) artNr.textContent = pid;
+      }
+    })();
+  </script>
+
   <!-- QFix Widget -->
   <script src="/widget.js"></script>
 
