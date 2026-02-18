@@ -16,6 +16,28 @@ Maps products from Swedish clothing brands to [QFix](https://kappahl.dev.qfixr.m
 | Nudie Jeans | `/nudie/` | ~300 |
 | Lindex | `/lindex/` | ~2,960 |
 
+## Authentication
+
+Brand product endpoints (`/<brand>/product/<id>` and `/<brand>/products`) require an API key when the `API_KEYS` environment variable is set. Pass the key via the `X-API-Key` header:
+
+```bash
+curl -H "X-API-Key: your-key-here" https://kappahl-qfix.fly.dev/kappahl/product/530956
+```
+
+Without a valid key, these endpoints return `401`:
+
+```json
+{"error": "Invalid or missing API key"}
+```
+
+If `API_KEYS` is not set, authentication is disabled and all requests are allowed. Other endpoints (`/demo`, `/widget.js`, `/apidocs`, `/v2/*`, `/v3/*`, `/v4/*`) do not require authentication.
+
+To configure keys on Fly.io (format `brand:key,brand:key`):
+
+```bash
+flyctl secrets set API_KEYS="kappahl:your-key,lindex:another-key"
+```
+
 ## Endpoints
 
 ### Brand product endpoints
