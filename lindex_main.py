@@ -24,13 +24,13 @@ def main():
     session = cffi_requests.Session(impersonate="chrome")
 
     logger.info("Crawling category pages for product URLs...")
-    urls = fetch_product_urls(session=session, delay=1.0)
-    if not urls:
+    url_to_category = fetch_product_urls(session=session, delay=1.0)
+    if not url_to_category:
         logger.warning("No product URLs found. Exiting.")
         conn.close()
         return
 
-    logger.info("Starting to scrape %d products...", len(urls))
+    logger.info("Starting to scrape %d products...", len(url_to_category))
     count = {"saved": 0}
 
     def on_product(product):
@@ -39,7 +39,7 @@ def main():
         upsert_product(conn, product)
         count["saved"] += 1
 
-    scrape_all(urls, callback=on_product, session=session, workers=3, delay=0.3)
+    scrape_all(url_to_category, callback=on_product, session=session, workers=3, delay=0.3)
 
     logger.info("Done! Saved %d products total.", count["saved"])
     conn.close()

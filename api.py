@@ -5,6 +5,7 @@ import tempfile
 
 import anthropic
 import psycopg2
+import requests as http_requests
 from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request
 from flasgger import Swagger
@@ -58,6 +59,116 @@ swagger_template = {
 }
 
 swagger = Swagger(app, config=swagger_config, template=swagger_template)
+
+logger = logging.getLogger(__name__)
+
+# ── QFix catalog cache ────────────────────────────────────────────────────
+
+QFIX_CATEGORIES_URL = "https://dev.qfixr.me/wp-json/qfix/v1/product-categories?parent=23"
+# Metadata from product-categories (L3 items, L4 subitems, services)
+_qfix_items = {}      # L3 clothing types: {id: {name, slug, link, parent}}
+_qfix_subitems = {}   # L4 materials:      {id: {name, slug, link}}
+_qfix_services = {}   # {(L3_id, L4_id): [service_categories]}
+_qfix_catalog_loaded = False
+
+
+def _build_catalog_node(node):
+    """Extract the fields we want from a QFix catalog node."""
+    return {
+        "id": node.get("id"),
+        "name": node.get("name"),
+        "slug": node.get("slug"),
+        "link": node.get("link"),
+        "description": node.get("category_description") or None,
+    }
+
+
+def _load_qfix_catalog():
+    """Fetch the QFix category tree and build lookup dicts.
+
+    The tree structure is:
+      L1 (Clothing/Shoes/Bags) → L2 (Women's/Men's/...) → L3 (Shirt/Trousers/...)
+        → L4 (Standard textile/Leather/...) → L5 (Repair/Adjust/Washing/Other)
+          → Products (services) → Variants
+    """
+    global _qfix_items, _qfix_subitems, _qfix_catalog_loaded, _qfix_services
+    if _qfix_catalog_loaded:
+        return
+    try:
+        resp = http_requests.get(QFIX_CATEGORIES_URL, timeout=30)
+        resp.raise_for_status()
+        tree = resp.json()
+    except Exception as e:
+        logger.warning("Failed to fetch QFix catalog: %s", e)
+        return
+
+    for l1 in tree:
+        for l2 in l1.get("children", []):
+            for l3 in l2.get("children", []):
+                l3_id = l3.get("id")
+                if l3_id not in _qfix_items:
+                    _qfix_items[l3_id] = {
+                        **_build_catalog_node(l3),
+                        "parent": _build_catalog_node(l2),
+                    }
+                for l4 in l3.get("children", []):
+                    l4_id = l4.get("id")
+                    if l4_id not in _qfix_subitems:
+                        _qfix_subitems[l4_id] = _build_catalog_node(l4)
+
+                    # Extract services grouped by L5 service category
+                    service_categories = []
+                    for l5 in l4.get("children", []):
+                        svc_cat = {
+                            "id": l5.get("id"),
+                            "name": l5.get("name"),
+                            "slug": l5.get("slug"),
+                            "services": [],
+                        }
+                        for prod in l5.get("products", []):
+                            service = {
+                                "id": prod.get("id"),
+                                "name": prod.get("name"),
+                                "price": prod.get("price"),
+                                "variants": [
+                                    {
+                                        "id": v.get("id"),
+                                        "name": v.get("name"),
+                                        "price": v.get("price"),
+                                    }
+                                    for v in prod.get("variants", [])
+                                ],
+                            }
+                            svc_cat["services"].append(service)
+                        service_categories.append(svc_cat)
+                    _qfix_services[(l3_id, l4_id)] = service_categories
+
+    _qfix_catalog_loaded = True
+    logger.info("QFix catalog loaded: %d items, %d subitems, %d service combos",
+                len(_qfix_items), len(_qfix_subitems), len(_qfix_services))
+
+
+def enrich_qfix(qfix):
+    """Add QFix catalog item, subitem, and service data to a qfix mapping dict.
+
+    Services are looked up by the (clothing_type_id, material_id) pair, matching
+    the QFix website behavior where services depend on both item and material.
+    """
+    _load_qfix_catalog()
+    ct_id = qfix.get("qfix_clothing_type_id")
+    mat_id = qfix.get("qfix_material_id")
+
+    if ct_id and ct_id in _qfix_items:
+        qfix["qfix_item"] = _qfix_items[ct_id]
+
+    if mat_id and mat_id in _qfix_subitems:
+        qfix["qfix_subitem"] = _qfix_subitems[mat_id]
+
+    if ct_id and mat_id:
+        qfix["qfix_services"] = _qfix_services.get((ct_id, mat_id), [])
+
+    return qfix
+
 
 # ── Brand routing config ──────────────────────────────────────────────────
 
@@ -132,7 +243,7 @@ def get_brand_product(brand_slug, product_id):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = _get_mapper()(product)
+    qfix = enrich_qfix(_get_mapper()(product))
 
     return jsonify({
         brand_slug: product,
@@ -297,7 +408,7 @@ def v2_get_by_gtin(gtin):
         return jsonify({"error": f"GTIN {gtin} not found"}), 404
 
     product = dict(row)
-    qfix = map_product_v2(product)
+    qfix = enrich_qfix(map_product_v2(product))
 
     return jsonify({
         "product": product,
@@ -336,7 +447,7 @@ def v2_get_by_article(article_number):
         return jsonify({"error": f"Article {article_number} not found"}), 404
 
     products = [dict(r) for r in rows]
-    qfix = map_product_v2(products[0])
+    qfix = enrich_qfix(map_product_v2(products[0]))
 
     return jsonify({
         "article_number": article_number,
@@ -399,7 +510,7 @@ def v3_get_product(product_id):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = _get_mapper()(product)
+    qfix = enrich_qfix(_get_mapper()(product))
 
     return jsonify({
         "product": product,
@@ -533,9 +644,9 @@ def v4_get_product(product_id):
     merged, materials_list = _merge_product(product)
 
     if product.get("article_number"):
-        qfix = map_product_v2(product, materials=materials_list)
+        qfix = enrich_qfix(map_product_v2(product, materials=materials_list))
     else:
-        qfix = _get_mapper()(product)
+        qfix = enrich_qfix(_get_mapper()(product))
 
     return jsonify({
         "product": merged,

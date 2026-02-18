@@ -101,14 +101,32 @@ def _extract_product_urls(html):
     return urls
 
 
+def _parse_category_path(cat_path):
+    """Extract category and clothing_type from a Lindex category path.
+
+    E.g. "/se/dam/klanningar/" -> ("dam", "klänningar")
+         "/se/barn/jackor-rockar/" -> ("barn", "jackor & rockar")
+         "/se/underklader/bh/" -> ("underkläder", "bh")
+    """
+    parts = [p for p in cat_path.strip("/").split("/") if p and p != "se"]
+    if not parts:
+        return None, None
+
+    category = parts[0] if parts else None  # dam, barn, baby, underklader
+    clothing_type = None
+    if len(parts) > 1:
+        # Convert URL slug to readable Swedish: "jackor-rockar" -> "jackor & rockar"
+        clothing_type = parts[1].replace("-", " ")
+    return category, clothing_type
+
+
 def fetch_product_urls(session=None, delay=1.0):
     """Crawl category pages to discover product URLs.
 
-    Args:
-        session: curl-cffi Session object (optional)
-        delay: seconds to wait between page loads
+    Returns:
+        dict mapping product_url -> {"category": str, "clothing_type": str}
     """
-    all_product_urls = set()
+    url_to_category = {}
     visited_categories = set()
     categories_to_visit = list(CATEGORY_PATHS)
 
@@ -125,9 +143,15 @@ def fetch_product_urls(session=None, delay=1.0):
             if resp.status_code == 200:
                 html = resp.text
                 product_urls = _extract_product_urls(html)
-                all_product_urls.update(product_urls)
+                category, clothing_type = _parse_category_path(cat_path)
+                for purl in product_urls:
+                    if purl not in url_to_category:
+                        url_to_category[purl] = {
+                            "category": category,
+                            "clothing_type": clothing_type,
+                        }
                 logger.info("  Found %d products, %d total so far",
-                            len(product_urls), len(all_product_urls))
+                            len(product_urls), len(url_to_category))
 
                 # Discover sub-categories
                 sub_links = _extract_category_links(html)
@@ -142,11 +166,11 @@ def fetch_product_urls(session=None, delay=1.0):
         time.sleep(delay)
 
     logger.info("Found %d unique product URLs from %d categories",
-                len(all_product_urls), len(visited_categories))
-    return list(all_product_urls)
+                len(url_to_category), len(visited_categories))
+    return url_to_category
 
 
-def scrape_product(url, session=None):
+def scrape_product(url, session=None, category=None, clothing_type=None):
     """Scrape a single Lindex product page.
 
     Returns:
@@ -192,8 +216,8 @@ def scrape_product(url, session=None):
     return {
         "product_id": product_id,
         "product_name": product_name,
-        "category": None,
-        "clothing_type": None,
+        "category": category,
+        "clothing_type": clothing_type,
         "material_composition": composition,
         "product_url": str(resp.url),
         "description": description,
@@ -203,18 +227,24 @@ def scrape_product(url, session=None):
     }
 
 
-def scrape_all(urls, callback=None, session=None, workers=3, delay=0.3):
+def scrape_all(url_to_category, callback=None, session=None, workers=3, delay=0.3):
     """Scrape all product URLs, calling callback(product_dict) for each.
 
-    Uses a small thread pool since curl-cffi is thread-safe and Lindex
-    requires Chrome TLS impersonation (no standard requests).
+    Args:
+        url_to_category: dict mapping URL -> {"category": str, "clothing_type": str}
     """
+    urls = list(url_to_category.keys())
     total = len(urls)
     done = 0
 
     def _scrape_one(url):
         try:
-            return scrape_product(url, session=session)
+            cat_info = url_to_category.get(url, {})
+            return scrape_product(
+                url, session=session,
+                category=cat_info.get("category"),
+                clothing_type=cat_info.get("clothing_type"),
+            )
         except Exception as e:
             logger.error("Failed to scrape %s: %s", url, e)
             return None

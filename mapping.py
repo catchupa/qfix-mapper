@@ -326,6 +326,119 @@ CLOTHING_TYPE_MAP = {
     "polo shirts": "Top / T-shirt",
     "t-shirt": "T-shirt",
     "vests": "Unlined Jacket / Vest",
+    # Gina Tricot (URL-slug-style concatenated Swedish)
+    "trojor": "Knitted Jumper",
+    "klanningarjumpsuits": "Skirt / Dress",
+    "blusarskjortor": "Shirt / Blouse",
+    "coatsjackets": "Jacket",
+    "vaskorplanbocker": "Handbags",
+    "mossorvantar": "Hat",
+    "scarveshalsdukar": "Scarf / Shawl",
+    "badklader": "Swimsuit",
+    "skor": "Sneakers",
+    "balten": "Belt",
+    "knitted": "Knitted Jumper",
+    "festklader": "Skirt / Dress",
+    "necessarer": None,
+    "ovrigaaccessoarer": None,
+    "nyaaccessoarer": None,
+    "mobiltillbehor": None,
+    "bag-charms": None,
+    "beauty": None,
+    "printworks": None,
+    "self-care": None,
+    "underklader": "Underwear",
+    "vantar": "Gloves",
+    "solglasogon": None,
+    "haraccessoarer": None,
+    "seallaklader": None,  # "see all clothes" — too generic
+    "matchande-set": None,
+    "blue-light-glasogon": None,
+    "blue-light-glasögon": None,
+    # Lindex (URL-slug with hyphens converted to spaces)
+    "blusar skjortor": "Shirt / Blouse",
+    "toppar t shirts": "Top / T-shirt",
+    "trojor cardigans": "Knitted Jumper",
+    "kavajer tunna jackor": "Suit",
+    "ytterklader": "Jacket",
+    "vastar": "Unlined Jacket / Vest",
+    "shorts cykelbyxor": "Trousers / Shorts",
+    "byxor leggings": "Trousers",
+    "klanningar kjolar": "Skirt / Dress",
+    "klanningar tunikor": "Skirt / Dress",
+    "klanningar": "Skirt / Dress",
+    "jumpsuits onesies": "Overall",
+    "onesies": "Overall",
+    "bodies": "Underwear",
+    "strumpor strumpbyxor": "Underwear",
+    "strumpbyxor leggings": "Underwear",
+    "strumpor": "Underwear",
+    "trosor": "Underwear",
+    "bh": "Underwear",
+    "sovklader": "Underwear",
+    "linnen": "Underwear",
+    "morgonrockar": "Underwear",
+    "shaping": "Underwear",
+    "underklanningar": "Underwear",
+    "ullunderstall": "Midlayer",
+    "performancewear": "Sweatshirt / Hoodie",
+    "trojor koftor": "Knitted Jumper",
+    "skjortor blusar": "Shirt / Blouse",
+    "mammaunderklader": "Underwear",
+    "mammaklader": "Trousers",
+    "traningsklader": "Sweatshirt / Hoodie",
+    "badklader uv": "Swimsuit",
+    "tofflor": "Other shoes",
+    "nyfodd": "Underwear",
+    "klimakterieklader": "Underwear",
+    "set": "Other",
+    "flerpack": "Other",
+    # Non-clothing Lindex categories (marketing, guides, brands)
+    "kommer snart": None,
+    "bastsaljare": None,
+    "utvalda nyheter": None,
+    "premium quality": None,
+    "hollywhyte": None,
+    "basgarderoben": None,
+    "bh guide": None,
+    "kladvard": None,
+    "tillbehor": None,
+    "casual comfort": None,
+    "classic": None,
+    "feminine": None,
+    "preppy": None,
+    "oncemore": None,
+    "femaleengineering": None,
+    "closely": None,
+    "linen collection": None,
+    "nyheter": None,
+    "basplagg 3 for 2": None,
+    "outfits pa sociala medier": None,
+    "trosguide": None,
+    "byxguide": None,
+    "menstrosor guide": None,
+    "ellam": None,
+    "present baby": None,
+    "lindex": None,
+    # Lindex brand/license categories
+    "alla hjaertans dag": None,
+    "hellokitty": None,
+    "moomin": None,
+    "pawpatrol": None,
+    "gabbysdollhouse": None,
+    "lilostich": None,
+    "minecraft": None,
+    "bluey": None,
+    "capyfun": None,
+    "fallguys": None,
+    "hotwheels": None,
+    "pokemon": None,
+    "tocaboca": None,
+    "ninjago": None,
+    "sonic": None,
+    # Lindex age range categories
+    "2 8 ar": None,
+    "9 14 ar": None,
     # Nudie category prefixes (used as first segment before ">")
     "men's jeans": "Trousers",
     "women's jeans": "Trousers",
@@ -415,11 +528,46 @@ MATERIAL_MAP = {
     "vegetabiliskt garvat": "Leather/Suede",
     "leather": "Leather/Suede",
     "suede": "Leather/Suede",
+    # Synthetic / other textiles
+    "polyuretan": "Standard textile",
+    "polyuretane": "Standard textile",
+    "mocka": "Leather/Suede",
+    "merinoull": "Linen/Wool",
+    "merino wool": "Linen/Wool",
+    "alpaca": "Linen/Wool",
+    "alpacka": "Linen/Wool",
+    "yak": "Linen/Wool",
+    "mohair": "Linen/Wool",
+    "angora": "Linen/Wool",
+    "spandex": "Standard textile",
+    "cupro": "Standard textile",
+    "pet": "Standard textile",
+    "resår": "Standard textile",
+    "silikongummi": None,  # silicone rubber (non-textile)
+    "narvläder (nöt)": "Leather/Suede",
+    "nötmocka": "Leather/Suede",
+    "spaltläder (nöt)": "Leather/Suede",
+    "papper": None,
+    "trä": None,
+    "pctg": None,  # plastic (non-textile)
+    "glas": None,
+    "glass": None,
     # Down
     "dun": "Down",
     "down": "Down",
-    # Metals (jewelry — no QFix match)
+    # Non-textile materials (jewelry, plastics — no QFix match)
     "metall": None,
+    "plast": None,
+    "polykarbonat": None,
+    "legering": None,
+    "järn": None,
+    "rostfritt stål": None,
+    "cellulospropionat": None,
+    "cubic zirconia": None,
+    "strå": None,
+    "kosmetik": None,
+    "925 sterling silver": None,
+    "18k guld": None,
     "återvunnen metall": None,
     "mässing": None,
     "zink": None,
@@ -445,6 +593,8 @@ CATEGORY_MAP = {
     "businesskjortor": "Men's Clothing",
     "casualskjortor": "Men's Clothing",
     "accessoarer": "Accessories",
+    # Lindex
+    "underklader": "Women's Clothing",
 }
 
 
@@ -530,6 +680,39 @@ def map_clothing_type(kappahl_clothing_type):
 
     first = parts[0]
 
+    # Badklader sub-mapping (bikini vs swimsuit)
+    if first == "badklader" and len(parts) > 1:
+        sub = parts[1]
+        if "bikini" in sub:
+            return "Bikini"
+        if "baddrakt" in sub:
+            return "Swimsuit"
+        return "Swimsuit"
+
+    # Skor sub-mapping
+    if first == "skor" and len(parts) > 1:
+        sub = parts[1]
+        if "boots" in sub:
+            return "Boots"
+        if "hogklackade" in sub or "klack" in sub:
+            return "High heels"
+        if "sandaler" in sub:
+            return "Sandals"
+        if "sneakers" in sub:
+            return "Sneakers"
+        return "Other shoes"
+
+    # Trojor sub-mapping (sweaters vs hoodies)
+    if first == "trojor" and len(parts) > 1:
+        sub = parts[1]
+        if "hoodies" in sub or "hoodie" in sub:
+            return "Sweatshirt / Hoodie"
+        if "collegetrojor" in sub:
+            return "Sweatshirt / Hoodie"
+        if "vastar" in sub:
+            return "Unlined Jacket / Vest"
+        return "Knitted Jumper"
+
     # Accessories need sub-mapping
     if first == "accessoarer" and len(parts) > 1:
         for part in parts[1:]:
@@ -562,21 +745,34 @@ def map_material(kappahl_material):
     if not kappahl_material:
         return "Other/Unsure"
 
-    # Support both "75% Bomull, 21% Polyester" and "98% Cotton 2% Elastane"
-    matches = re.findall(r"(\d{1,3})%\s*(.+?)(?:,\s*|(?=\s+\d{1,3}%)|$)", kappahl_material)
-    # Also support reversed format: "Cotton 100%"
-    if not matches:
-        matches = re.findall(r"(.+?)\s+(\d{1,3})%", kappahl_material)
-        matches = [(pct, name) for name, pct in matches]
-    if not matches:
-        return "Other/Unsure"
+    def _resolve(matches):
+        """Find best material from (pct, name) pairs, highest % first."""
+        sorted_mats = sorted(matches, key=lambda x: int(x[0]), reverse=True)
+        for _pct, name in sorted_mats:
+            name = name.strip().lower()
+            qfix_mat = MATERIAL_MAP.get(name)
+            if qfix_mat:
+                return qfix_mat
+        return None
 
-    sorted_mats = sorted(matches, key=lambda x: int(x[0]), reverse=True)
-    for _pct, name in sorted_mats:
-        name = name.strip().lower()
-        qfix_mat = MATERIAL_MAP.get(name)
-        if qfix_mat:
-            return qfix_mat
+    # Try standard format first: "75% Bomull, 21% Polyester" / "98% Cotton 2% Elastane"
+    matches = re.findall(r"(\d{1,3})%\s*(.+?)(?:,\s*|(?=\s+\d{1,3}%)|$)", kappahl_material)
+    if matches:
+        result = _resolve(matches)
+        if result:
+            return result
+
+    # Try reversed format: "Bomull 57%, Polyamid 42%, Elastan 1%"
+    rev_matches = re.findall(r"([A-Za-z\u00C0-\u00FF][A-Za-z\u00C0-\u00FF ]*?)\s+(\d{1,3})%", kappahl_material)
+    if rev_matches:
+        result = _resolve([(pct, name) for name, pct in rev_matches])
+        if result:
+            return result
+
+    # Bare material name without percentage (e.g. "Metall", "Läder")
+    bare = kappahl_material.strip().lower()
+    if bare in MATERIAL_MAP:
+        return MATERIAL_MAP[bare] if MATERIAL_MAP[bare] else "Other/Unsure"
 
     return "Other/Unsure"
 
@@ -586,6 +782,51 @@ def map_category(kappahl_category):
     if not kappahl_category:
         return "Women's Clothing"
     return CATEGORY_MAP.get(kappahl_category.lower(), "Women's Clothing")
+
+
+# Subcategory-aware overrides for clothing type IDs.
+# The default QFIX_CLOTHING_TYPE_IDS uses Women's IDs for shared names
+# (e.g. "Shirt / Blouse" → 89). These overrides remap to the correct
+# gender-specific ID when the subcategory is known.
+_CLOTHING_TYPE_OVERRIDES = {
+    "Men's Clothing": {
+        "Shirt / Blouse": 96,       # → Shirts/t-shirts (Men's)
+        "Top / T-shirt": 96,        # → Shirts/t-shirts (Men's, no separate top)
+        "T-shirt": 96,              # → Shirts/t-shirts (Men's)
+        "Trousers / Shorts": 91,
+        "Sweatshirt / Hoodie": 94,
+        "Knitted Jumper": 95,
+        "Jacket": 93,
+        "Suit": 92,                 # → Suit / Smoking (Men's)
+    },
+    "Women's Clothing": {
+        "T-shirt": 90,              # → Top / T-shirt (Women's)
+    },
+    "Children's Clothing": {
+        "Shirt / Blouse": 194,      # → Shirt / t-shirt / Body
+        "Top / T-shirt": 194,       # → Shirt / t-shirt / Body
+        "T-shirt": 194,             # → Shirt / t-shirt / Body
+        "Trousers / Shorts": 104,
+        "Sweatshirt / Hoodie": 196,
+        "Knitted Jumper": 193,
+        "Jacket": 103,
+        "Suit": 195,                # → Suit / Smoking (Children's)
+    },
+}
+
+
+def _resolve_clothing_type_id(clothing_name, subcategory_name):
+    """Resolve a QFix clothing type name to the correct ID, considering gender.
+
+    Checks subcategory-specific overrides first, then falls back to the
+    default QFIX_CLOTHING_TYPE_IDS dict.
+    """
+    if not clothing_name:
+        return None
+    overrides = _CLOTHING_TYPE_OVERRIDES.get(subcategory_name, {})
+    if clothing_name in overrides:
+        return overrides[clothing_name]
+    return QFIX_CLOTHING_TYPE_IDS.get(clothing_name)
 
 
 def _resolve_material_id(clothing_type_id, material_name):
@@ -618,7 +859,7 @@ def map_product(product):
     material_name = map_material(product.get("material_composition"))
     subcategory_name = map_category(product.get("category"))
 
-    clothing_type_id = QFIX_CLOTHING_TYPE_IDS.get(clothing_name) if clothing_name else None
+    clothing_type_id = _resolve_clothing_type_id(clothing_name, subcategory_name)
     material_id = _resolve_material_id(clothing_type_id, material_name)
 
     qfix_url = None
