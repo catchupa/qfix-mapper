@@ -838,9 +838,11 @@ def unmapped_categories():
     conn = get_db()
     result = {}
 
+    known_brands = tuple(BRAND_ROUTES.values())
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
-            "SELECT DISTINCT brand, clothing_type, material_composition, category FROM products_unified WHERE clothing_type IS NOT NULL ORDER BY brand, clothing_type"
+            "SELECT DISTINCT brand, clothing_type, material_composition, category FROM products_unified WHERE clothing_type IS NOT NULL AND brand IN %s ORDER BY brand, clothing_type",
+            (known_brands,),
         )
         all_rows = cur.fetchall()
 
@@ -1026,12 +1028,14 @@ def remap_suggestions():
         return jsonify({"error": "type must be 'clothing_type' or 'material'"}), 400
 
     # Gather unmapped items (reuse /unmapped logic)
+    known_brands = tuple(BRAND_ROUTES.values())
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
             "SELECT DISTINCT brand, clothing_type, material_composition, category "
             "FROM products_unified WHERE clothing_type IS NOT NULL "
-            "ORDER BY brand, clothing_type"
+            "AND brand IN %s ORDER BY brand, clothing_type",
+            (known_brands,),
         )
         all_rows = cur.fetchall()
     conn.close()
