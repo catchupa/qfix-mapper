@@ -4,6 +4,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_WRITE_URL = os.environ.get("DATABASE_WRITE_URL")
 
 # All columns in products_unified (excluding id and updated_at)
 PRODUCT_COLUMNS = [
@@ -16,6 +17,13 @@ PRODUCT_COLUMNS = [
 
 def get_connection():
     conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = True
+    return conn
+
+
+def get_write_connection():
+    url = DATABASE_WRITE_URL or DATABASE_URL
+    conn = psycopg2.connect(url)
     conn.autocommit = True
     return conn
 

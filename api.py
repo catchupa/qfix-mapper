@@ -17,7 +17,7 @@ from mapping import (
     CLOTHING_TYPE_MAP, MATERIAL_MAP, _KEYWORD_CLOTHING_MAP,
 )
 from mapping_v2 import map_product_v2
-from database import create_table, upsert_product, DATABASE_URL
+from database import create_table, upsert_product, DATABASE_URL, DATABASE_WRITE_URL
 from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
 
@@ -213,6 +213,13 @@ BRAND_SLUG = {v: k for k, v in BRAND_ROUTES.items()}
 
 def get_db():
     conn = psycopg2.connect(DATABASE_URL)
+    conn.autocommit = True
+    return conn
+
+
+def get_write_db():
+    url = DATABASE_WRITE_URL or DATABASE_URL
+    conn = psycopg2.connect(url)
     conn.autocommit = True
     return conn
 
@@ -415,7 +422,7 @@ def v2_upload():
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
-    conn = get_db()
+    conn = get_write_db()
     create_table(conn)
     count = 0
     for prod in products:
