@@ -297,6 +297,48 @@ def _extract_material(soup):
     return None
 
 
+def _extract_current_page(soup):
+    """Extract the window.CURRENT_PAGE JSON object from inline scripts."""
+    for script in soup.find_all("script"):
+        script_text = script.string or ""
+        match = re.search(r'window\.CURRENT_PAGE\s*=\s*(\{.*\})\s*;?\s*$', script_text, re.DOTALL)
+        if match:
+            try:
+                return json.loads(match.group(1))
+            except (json.JSONDecodeError, TypeError):
+                pass
+    return {}
+
+
+def _extract_care_text(page_data):
+    """Extract care/washing instructions from CURRENT_PAGE data."""
+    washing = page_data.get("washingInstructions")
+    if not washing:
+        return None
+    parts = []
+    temp = washing.get("washingTemperature")
+    if temp:
+        parts.append(temp)
+    for instr in washing.get("washingInstructions", []):
+        parts.append(instr)
+    for instr in washing.get("additionalInstructions", []):
+        parts.append(instr)
+    return ". ".join(parts) if parts else None
+
+
+def _extract_country_of_origin(page_data):
+    """Extract country of origin from traceability data in CURRENT_PAGE."""
+    traceability = page_data.get("traceability")
+    if not traceability or not isinstance(traceability, list):
+        return None
+    countries = []
+    for entry in traceability:
+        country = entry.get("country")
+        if country and country not in countries:
+            countries.append(country)
+    return ", ".join(countries) if countries else None
+
+
 def scrape_product(url, session=None):
     """Scrape a single product page and return a dict."""
     getter = session or requests
@@ -313,6 +355,8 @@ def scrape_product(url, session=None):
     if image_url:
         _download_image(image_url, product_id, store="kappahl")
 
+    page_data = _extract_current_page(soup)
+
     return {
         "product_id": product_id,
         "product_name": _extract_product_name(soup),
@@ -324,6 +368,8 @@ def scrape_product(url, session=None):
         "color": _extract_color(soup),
         "brand": _extract_brand(soup),
         "image_url": image_url,
+        "care_text": _extract_care_text(page_data),
+        "country_of_origin": _extract_country_of_origin(page_data),
     }
 
 
