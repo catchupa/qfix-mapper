@@ -278,7 +278,7 @@ def get_brand_product(brand_slug, product_id):
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
-            "SELECT product_id, product_name, category, clothing_type, material_composition, product_url, description, color, brand, image_url FROM products_unified WHERE brand = %s AND product_id = %s",
+            "SELECT product_id, product_name, category, clothing_type, material_composition, materials, product_url, description, color, brand, image_url, gtin, article_number, care_text, size, country_of_origin FROM products_unified WHERE brand = %s AND product_id = %s",
             (brand_name, product_id),
         )
         row = cur.fetchone()
@@ -336,7 +336,7 @@ def list_brand_products(brand_slug):
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
-            "SELECT product_id, product_name, category, clothing_type, description, color, brand FROM products_unified WHERE brand = %s ORDER BY product_id LIMIT 100",
+            "SELECT product_id, product_name, category, clothing_type, material_composition, materials, description, color, brand, gtin, article_number, care_text, size, country_of_origin FROM products_unified WHERE brand = %s ORDER BY product_id LIMIT 100",
             (brand_name,),
         )
         rows = cur.fetchall()
