@@ -186,8 +186,10 @@
 
       <hr class="kh-divider">
 
-      <!-- QFix Repair Widget -->
-      <div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-theme="light" data-lazy></div>
+      <!-- QFix Widgets -->
+      <div data-qfix data-product-id="530956" data-brand="kappahl" data-theme="light" data-lazy></div>
+      <div data-qfix data-product-id="530956" data-brand="kappahl" data-theme="light" data-lazy data-service-id="39" data-label="Måttanpassa" data-icon="ruler"></div>
+      <div data-qfix data-product-id="530956" data-brand="kappahl" data-theme="light" data-lazy data-service-id="42" data-label="Skötsel" data-icon="droplets"></div>
 
       <hr class="kh-divider">
 
@@ -218,8 +220,9 @@
       var params = new URLSearchParams(location.search);
       var pid = params.get("productId");
       if (pid) {
-        var el = document.getElementById("qfix-repair");
-        el.setAttribute("data-product-id", pid);
+        document.querySelectorAll("[data-qfix]").forEach(function (el) {
+          el.setAttribute("data-product-id", pid);
+        });
         document.querySelector(".kh-title").textContent = "Product " + pid;
         var artNr = document.querySelector(".kh-details:last-of-type p");
         if (artNr) artNr.textContent = pid;

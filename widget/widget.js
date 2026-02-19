@@ -28,10 +28,24 @@
     "@keyframes qfix-pulse{0%,80%,100%{opacity:.3}40%{opacity:1}}";
   document.head.appendChild(style);
 
-  var WRENCH_SVG =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
-    '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>' +
-    "</svg>";
+  var ICONS = {
+    wrench:
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>' +
+      "</svg>",
+    ruler:
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/>' +
+      '<path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/>' +
+      "</svg>",
+    droplets:
+      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/>' +
+      '<path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/>' +
+      "</svg>"
+  };
+
+  var DEFAULT_ICON = "wrench";
 
   function showLoading(el) {
     el.innerHTML =
@@ -42,25 +56,25 @@
       "</div>";
   }
 
-  function renderButton(el, qfixUrl, theme) {
+  function renderButton(el, qfixUrl, theme, label, icon) {
     var btnClass = theme === "dark" ? "qfix-btn" : "qfix-btn qfix-btn--light";
     el.innerHTML =
       '<a class="' + btnClass + '" href="' + qfixUrl + '" target="_blank" rel="noopener">' +
-      WRENCH_SVG +
-      "Reparera" +
+      (ICONS[icon] || ICONS[DEFAULT_ICON]) +
+      label +
       "</a>";
   }
 
-  function renderPlaceholder(el, theme) {
+  function renderPlaceholder(el, theme, label, icon) {
     var btnClass = theme === "dark" ? "qfix-btn" : "qfix-btn qfix-btn--light";
     el.innerHTML =
       '<button type="button" class="' + btnClass + ' qfix-btn--lazy">' +
-      WRENCH_SVG +
-      "Reparera" +
+      (ICONS[icon] || ICONS[DEFAULT_ICON]) +
+      label +
       "</button>";
   }
 
-  function fetchAndRender(el, brand, productId, apiKey, theme) {
+  function fetchAndRender(el, brand, productId, apiKey, theme, serviceId, label, icon) {
     showLoading(el);
 
     var fetchOpts = {};
@@ -79,7 +93,10 @@
           el.innerHTML = "";
           return;
         }
-        renderButton(el, qfixUrl, theme);
+        if (serviceId) {
+          qfixUrl += (qfixUrl.indexOf("?") === -1 ? "?" : "&") + "service_id=" + encodeURIComponent(serviceId);
+        }
+        renderButton(el, qfixUrl, theme, label, icon);
       })
       .catch(function () {
         el.innerHTML = "";
@@ -95,6 +112,9 @@
       var theme = el.getAttribute("data-theme") || "light";
       var apiKey = el.getAttribute("data-api-key");
       var lazy = el.hasAttribute("data-lazy");
+      var serviceId = el.getAttribute("data-service-id");
+      var label = el.getAttribute("data-label") || "Reparera";
+      var icon = el.getAttribute("data-icon") || DEFAULT_ICON;
 
       if (!productId) return;
 
@@ -102,13 +122,13 @@
       el.setAttribute("data-theme", theme);
 
       if (lazy) {
-        renderPlaceholder(el, theme);
+        renderPlaceholder(el, theme, label, icon);
         el.addEventListener("click", function handler() {
           el.removeEventListener("click", handler);
-          fetchAndRender(el, brand, productId, apiKey, theme);
+          fetchAndRender(el, brand, productId, apiKey, theme, serviceId, label, icon);
         });
       } else {
-        fetchAndRender(el, brand, productId, apiKey, theme);
+        fetchAndRender(el, brand, productId, apiKey, theme, serviceId, label, icon);
       }
     });
   }
