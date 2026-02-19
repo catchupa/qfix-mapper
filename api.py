@@ -1223,6 +1223,30 @@ def remap_apply():
     })
 
 
+# --- Health check ---
+
+@app.route("/health")
+def health():
+    """Health check endpoint.
+    ---
+    tags:
+      - Health
+    responses:
+      200:
+        description: Service is healthy
+      500:
+        description: Database unreachable
+    """
+    try:
+        conn = get_db()
+        with conn.cursor() as cur:
+            cur.execute("SELECT 1")
+        conn.close()
+        return jsonify({"status": "ok"})
+    except Exception as e:
+        return jsonify({"status": "error", "detail": str(e)}), 500
+
+
 # --- QFix Widget Demo ---
 
 WIDGET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widget")
