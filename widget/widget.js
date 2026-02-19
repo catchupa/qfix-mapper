@@ -47,6 +47,25 @@
 
   var DEFAULT_ICON = "wrench";
 
+  // Map data-service values to service category slug suffixes and defaults
+  var SERVICE_MAP = {
+    repair:     { slug: "repair",     icon: "wrench",   label: "Reparera" },
+    adjustment: { slug: "adjustment", icon: "ruler",    label: "Måttanpassa" },
+    washing:    { slug: "washing",    icon: "droplets", label: "Skötsel" }
+  };
+
+  function findServiceId(services, serviceKey) {
+    if (!services || !serviceKey) return null;
+    var mapped = SERVICE_MAP[serviceKey];
+    if (!mapped) return null;
+    for (var i = 0; i < services.length; i++) {
+      if (services[i].slug && services[i].slug.indexOf(mapped.slug) !== -1) {
+        return services[i].id;
+      }
+    }
+    return null;
+  }
+
   function showLoading(el) {
     el.innerHTML =
       '<div class="qfix-loading">' +
@@ -74,7 +93,7 @@
       "</button>";
   }
 
-  function fetchAndRender(el, brand, productId, apiKey, theme, serviceId, label, icon) {
+  function fetchAndRender(el, brand, productId, apiKey, theme, serviceKey, label, icon) {
     showLoading(el);
 
     var fetchOpts = {};
@@ -93,9 +112,17 @@
           el.innerHTML = "";
           return;
         }
-        if (serviceId) {
-          qfixUrl += (qfixUrl.indexOf("?") === -1 ? "?" : "&") + "service_id=" + encodeURIComponent(serviceId);
+
+        var serviceId = findServiceId(data.qfix.qfix_services, serviceKey);
+        if (serviceKey && !serviceId) {
+          // Requested service not available for this product
+          el.innerHTML = "";
+          return;
         }
+        if (serviceId) {
+          qfixUrl += (qfixUrl.indexOf("?") === -1 ? "?" : "&") + "service_id=" + serviceId;
+        }
+
         renderButton(el, qfixUrl, theme, label, icon);
       })
       .catch(function () {
@@ -112,9 +139,12 @@
       var theme = el.getAttribute("data-theme") || "light";
       var apiKey = el.getAttribute("data-api-key");
       var lazy = el.hasAttribute("data-lazy");
-      var serviceId = el.getAttribute("data-service-id");
-      var label = el.getAttribute("data-label") || "Reparera";
-      var icon = el.getAttribute("data-icon") || DEFAULT_ICON;
+      var serviceKey = el.getAttribute("data-service");
+
+      // Resolve defaults from SERVICE_MAP
+      var mapped = serviceKey && SERVICE_MAP[serviceKey];
+      var label = el.getAttribute("data-label") || (mapped ? mapped.label : "Reparera");
+      var icon = el.getAttribute("data-icon") || (mapped ? mapped.icon : DEFAULT_ICON);
 
       if (!productId) return;
 
@@ -125,10 +155,10 @@
         renderPlaceholder(el, theme, label, icon);
         el.addEventListener("click", function handler() {
           el.removeEventListener("click", handler);
-          fetchAndRender(el, brand, productId, apiKey, theme, serviceId, label, icon);
+          fetchAndRender(el, brand, productId, apiKey, theme, serviceKey, label, icon);
         });
       } else {
-        fetchAndRender(el, brand, productId, apiKey, theme, serviceId, label, icon);
+        fetchAndRender(el, brand, productId, apiKey, theme, serviceKey, label, icon);
       }
     });
   }
