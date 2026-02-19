@@ -1,5 +1,6 @@
 import logging
 import sys
+import threading
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -32,17 +33,42 @@ def main():
 
     logger.info("Starting to scrape %d products...", len(url_to_category))
     count = {"saved": 0}
+    lock = threading.Lock()
+
+    pending = []
 
     def on_product(product):
         product["sub_brand"] = product.get("brand")
         product["brand"] = "Lindex"
-        upsert_product(conn, product)
-        count["saved"] += 1
+        with lock:
+            pending.append(product)
+            if len(pending) >= 50:
+                _flush(pending, count)
+
+    def _flush(products, cnt):
+        if not products:
+            return
+        batch = list(products)
+        products.clear()
+        for attempt in range(3):
+            try:
+                c = get_connection()
+                for p in batch:
+                    upsert_product(c, p)
+                    cnt["saved"] += 1
+                c.close()
+                return
+            except Exception as e:
+                logger.warning("DB write failed (attempt %d/3): %s", attempt + 1, e)
+                if attempt < 2:
+                    import time
+                    time.sleep(2 ** attempt)
+        logger.error("Giving up on batch of %d products after 3 attempts", len(batch))
 
     scrape_all(url_to_category, callback=on_product, session=session, workers=3, delay=0.3)
+    _flush(pending, count)
 
     logger.info("Done! Saved %d products total.", count["saved"])
-    conn.close()
 
 
 if __name__ == "__main__":

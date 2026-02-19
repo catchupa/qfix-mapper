@@ -235,6 +235,34 @@ def _extract_material(soup):
     return None
 
 
+def _extract_next_data(soup):
+    """Extract __NEXT_DATA__ product object from inline script."""
+    script = soup.select_one('script#__NEXT_DATA__')
+    if not script or not script.string:
+        return {}
+    try:
+        data = json.loads(script.string)
+        return data.get("props", {}).get("pageProps", {}).get("product", {}).get("product", {})
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        return {}
+
+
+def _extract_care_text(next_data):
+    """Extract washing instructions from __NEXT_DATA__ product data."""
+    washing = next_data.get("washingInstructions")
+    if washing and isinstance(washing, str):
+        return washing.strip()
+    return None
+
+
+def _extract_country_of_origin(next_data):
+    """Extract country of origin from __NEXT_DATA__ product data."""
+    origin = next_data.get("countryOfOrigin")
+    if origin and isinstance(origin, str):
+        return origin.strip()
+    return None
+
+
 def scrape_product(url, session=None):
     """Scrape a single Gina Tricot product page and return a dict."""
     getter = session or requests
@@ -251,6 +279,8 @@ def scrape_product(url, session=None):
     if image_url:
         _download_image(image_url, product_id, store="ginatricot")
 
+    next_data = _extract_next_data(soup)
+
     return {
         "product_id": product_id,
         "product_name": _extract_product_name(soup),
@@ -262,6 +292,8 @@ def scrape_product(url, session=None):
         "color": _extract_color(soup),
         "brand": _extract_brand(soup),
         "image_url": image_url,
+        "care_text": _extract_care_text(next_data),
+        "country_of_origin": _extract_country_of_origin(next_data),
     }
 
 

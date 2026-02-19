@@ -90,6 +90,10 @@ _COLOR_PATTERN = re.compile(
     r'pr_color.*?\\"value\\":\\"([^\\]+)\\"'
 )
 
+_MADE_IN_PATTERN = re.compile(
+    r'pr_made_in.*?\\"value\\":\\"([^\\]+)\\"'
+)
+
 
 def _extract_material_composition(html):
     """Extract material composition from the Next.js RSC flight payload.
@@ -104,6 +108,12 @@ def _extract_material_composition(html):
 def _extract_color(html):
     """Extract color from the Next.js RSC flight payload (pr_color attribute)."""
     m = _COLOR_PATTERN.search(html)
+    return m.group(1) if m else None
+
+
+def _extract_country_of_origin(html):
+    """Extract country of origin from the Next.js RSC flight payload (pr_made_in)."""
+    m = _MADE_IN_PATTERN.search(html)
     return m.group(1) if m else None
 
 
@@ -228,6 +238,7 @@ def scrape_product(url, session=None):
         "color": _extract_color(html),
         "brand": _extract_brand(product_data),
         "image_url": _extract_image_url(product_data, soup),
+        "country_of_origin": _extract_country_of_origin(html),
     }
 
 

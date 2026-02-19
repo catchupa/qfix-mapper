@@ -66,7 +66,8 @@ def _parse_nuxt_data(html):
         if isinstance(item, dict) and product_keys.issubset(item.keys()):
             result = {}
             for key in ("styleId", "name", "description", "composition",
-                        "colorName", "colorGroup", "washingInstructions", "liningComp"):
+                        "colorName", "colorGroup", "washingInstructions",
+                        "careInstructions", "liningComp"):
                 if key not in item:
                     continue
                 ref = item[key]
@@ -213,6 +214,18 @@ def scrape_product(url, session=None, category=None, clothing_type=None):
     color = nuxt.get("colorName") or nuxt.get("colorGroup")
     image_url = json_ld.get("image")
 
+    # Build care_text from washingInstructions and careInstructions
+    care_parts = []
+    washing = nuxt.get("washingInstructions")
+    if isinstance(washing, str) and washing:
+        care_parts.append(washing)
+    care = nuxt.get("careInstructions")
+    if isinstance(care, list):
+        care_parts.extend(str(c) for c in care if c)
+    elif isinstance(care, str) and care:
+        care_parts.append(care)
+    care_text = ". ".join(care_parts) if care_parts else None
+
     return {
         "product_id": product_id,
         "product_name": product_name,
@@ -224,6 +237,7 @@ def scrape_product(url, session=None, category=None, clothing_type=None):
         "color": color,
         "brand": "Lindex",
         "image_url": image_url,
+        "care_text": care_text,
     }
 
 

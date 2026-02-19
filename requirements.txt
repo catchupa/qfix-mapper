@@ -5,6 +5,7 @@ psycopg2-binary
 python-dotenv
 flask
 flask-cors
+Flask-Limiter
 openpyxl
 anthropic
 Pillow

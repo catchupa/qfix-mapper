@@ -161,6 +161,30 @@ def _extract_category(url):
     return None
 
 
+def _extract_next_data_product(soup):
+    """Extract productData from __NEXT_DATA__ inline script."""
+    script = soup.select_one('script#__NEXT_DATA__')
+    if not script or not script.string:
+        return {}
+    try:
+        data = json.loads(script.string)
+        return data.get("props", {}).get("pageProps", {}).get("productData") or {}
+    except (json.JSONDecodeError, TypeError, AttributeError):
+        return {}
+
+
+def _extract_care_text(next_product):
+    """Extract care instructions from __NEXT_DATA__ productData.
+
+    Eton stores care instructions as a Contentful asset ID (short alphanumeric string)
+    which is not human-readable text. Only return if it looks like actual text.
+    """
+    care = next_product.get("careInstructions")
+    if care and isinstance(care, str) and len(care) > 10:
+        return care.strip()
+    return None
+
+
 def scrape_product(url, session=None):
     """Scrape a single Eton product page and return a dict."""
     getter = session or requests
@@ -176,6 +200,7 @@ def scrape_product(url, session=None):
         return None
 
     clothing_type = _extract_clothing_type(soup)
+    next_product = _extract_next_data_product(soup)
 
     return {
         "product_id": product_id,
@@ -188,6 +213,7 @@ def scrape_product(url, session=None):
         "color": _extract_color(product_data),
         "brand": "Eton",
         "image_url": _extract_image_url(soup),
+        "care_text": _extract_care_text(next_product),
     }
 
 

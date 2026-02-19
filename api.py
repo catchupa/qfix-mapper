@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import tempfile
+import time as _time
 
 import anthropic
 import psycopg2
@@ -9,6 +10,8 @@ import requests as http_requests
 from psycopg2.extras import RealDictCursor
 from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flasgger import Swagger
 
 from mapping import (
@@ -23,6 +26,23 @@ from vision import classify_and_map
 
 app = Flask(__name__)
 CORS(app)
+
+
+# ── Rate limiting ─────────────────────────────────────────────────────────
+def _rate_limit_key():
+    """Use API key if provided, otherwise fall back to IP address."""
+    api_key = request.headers.get("X-API-Key", "")
+    if api_key:
+        return "key:" + api_key
+    return "ip:" + get_remote_address()
+
+
+limiter = Limiter(
+    app=app,
+    key_func=_rate_limit_key,
+    default_limits=["100 per minute", "1000 per hour"],
+    storage_uri="memory://",
+)
 
 # ── API key authentication ────────────────────────────────────────────────
 # Format: "brand1:key1,brand2:key2"  — if unset, auth is disabled.
@@ -88,6 +108,28 @@ swagger_template = {
 swagger = Swagger(app, config=swagger_config, template=swagger_template)
 
 logger = logging.getLogger(__name__)
+
+
+# ── Request logging ───────────────────────────────────────────────────────
+@app.before_request
+def _log_request_start():
+    request._start_time = _time.time()
+
+
+@app.after_request
+def _log_request(response):
+    duration_ms = (_time.time() - getattr(request, "_start_time", _time.time())) * 1000
+    logger.info("%s %s %s %.1fms", request.method, request.path,
+                response.status_code, duration_ms)
+    # Add Cache-Control for read-only GET product endpoints
+    if (request.method == "GET" and response.status_code == 200
+            and request.path not in ("/health", "/apidocs/", "/apispec.json")):
+        if "/product/" in request.path:
+            response.headers.setdefault("Cache-Control", "public, max-age=600")
+        elif "/products" in request.path:
+            response.headers.setdefault("Cache-Control", "public, max-age=300")
+    return response
+
 
 # ── QFix catalog cache ────────────────────────────────────────────────────
 
@@ -383,6 +425,7 @@ def list_products():
 # ── v2 endpoints (T4V protocol xlsx) ─────────────────────────────────────
 
 @app.route("/v2/upload", methods=["POST"])
+@limiter.limit("10 per minute")
 def v2_upload():
     """Upload a T4V protocol xlsx file.
     ---
@@ -786,6 +829,7 @@ ALLOWED_IMAGE_TYPES = {
 
 
 @app.route("/identify", methods=["POST"])
+@limiter.limit("20 per minute")
 def identify():
     """Upload a garment image for identification and QFix mapping.
     ---
@@ -1006,6 +1050,7 @@ Respond with ONLY a JSON object, no other text:
 
 
 @app.route("/remap")
+@limiter.limit("10 per minute")
 def remap_suggestions():
     """Use Claude AI to analyze unmapped items and suggest new mapping rules.
     ---
@@ -1146,6 +1191,7 @@ def remap_suggestions():
 
 
 @app.route("/remap/apply", methods=["POST"])
+@limiter.limit("10 per minute")
 def remap_apply():
     """Apply AI-suggested mapping rules (in-memory, resets on redeploy).
     ---
@@ -1233,6 +1279,7 @@ def remap_apply():
 # --- Health check ---
 
 @app.route("/health")
+@limiter.exempt
 def health():
     """Health check endpoint.
     ---
