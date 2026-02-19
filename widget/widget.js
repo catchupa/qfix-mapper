@@ -33,6 +33,59 @@
     '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>' +
     "</svg>";
 
+  function showLoading(el) {
+    el.innerHTML =
+      '<div class="qfix-loading">' +
+      '<span class="qfix-loading-dot"></span>' +
+      '<span class="qfix-loading-dot"></span>' +
+      '<span class="qfix-loading-dot"></span>' +
+      "</div>";
+  }
+
+  function renderButton(el, qfixUrl, theme) {
+    var btnClass = theme === "dark" ? "qfix-btn" : "qfix-btn qfix-btn--light";
+    el.innerHTML =
+      '<a class="' + btnClass + '" href="' + qfixUrl + '" target="_blank" rel="noopener">' +
+      WRENCH_SVG +
+      "Reparera" +
+      "</a>";
+  }
+
+  function renderPlaceholder(el, theme) {
+    var btnClass = theme === "dark" ? "qfix-btn" : "qfix-btn qfix-btn--light";
+    el.innerHTML =
+      '<button type="button" class="' + btnClass + ' qfix-btn--lazy">' +
+      WRENCH_SVG +
+      "Reparera" +
+      "</button>";
+  }
+
+  function fetchAndRender(el, brand, productId, apiKey, theme) {
+    showLoading(el);
+
+    var fetchOpts = {};
+    if (apiKey) {
+      fetchOpts.headers = { "X-API-Key": apiKey };
+    }
+
+    fetch(API_BASE + "/" + brand + "/product/" + productId, fetchOpts)
+      .then(function (res) {
+        if (!res.ok) throw new Error("Not found");
+        return res.json();
+      })
+      .then(function (data) {
+        var qfixUrl = data.qfix && data.qfix.qfix_url;
+        if (!qfixUrl) {
+          el.innerHTML = "";
+          return;
+        }
+        renderButton(el, qfixUrl, theme);
+      })
+      .catch(function () {
+        el.innerHTML = "";
+      });
+  }
+
   function initWidgets() {
     var elements = document.querySelectorAll("[data-qfix], #qfix-repair");
 
@@ -41,49 +94,26 @@
       var brand = el.getAttribute("data-brand") || "kappahl";
       var theme = el.getAttribute("data-theme") || "light";
       var apiKey = el.getAttribute("data-api-key");
+      var lazy = el.hasAttribute("data-lazy");
 
       if (!productId) return;
 
       el.classList.add("qfix-widget");
       el.setAttribute("data-theme", theme);
 
-      // Show loading state
-      el.innerHTML =
-        '<div class="qfix-loading">' +
-        '<span class="qfix-loading-dot"></span>' +
-        '<span class="qfix-loading-dot"></span>' +
-        '<span class="qfix-loading-dot"></span>' +
-        "</div>";
-
-      var fetchOpts = {};
-      if (apiKey) {
-        fetchOpts.headers = { "X-API-Key": apiKey };
-      }
-
-      fetch(API_BASE + "/" + brand + "/product/" + productId, fetchOpts)
-        .then(function (res) {
-          if (!res.ok) throw new Error("Not found");
-          return res.json();
-        })
-        .then(function (data) {
-          var qfixUrl = data.qfix && data.qfix.qfix_url;
-          if (!qfixUrl) {
-            el.innerHTML = "";
-            return;
-          }
-
-          var btnClass = theme === "dark" ? "qfix-btn" : "qfix-btn qfix-btn--light";
-          el.innerHTML =
-            '<a class="' + btnClass + '" href="' + qfixUrl + '" target="_blank" rel="noopener">' +
-            WRENCH_SVG +
-            "Reparera" +
-            "</a>";
-        })
-        .catch(function () {
-          el.innerHTML = "";
+      if (lazy) {
+        renderPlaceholder(el, theme);
+        el.addEventListener("click", function handler() {
+          el.removeEventListener("click", handler);
+          fetchAndRender(el, brand, productId, apiKey, theme);
         });
+      } else {
+        fetchAndRender(el, brand, productId, apiKey, theme);
+      }
     });
   }
+
+  window.QFixWidget = { init: initWidgets };
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", initWidgets);
