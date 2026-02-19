@@ -47,11 +47,13 @@ Add this script tag at the bottom of your page, before `</body>`:
 ### Complete example
 
 ```html
-<!-- Eager: fetches on page load -->
+<!-- Repair button (eager: fetches on page load) -->
 <div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here"></div>
 
-<!-- Or lazy: fetches only when clicked -->
-<div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here" data-lazy></div>
+<!-- Or lazy: all three service buttons, fetch only when clicked -->
+<div data-qfix data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here" data-lazy></div>
+<div data-qfix data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here" data-lazy data-service="adjustment"></div>
+<div data-qfix data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here" data-lazy data-service="washing"></div>
 
 <!-- Load the widget (before </body>) -->
 <script src="https://kappahl-qfix.fly.dev/widget.js"></script>
@@ -124,9 +126,40 @@ The widget comes in two variants. Set the `data-theme` attribute to match your p
 <div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-theme="dark"></div>
 ```
 
+### Service type
+
+By default the widget links to the general repair page. Use `data-service` to link directly to a specific service category. The widget looks up the service ID from the API — if the service isn't available for a given product, the button is hidden.
+
+| Value        | Service                | Default label  | Icon     |
+|--------------|------------------------|----------------|----------|
+| *(none)*     | General repair page    | Reparera       | Wrench   |
+| `repair`     | Repair                 | Reparera       | Wrench   |
+| `adjustment` | Adjust measurements    | Måttanpassa    | Ruler    |
+| `washing`    | Washing and care       | Skötsel        | Droplets |
+
+```html
+<div data-qfix data-product-id="530956" data-brand="kappahl" data-service="adjustment" data-lazy></div>
+```
+
+You can override the default label and icon with `data-label` and `data-icon`:
+
+```html
+<div data-qfix data-product-id="530956" data-brand="kappahl" data-service="washing" data-label="Tvätt & vård" data-icon="droplets" data-lazy></div>
+```
+
+Available icons: `wrench`, `ruler`, `droplets`.
+
 ### Multiple buttons on the same page
 
-If you need more than one repair button on a page (e.g. a product bundle), use `data-qfix` instead of `id`:
+Use `data-qfix` instead of `id` when placing multiple buttons on a page — for example to offer repair, adjustment, and care for the same product:
+
+```html
+<div data-qfix data-product-id="530956" data-brand="kappahl" data-lazy></div>
+<div data-qfix data-product-id="530956" data-brand="kappahl" data-lazy data-service="adjustment"></div>
+<div data-qfix data-product-id="530956" data-brand="kappahl" data-lazy data-service="washing"></div>
+```
+
+This also works for product bundles with different product IDs:
 
 ```html
 <div data-qfix data-product-id="530956" data-brand="kappahl"></div>
