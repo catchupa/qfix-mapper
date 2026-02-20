@@ -402,6 +402,21 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                 qfix_url += ("&" if "?" in qfix_url else "?") + f"service_id={svc['id']}"
                 break
 
+        # Add top-ranked action IDs as variants_id
+        ct_id = qfix.get("qfix_clothing_type_id")
+        mat_id = qfix.get("qfix_material_id")
+        if ct_id and mat_id:
+            ranking_key_map = {"repair": "repair", "adjustment": "adjustment", "washing": "care", "customize": "other"}
+            ranking_key = ranking_key_map.get(service_key)
+            if ranking_key:
+                ranking_conn = get_db()
+                top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
+                ranking_conn.close()
+                actions = top_actions.get(ranking_key, [])
+                if actions:
+                    ids = ",".join(str(a["id"]) for a in actions)
+                    qfix_url += ("&" if "?" in qfix_url else "?") + f"variants_id={ids}"
+
     return redirect(qfix_url, code=302)
 
 
