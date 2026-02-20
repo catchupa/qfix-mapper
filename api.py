@@ -340,36 +340,8 @@ def get_brand_product(brand_slug, product_id):
     })
 
 
-@app.route("/<brand_slug>/repair/")
-def redirect_to_repair(brand_slug):
-    """Redirect to QFix repair booking page for a product.
-
-    Usage: /<brand>/repair/?productId=534008&service=adjustment
-    ---
-    tags:
-      - Widget
-    parameters:
-      - name: brand_slug
-        in: path
-        type: string
-        required: true
-        description: "Brand slug (kappahl, ginatricot, eton, nudie, lindex)"
-      - name: productId
-        in: query
-        type: string
-        required: true
-        description: Product ID
-      - name: service
-        in: query
-        type: string
-        required: false
-        description: "Service type (repair, adjustment, washing)"
-    responses:
-      302:
-        description: Redirect to QFix booking page
-      404:
-        description: Product not found or no repair available
-    """
+def _redirect_to_qfix(brand_slug, service_key=None):
+    """Shared helper: look up product, map to QFix, redirect with optional service_id."""
     brand_name = BRAND_ROUTES.get(brand_slug)
     if not brand_name:
         return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
@@ -397,17 +369,92 @@ def redirect_to_repair(brand_slug):
     if not qfix_url:
         return jsonify({"error": f"No repair mapping available for product {product_id}"}), 404
 
-    service_key = request.args.get("service")
     if service_key:
         services = qfix.get("qfix_services", [])
-        slug_match = {"repair": "repair", "adjustment": "adjustment", "washing": "washing"}.get(service_key)
-        if slug_match and services:
-            for svc in services:
-                if svc.get("slug") and slug_match in svc["slug"]:
-                    qfix_url += ("&" if "?" in qfix_url else "?") + f"service_id={svc['id']}"
-                    break
+        for svc in services:
+            if svc.get("slug") and service_key in svc["slug"]:
+                qfix_url += ("&" if "?" in qfix_url else "?") + f"service_id={svc['id']}"
+                break
 
     return redirect(qfix_url, code=302)
+
+
+@app.route("/<brand_slug>/repair/")
+def redirect_to_repair(brand_slug):
+    """Redirect to QFix repair booking page.
+
+    Usage: /<brand>/repair/?productId=534008
+    ---
+    tags:
+      - Redirect
+    parameters:
+      - name: brand_slug
+        in: path
+        type: string
+        required: true
+      - name: productId
+        in: query
+        type: string
+        required: true
+    responses:
+      302:
+        description: Redirect to QFix booking page with service_id for repair
+      404:
+        description: Product not found or no repair available
+    """
+    return _redirect_to_qfix(brand_slug, service_key="repair")
+
+
+@app.route("/<brand_slug>/adjustment/")
+def redirect_to_adjustment(brand_slug):
+    """Redirect to QFix adjustment booking page.
+
+    Usage: /<brand>/adjustment/?productId=534008
+    ---
+    tags:
+      - Redirect
+    parameters:
+      - name: brand_slug
+        in: path
+        type: string
+        required: true
+      - name: productId
+        in: query
+        type: string
+        required: true
+    responses:
+      302:
+        description: Redirect to QFix booking page with service_id for adjustment
+      404:
+        description: Product not found or no adjustment available
+    """
+    return _redirect_to_qfix(brand_slug, service_key="adjustment")
+
+
+@app.route("/<brand_slug>/care/")
+def redirect_to_care(brand_slug):
+    """Redirect to QFix washing & care booking page.
+
+    Usage: /<brand>/care/?productId=534008
+    ---
+    tags:
+      - Redirect
+    parameters:
+      - name: brand_slug
+        in: path
+        type: string
+        required: true
+      - name: productId
+        in: query
+        type: string
+        required: true
+    responses:
+      302:
+        description: Redirect to QFix booking page with service_id for washing/care
+      404:
+        description: Product not found or no care service available
+    """
+    return _redirect_to_qfix(brand_slug, service_key="washing")
 
 
 @app.route("/<brand_slug>/products")

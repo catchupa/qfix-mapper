@@ -4,23 +4,30 @@ The simplest way to add QFix repair links to your product pages. No JavaScript w
 
 ## How it works
 
-1. You place a link on your product page pointing to the QFix redirect endpoint
-2. When a customer clicks it, the server looks up the product, maps it to QFix repair categories, and returns a **302 redirect** to the QFix booking page
-3. The customer lands directly on the correct repair page with category and material pre-selected
+1. You place a link on your product page pointing to a QFix redirect endpoint
+2. When a customer clicks it, the server looks up the product, maps it to QFix categories, and returns a **302 redirect** to the QFix booking page
+3. The customer lands directly on the correct page with category, material, and service pre-selected
 
 ---
 
-## Endpoint
+## Endpoints
 
-```
-GET https://kappahl-qfix.fly.dev/<brand>/repair/?productId=<product_id>
-```
+There are three endpoints, one per service type. Each automatically includes the correct `service_id` in the redirect.
+
+| Endpoint | Service | Redirect example |
+|----------|---------|------------------|
+| `/<brand>/repair/?productId=<id>` | Repair | `…?category_id=96&material_id=69&service_id=39` |
+| `/<brand>/adjustment/?productId=<id>` | Adjust measurements | `…?category_id=96&material_id=69&service_id=40` |
+| `/<brand>/care/?productId=<id>` | Washing & care | `…?category_id=96&material_id=69&service_id=42` |
+
+Base URL: `https://kappahl-qfix.fly.dev`
+
+### Parameters
 
 | Parameter   | Location | Required | Description |
 |-------------|----------|----------|-------------|
 | `brand`     | path     | yes      | Your brand slug (see table below) |
 | `productId` | query    | yes      | The product's article number |
-| `service`   | query    | no       | Service type: `repair`, `adjustment`, or `washing` |
 
 ### Brand slugs
 
@@ -36,49 +43,36 @@ GET https://kappahl-qfix.fly.dev/<brand>/repair/?productId=<product_id>
 
 ## Examples
 
-### Basic repair link
+### Repair link
 
 ```html
 <a href="https://kappahl-qfix.fly.dev/kappahl/repair/?productId=534008">
-  Reparera detta plagg
-</a>
-```
-
-The customer is redirected to something like:
-```
-https://kappahl.dev.qfixr.me/sv/?category_id=93&material_id=69
-```
-
-### With a specific service
-
-```html
-<!-- Repair -->
-<a href="https://kappahl-qfix.fly.dev/kappahl/repair/?productId=534008&service=repair">
   Reparera
 </a>
+```
 
-<!-- Adjust measurements -->
-<a href="https://kappahl-qfix.fly.dev/kappahl/repair/?productId=534008&service=adjustment">
+### Adjustment link
+
+```html
+<a href="https://kappahl-qfix.fly.dev/kappahl/adjustment/?productId=534008">
   Måttanpassa
 </a>
+```
 
-<!-- Washing and care -->
-<a href="https://kappahl-qfix.fly.dev/kappahl/repair/?productId=534008&service=washing">
+### Washing & care link
+
+```html
+<a href="https://kappahl-qfix.fly.dev/kappahl/care/?productId=534008">
   Skötsel
 </a>
-```
-
-When `service` is specified, a `service_id` parameter is appended to the redirect URL:
-```
-https://kappahl.dev.qfixr.me/sv/?category_id=93&material_id=69&service_id=39
 ```
 
 ### All three services for one product
 
 ```html
-<a href="https://kappahl-qfix.fly.dev/kappahl/repair/?productId=534008&service=repair">Reparera</a>
-<a href="https://kappahl-qfix.fly.dev/kappahl/repair/?productId=534008&service=adjustment">Måttanpassa</a>
-<a href="https://kappahl-qfix.fly.dev/kappahl/repair/?productId=534008&service=washing">Skötsel</a>
+<a href="https://kappahl-qfix.fly.dev/kappahl/repair/?productId=534008">Reparera</a>
+<a href="https://kappahl-qfix.fly.dev/kappahl/adjustment/?productId=534008">Måttanpassa</a>
+<a href="https://kappahl-qfix.fly.dev/kappahl/care/?productId=534008">Skötsel</a>
 ```
 
 ---
@@ -93,6 +87,13 @@ https://kappahl.dev.qfixr.me/sv/?category_id=93&material_id=69&service_id=39
 
 ---
 
+## Live demo
+
+See the redirect links in action on the demo product page:
+https://kappahl-qfix.fly.dev/demo/
+
+---
+
 ## Comparison: Redirect link vs Widget
 
 | | Redirect link | Widget (`widget.js`) |
@@ -102,7 +103,7 @@ https://kappahl.dev.qfixr.me/sv/?category_id=93&material_id=69&service_id=39
 | **Shows availability before click** | No — always visible | Yes — hidden if product not found |
 | **API call timing** | On click (server-side) | On page load or click (client-side) |
 | **Styling** | Your own CSS | Widget CSS (customizable) |
-| **Service type support** | Yes (`&service=`) | Yes (`data-service`) |
+| **Service type support** | Yes (separate endpoints) | Yes (`data-service` attribute) |
 
 Use the **redirect link** when you want the simplest possible integration with full control over styling. Use the **widget** when you want the button to auto-hide for products without repair support.
 
