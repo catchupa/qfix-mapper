@@ -1,4 +1,5 @@
 """Tests for QFix mapping logic."""
+import pytest
 from mapping import (
     map_clothing_type,
     map_material,
@@ -11,6 +12,9 @@ from mapping import (
     VALID_MATERIAL_IDS_LEGACY,
     QFIX_SUBCATEGORY_IDS,
     QFIX_SUBCATEGORY_IDS_LEGACY,
+    BRAND_CLOTHING_TYPE_OVERRIDES,
+    BRAND_KEYWORD_CLOTHING_OVERRIDES,
+    BRAND_MATERIAL_OVERRIDES,
 )
 from mapping_v2 import (
     map_clothing_type_v2,
@@ -244,3 +248,86 @@ def test_new_mapping_covers_additional_outerwear():
     extra_types = ["Rain Jacket", "Rain Trousers", "Ski / Shell jacket", "Ski / Shell Trousers"]
     for t in extra_types:
         assert t in QFIX_CLOTHING_TYPE_IDS, f"{t} missing from new mapping"
+
+
+# ── Brand-specific overrides ──────────────────────────────────────────────
+
+@pytest.fixture(autouse=False)
+def clean_brand_overrides():
+    """Save and restore brand override dicts around tests."""
+    saved_ct = dict(BRAND_CLOTHING_TYPE_OVERRIDES)
+    saved_kw = dict(BRAND_KEYWORD_CLOTHING_OVERRIDES)
+    saved_mat = dict(BRAND_MATERIAL_OVERRIDES)
+    BRAND_CLOTHING_TYPE_OVERRIDES.clear()
+    BRAND_KEYWORD_CLOTHING_OVERRIDES.clear()
+    BRAND_MATERIAL_OVERRIDES.clear()
+    yield
+    BRAND_CLOTHING_TYPE_OVERRIDES.clear()
+    BRAND_CLOTHING_TYPE_OVERRIDES.update(saved_ct)
+    BRAND_KEYWORD_CLOTHING_OVERRIDES.clear()
+    BRAND_KEYWORD_CLOTHING_OVERRIDES.update(saved_kw)
+    BRAND_MATERIAL_OVERRIDES.clear()
+    BRAND_MATERIAL_OVERRIDES.update(saved_mat)
+
+
+def test_brand_clothing_type_override_takes_priority(clean_brand_overrides):
+    """Brand override should override global map for that brand."""
+    BRAND_CLOTHING_TYPE_OVERRIDES["eton"] = {"skjortor": "Shirt / Blouse"}
+    # "skjortor" globally maps to "Top / T-shirt" (or similar), but for eton it should be "Shirt / Blouse"
+    result = map_clothing_type("Skjortor", brand="eton")
+    assert result == "Shirt / Blouse"
+
+
+def test_brand_clothing_type_override_does_not_affect_other_brands(clean_brand_overrides):
+    """Brand override for one brand should not affect another brand."""
+    BRAND_CLOTHING_TYPE_OVERRIDES["eton"] = {"skjortor": "Shirt / Blouse"}
+    # Without brand, should use global map
+    result_global = map_clothing_type("Skjortor")
+    result_kappahl = map_clothing_type("Skjortor", brand="kappahl")
+    # Both should return the same (global) result, not the eton override
+    assert result_global == result_kappahl
+
+
+def test_brand_clothing_type_fallback_to_global(clean_brand_overrides):
+    """When no brand override exists, should fall back to global map."""
+    result = map_clothing_type("Jeans", brand="eton")
+    assert result == "Trousers"
+
+
+def test_brand_keyword_clothing_override(clean_brand_overrides):
+    """Brand keyword override should match before global keywords."""
+    BRAND_KEYWORD_CLOTHING_OVERRIDES["nudie"] = [("special_thing", "Trousers")]
+    result = map_clothing_type("Some > special_thing > category", brand="nudie")
+    assert result == "Trousers"
+    # Without brand, should not match
+    result_global = map_clothing_type("Some > special_thing > category")
+    assert result_global != "Trousers" or result_global is None
+
+
+def test_brand_material_override(clean_brand_overrides):
+    """Brand material override should take priority over global map."""
+    BRAND_MATERIAL_OVERRIDES["ginatricot"] = {"bomull": "Linen/Wool"}
+    result = map_material("100% Bomull", brand="ginatricot")
+    assert result == "Linen/Wool"
+    # Without brand, bomull maps to Standard textile globally
+    result_global = map_material("100% Bomull")
+    assert result_global == "Standard textile"
+
+
+def test_brand_material_override_bare_name(clean_brand_overrides):
+    """Brand material override should work for bare material names."""
+    BRAND_MATERIAL_OVERRIDES["eton"] = {"silke": "Silk"}
+    result = map_material("Silke", brand="eton")
+    assert result == "Silk"
+
+
+def test_map_product_with_brand(clean_brand_overrides):
+    """map_product should pass brand through to sub-mappers."""
+    BRAND_CLOTHING_TYPE_OVERRIDES["lindex"] = {"klänningar": "Skirt / Dress"}
+    product = {
+        "clothing_type": "Klänningar",
+        "material_composition": "100% Bomull",
+        "category": "dam",
+    }
+    result = map_product(product, brand="lindex")
+    assert result["qfix_clothing_type"] == "Skirt / Dress"

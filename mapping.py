@@ -577,6 +577,12 @@ MATERIAL_MAP = {
     "stål": None,
 }
 
+# Per-brand overrides (brand_slug -> {from: to})
+# Populated at runtime via /remap/apply?brand=<slug>
+BRAND_CLOTHING_TYPE_OVERRIDES = {}      # brand_slug -> {key: qfix_type}
+BRAND_KEYWORD_CLOTHING_OVERRIDES = {}   # brand_slug -> [(keyword, qfix_type)]
+BRAND_MATERIAL_OVERRIDES = {}           # brand_slug -> {key: qfix_material}
+
 CATEGORY_MAP = {
     "dam": "Women's Clothing",
     "herr": "Men's Clothing",
@@ -665,7 +671,7 @@ _KEYWORD_CLOTHING_MAP = [
 ]
 
 
-def map_clothing_type(kappahl_clothing_type):
+def map_clothing_type(kappahl_clothing_type, brand=None):
     """Map clothing_type string to QFix L3 clothing type name."""
     if not kappahl_clothing_type:
         return None
@@ -679,6 +685,15 @@ def map_clothing_type(kappahl_clothing_type):
         return None
 
     first = parts[0]
+
+    # Brand-specific exact override (checked before global map)
+    if brand:
+        brand_map = BRAND_CLOTHING_TYPE_OVERRIDES.get(brand, {})
+        full_key = " > ".join(parts)
+        if full_key in brand_map:
+            return brand_map[full_key]
+        if first in brand_map:
+            return brand_map[first]
 
     # Badklader sub-mapping (bikini vs swimsuit)
     if first == "badklader" and len(parts) > 1:
@@ -729,6 +744,15 @@ def map_clothing_type(kappahl_clothing_type):
     if result is not None:
         return result
 
+    # Brand-specific keyword fallback
+    if brand:
+        brand_keywords = BRAND_KEYWORD_CLOTHING_OVERRIDES.get(brand, [])
+        if brand_keywords:
+            full = kappahl_clothing_type.lower()
+            for keyword, qfix_type in brand_keywords:
+                if keyword in full:
+                    return qfix_type
+
     # Keyword fallback: match English keywords in the full string
     # (handles product names like "Roy Sunburns T-Shirt Antracite")
     if first not in CLOTHING_TYPE_MAP:
@@ -740,17 +764,23 @@ def map_clothing_type(kappahl_clothing_type):
     return None
 
 
-def map_material(kappahl_material):
+def map_material(kappahl_material, brand=None):
     """Map material composition to QFix L4 material category name."""
     if not kappahl_material:
         return "Other/Unsure"
+
+    # Brand-specific material override (checked before global map)
+    brand_mat_map = BRAND_MATERIAL_OVERRIDES.get(brand, {}) if brand else {}
 
     def _resolve(matches):
         """Find best material from (pct, name) pairs, highest % first."""
         sorted_mats = sorted(matches, key=lambda x: int(x[0]), reverse=True)
         for _pct, name in sorted_mats:
             name = name.strip().lower()
-            qfix_mat = MATERIAL_MAP.get(name)
+            # Brand override first, then global
+            qfix_mat = brand_mat_map.get(name) if brand_mat_map else None
+            if not qfix_mat:
+                qfix_mat = MATERIAL_MAP.get(name)
             if qfix_mat:
                 return qfix_mat
         return None
@@ -771,6 +801,8 @@ def map_material(kappahl_material):
 
     # Bare material name without percentage (e.g. "Metall", "Läder")
     bare = kappahl_material.strip().lower()
+    if brand_mat_map and bare in brand_mat_map:
+        return brand_mat_map[bare] if brand_mat_map[bare] else "Other/Unsure"
     if bare in MATERIAL_MAP:
         return MATERIAL_MAP[bare] if MATERIAL_MAP[bare] else "Other/Unsure"
 
@@ -850,13 +882,13 @@ def _resolve_material_id(clothing_type_id, material_name):
     return None
 
 
-def map_product(product):
+def map_product(product, brand=None):
     """Map a product dict to QFix IDs using the complete catalog.
 
     Returns dict with qfix names and numeric IDs.
     """
-    clothing_name = map_clothing_type(product.get("clothing_type"))
-    material_name = map_material(product.get("material_composition"))
+    clothing_name = map_clothing_type(product.get("clothing_type"), brand=brand)
+    material_name = map_material(product.get("material_composition"), brand=brand)
     subcategory_name = map_category(product.get("category"))
 
     clothing_type_id = _resolve_clothing_type_id(clothing_name, subcategory_name)
@@ -877,13 +909,13 @@ def map_product(product):
     }
 
 
-def map_product_legacy(product):
+def map_product_legacy(product, brand=None):
     """Map a product dict to QFix IDs using the original hand-curated mapping.
 
     Same interface as map_product() but uses _LEGACY dicts.
     """
-    clothing_name = map_clothing_type(product.get("clothing_type"))
-    material_name = map_material(product.get("material_composition"))
+    clothing_name = map_clothing_type(product.get("clothing_type"), brand=brand)
+    material_name = map_material(product.get("material_composition"), brand=brand)
     subcategory_name = map_category(product.get("category"))
 
     clothing_type_id = QFIX_CLOTHING_TYPE_IDS_LEGACY.get(clothing_name) if clothing_name else None

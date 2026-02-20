@@ -18,6 +18,8 @@ from mapping import (
     map_product, map_product_legacy, map_clothing_type, map_material,
     QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS,
     CLOTHING_TYPE_MAP, MATERIAL_MAP, _KEYWORD_CLOTHING_MAP,
+    BRAND_CLOTHING_TYPE_OVERRIDES, BRAND_KEYWORD_CLOTHING_OVERRIDES,
+    BRAND_MATERIAL_OVERRIDES,
 )
 from mapping_v2 import map_product_v2
 from database import create_table, upsert_product, DATABASE_URL, DATABASE_WRITE_URL
@@ -330,7 +332,7 @@ def get_brand_product(brand_slug, product_id):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = enrich_qfix(_get_mapper()(product))
+    qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
 
     return jsonify({
         brand_slug: product,
@@ -609,7 +611,7 @@ def v3_get_product(product_id):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = enrich_qfix(_get_mapper()(product))
+    qfix = enrich_qfix(_get_mapper()(product, brand="ginatricot"))
 
     return jsonify({
         "product": product,
@@ -742,10 +744,11 @@ def v4_get_product(product_id):
     product = dict(row)
     merged, materials_list = _merge_product(product)
 
+    brand_slug = BRAND_SLUG.get(product.get("brand"))
     if product.get("article_number"):
         qfix = enrich_qfix(map_product_v2(product, materials=materials_list))
     else:
-        qfix = enrich_qfix(_get_mapper()(product))
+        qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
 
     return jsonify({
         "product": merged,
@@ -915,12 +918,12 @@ def unmapped_categories():
         for row in rows:
             ct = row["clothing_type"]
             mat = row["material_composition"]
-            mapped_type = map_clothing_type(ct)
+            mapped_type = map_clothing_type(ct, brand=slug)
             if mapped_type is None and ct:
                 if ct not in unmapped_types:
                     unmapped_types[ct] = 0
                 unmapped_types[ct] += 1
-            mapped_mat = map_material(mat)
+            mapped_mat = map_material(mat, brand=slug)
             if mapped_mat == "Other/Unsure" and mat:
                 unmapped_materials.add(mat)
 
@@ -936,6 +939,13 @@ def unmapped_categories():
     result["qfix_valid_materials"] = {
         ct_id: {str(mat_id): mat_name for mat_id, mat_name in mats.items()}
         for ct_id, mats in VALID_MATERIAL_IDS.items()
+    }
+
+    # Include current brand override state
+    result["brand_overrides"] = {
+        "clothing_type": {k: v for k, v in BRAND_CLOTHING_TYPE_OVERRIDES.items() if v},
+        "keyword_clothing": {k: v for k, v in BRAND_KEYWORD_CLOTHING_OVERRIDES.items() if v},
+        "material": {k: v for k, v in BRAND_MATERIAL_OVERRIDES.items() if v},
     }
 
     return jsonify(result)
@@ -1233,6 +1243,10 @@ def remap_apply():
     if not data or "suggestions" not in data:
         return jsonify({"error": "JSON body with 'suggestions' array required"}), 400
 
+    brand = data.get("brand") or request.args.get("brand")
+    if brand and brand not in BRAND_ROUTES:
+        return jsonify({"error": f"Unknown brand: {brand}"}), 400
+
     valid_materials = {"Standard textile", "Linen/Wool", "Cashmere", "Silk",
                        "Leather/Suede", "Down", "Fur", "Other/Unsure"}
     applied = []
@@ -1252,19 +1266,31 @@ def remap_apply():
             if to_val not in QFIX_CLOTHING_TYPE_IDS:
                 errors.append({"from": from_val, "error": f"Invalid QFix type: '{to_val}'"})
                 continue
-            if match_type == "keyword":
-                _KEYWORD_CLOTHING_MAP.append((from_val, to_val))
-                applied.append({"from": from_val, "to": to_val, "type": "keyword_rule"})
+            if brand:
+                if match_type == "keyword":
+                    BRAND_KEYWORD_CLOTHING_OVERRIDES.setdefault(brand, []).append((from_val, to_val))
+                    applied.append({"from": from_val, "to": to_val, "type": "brand_keyword_rule", "brand": brand})
+                else:
+                    BRAND_CLOTHING_TYPE_OVERRIDES.setdefault(brand, {})[from_val] = to_val
+                    applied.append({"from": from_val, "to": to_val, "type": "brand_exact_rule", "brand": brand})
             else:
-                CLOTHING_TYPE_MAP[from_val] = to_val
-                applied.append({"from": from_val, "to": to_val, "type": "exact_rule"})
+                if match_type == "keyword":
+                    _KEYWORD_CLOTHING_MAP.append((from_val, to_val))
+                    applied.append({"from": from_val, "to": to_val, "type": "keyword_rule"})
+                else:
+                    CLOTHING_TYPE_MAP[from_val] = to_val
+                    applied.append({"from": from_val, "to": to_val, "type": "exact_rule"})
 
         elif rule_type == "material":
             if to_val not in valid_materials:
                 errors.append({"from": from_val, "error": f"Invalid material: '{to_val}'"})
                 continue
-            MATERIAL_MAP[from_val] = to_val
-            applied.append({"from": from_val, "to": to_val, "type": "material_rule"})
+            if brand:
+                BRAND_MATERIAL_OVERRIDES.setdefault(brand, {})[from_val] = to_val
+                applied.append({"from": from_val, "to": to_val, "type": "brand_material_rule", "brand": brand})
+            else:
+                MATERIAL_MAP[from_val] = to_val
+                applied.append({"from": from_val, "to": to_val, "type": "material_rule"})
 
         else:
             errors.append({"from": from_val, "error": f"Invalid rule_type: '{rule_type}'"})
