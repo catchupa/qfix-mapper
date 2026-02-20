@@ -103,7 +103,8 @@ swagger_template = {
         {"name": "T4V Protocol", "description": "T4V protocol data endpoints"},
         {"name": "Aggregated", "description": "Merged scraper + protocol data"},
         {"name": "Vision", "description": "Image-based garment identification"},
-        {"name": "Mapping", "description": "Unmapped categories and mapping management"},
+        {"name": "Redirect", "description": "QFix booking page redirects"},
+        {"name": "Mapping", "description": "Unmapped categories, mapping management, and batch persistence"},
     ],
 }
 
@@ -1180,6 +1181,10 @@ logger = logging.getLogger(__name__)
 @limiter.limit("5 per minute")
 def remap_run():
     """Batch-compute and persist QFix mappings for all (or per-brand) products.
+
+    Runs the mapping engine on every product and writes the 5 QFix columns
+    (clothing_type, clothing_type_id, material, material_id, url) to the DB.
+    Products are processed in batches of 100 rows per transaction.
     ---
     tags:
       - Mapping
@@ -1187,10 +1192,34 @@ def remap_run():
       - name: brand
         in: query
         type: string
-        description: "Optional brand slug to limit to (e.g. kappahl, eton)"
+        required: false
+        description: "Brand slug to limit the run to (e.g. kappahl, ginatricot, eton, nudie, lindex). Omit to process all brands."
+      - name: mapping
+        in: query
+        type: string
+        required: false
+        enum: [default, legacy]
+        description: "Mapping engine to use. Defaults to the current engine."
     responses:
       200:
         description: Summary of mapping run
+        schema:
+          type: object
+          properties:
+            total:
+              type: integer
+              description: Total products processed
+            mapped:
+              type: integer
+              description: Products that received a QFix URL
+            unmapped:
+              type: integer
+              description: Products with no mapping match
+            updated:
+              type: integer
+              description: DB rows updated
+      400:
+        description: Unknown brand slug
     """
     brand_filter = request.args.get("brand")
     if brand_filter and brand_filter not in BRAND_ROUTES:
@@ -1222,8 +1251,9 @@ def remap_run():
     unmapped = 0
     updated = 0
 
-    # Process in batches of 100
     write_conn = get_write_db()
+
+    # Process in batches of 100
     write_conn.autocommit = False
     batch_count = 0
 
@@ -1271,12 +1301,31 @@ def remap_run():
 @app.route("/remap/status")
 def remap_status():
     """Get per-brand QFix mapping coverage.
+
+    Returns how many products per brand have a persisted QFix URL vs how many are unmapped.
     ---
     tags:
       - Mapping
     responses:
       200:
-        description: Per-brand mapping counts
+        description: Array of per-brand mapping counts
+        schema:
+          type: array
+          items:
+            type: object
+            properties:
+              brand:
+                type: string
+                description: Brand display name
+              total:
+                type: integer
+                description: Total products for this brand
+              mapped:
+                type: integer
+                description: Products with a persisted qfix_url
+              unmapped:
+                type: integer
+                description: Products without a persisted qfix_url
     """
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
