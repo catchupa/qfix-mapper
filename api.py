@@ -1429,55 +1429,70 @@ Return ONLY a JSON array of the top 5 most relevant action names (as strings), o
 
 # Keyword → action injection: Swedish/English keywords in product text → actions to boost
 # Each entry: list of keywords (any match triggers), action names to inject, which ranking category
+MAX_INJECTED_PER_RULE = 2  # Max actions injected per keyword rule
+
 KEYWORD_ACTION_RULES = [
     {
         "keywords": ["dragkedja", "zipper", "blixtlås", "zip"],
-        "actions": ["Replace zipper", "Replace main zipper", "Replace zipper slider"],
+        "actions": [
+            {"name": "Replace zipper", "default": True},
+            {"name": "Replace main zipper", "sub_keywords": ["jacka", "jacket", "coat", "kappa", "rock"]},
+            {"name": "Replace zipper slider", "sub_keywords": ["slider", "dragare", "rits"]},
+        ],
         "category": "repair",
     },
     {
         "keywords": ["knapp", "knappar", "button", "buttons"],
-        "actions": ["Replace button", "Replace snap button", "Replace jeans button", "Place new button", "Exchange button"],
+        "actions": [
+            {"name": "Replace button", "default": True},
+            {"name": "Replace snap button", "sub_keywords": ["tryck", "snap", "press"]},
+            {"name": "Replace jeans button", "sub_keywords": ["jeans", "denim", "jean"]},
+            {"name": "Place new button"},
+            {"name": "Exchange button"},
+        ],
         "category": "repair",
     },
     {
         "keywords": ["spänne", "buckle"],
-        "actions": ["Replace buckle"],
+        "actions": [{"name": "Replace buckle", "default": True}],
         "category": "repair",
     },
     {
         "keywords": ["foder", "lining", "fodrad"],
-        "actions": ["Replace lining", "Attach new inner lining"],
+        "actions": [
+            {"name": "Replace lining", "default": True},
+            {"name": "Attach new inner lining"},
+        ],
         "category": "repair",
     },
     {
         "keywords": ["resår", "elastic", "elastisk"],
-        "actions": ["Replace elastic"],
+        "actions": [{"name": "Replace elastic", "default": True}],
         "category": "repair",
     },
     {
         "keywords": ["kardborre", "velcro"],
-        "actions": ["Replace velcro"],
+        "actions": [{"name": "Replace velcro", "default": True}],
         "category": "repair",
     },
     {
         "keywords": ["reflex", "reflexer", "reflective"],
-        "actions": ["Replace reflectors"],
+        "actions": [{"name": "Replace reflectors", "default": True}],
         "category": "repair",
     },
     {
         "keywords": ["läder", "leather", "skinn", "mocka", "suede", "nubuck"],
-        "actions": ["Clean and condition"],
+        "actions": [{"name": "Clean and condition", "default": True}],
         "category": "care",
     },
     {
         "keywords": ["dun", "dunfyllning", "down filled", "down jacket"],
-        "actions": ["Dry cleaning"],
+        "actions": [{"name": "Dry cleaning", "default": True}],
         "category": "care",
     },
     {
         "keywords": ["impregnera", "waterproof", "vattentät", "gore-tex", "shell"],
-        "actions": ["Waterproofing"],
+        "actions": [{"name": "Waterproofing", "default": True}],
         "category": "care",
     },
 ]
@@ -1512,23 +1527,39 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
                 "price": s.get("price"), "category_key": cat_key,
             })
 
-    # Check each keyword rule
+    # Check each keyword rule — inject at most MAX_INJECTED_PER_RULE actions
     injected = {}  # category_key -> list of actions to inject
     for rule in KEYWORD_ACTION_RULES:
         if any(kw in product_text for kw in rule["keywords"]):
             cat = rule["category"]
             if cat not in injected:
                 injected[cat] = []
-            for action_name in rule["actions"]:
-                if action_name in all_actions:
-                    # Pick the cheapest variant
-                    variants = [a for a in all_actions[action_name] if a["category_key"] == cat]
-                    if not variants:
-                        variants = all_actions[action_name]
-                    best = min(variants, key=lambda a: a["price"] or 9999)
-                    injected[cat].append({
-                        "id": best["id"], "name": best["name"], "price": best["price"],
-                    })
+
+            # First pass: collect actions whose sub_keywords match the product
+            sub_matched = []
+            default_action = None
+            for action_def in rule["actions"]:
+                action_name = action_def["name"]
+                if action_name not in all_actions:
+                    continue
+                variants = [a for a in all_actions[action_name] if a["category_key"] == cat]
+                if not variants:
+                    variants = all_actions[action_name]
+                best = min(variants, key=lambda a: a["price"] or 9999)
+                entry = {"id": best["id"], "name": best["name"], "price": best["price"]}
+
+                if action_def.get("sub_keywords") and any(sk in product_text for sk in action_def["sub_keywords"]):
+                    sub_matched.append(entry)
+                elif action_def.get("default"):
+                    default_action = entry
+
+            # Build final list: sub-keyword matches first, then default, capped at MAX_INJECTED_PER_RULE
+            selected = list(sub_matched)
+            if default_action and len(selected) < MAX_INJECTED_PER_RULE:
+                # Add default only if no sub-keyword match already covers it
+                if not any(a["name"] == default_action["name"] for a in selected):
+                    selected.append(default_action)
+            injected[cat].extend(selected[:MAX_INJECTED_PER_RULE])
 
     if not injected:
         return top_actions
@@ -2381,7 +2412,7 @@ def docs_keyword_stats():
             count = cur.fetchone()[0]
             results.append({
                 "keywords": rule["keywords"],
-                "actions": rule["actions"],
+                "actions": [a["name"] for a in rule["actions"]],
                 "category": rule["category"],
                 "product_count": count,
             })
@@ -2396,6 +2427,160 @@ def docs_keyword_stats():
     return jsonify({
         "total_products": total_products,
         "rules": results,
+    })
+
+
+@app.route("/remap/validate-keyword-scores", methods=["POST"])
+@limiter.limit("2 per minute")
+def validate_keyword_scores():
+    """Validate keyword injection scoring by asking AI to rank merged action pools.
+
+    Picks sample products per keyword rule, builds the merged pool of AI-ranked +
+    keyword-injected actions, and asks Claude to rank them for that specific product.
+    Compares AI ranking vs our score-based ranking.
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return jsonify({"error": "ANTHROPIC_API_KEY not configured"}), 500
+
+    _load_qfix_catalog()
+    ai_client = anthropic.Anthropic(api_key=api_key)
+    conn = get_db()
+
+    samples_per_rule = 2
+    comparisons = []
+
+    for rule in KEYWORD_ACTION_RULES:
+        # Find sample products that trigger this rule and have a qfix mapping
+        conditions = []
+        params = []
+        for kw in rule["keywords"]:
+            conditions.append("(LOWER(product_name) LIKE %s OR LOWER(description) LIKE %s)")
+            params.extend([f"%{kw}%", f"%{kw}%"])
+
+        where = " OR ".join(conditions)
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute(f"""
+                SELECT product_id, product_name, description, brand,
+                       clothing_type, material_composition,
+                       qfix_clothing_type, qfix_clothing_type_id,
+                       qfix_material, qfix_material_id
+                FROM products_unified
+                WHERE ({where}) AND qfix_clothing_type_id IS NOT NULL
+                ORDER BY RANDOM()
+                LIMIT %s
+            """, params + [samples_per_rule])
+            products = cur.fetchall()
+
+        for product in products:
+            ct_id = product["qfix_clothing_type_id"]
+            mat_id = product["qfix_material_id"]
+
+            # Get AI-ranked top 5
+            ai_top = get_action_ranking(conn, ct_id, mat_id) or {}
+            ai_repair = ai_top.get(rule["category"], [])
+
+            if not ai_repair:
+                continue
+
+            # Get the full service list for this clothing type
+            svc_cats = _qfix_services.get((ct_id, mat_id), [])
+            if not svc_cats:
+                continue
+
+            # Build product text and run keyword injection
+            product_text = " ".join(filter(None, [
+                product.get("product_name", ""),
+                product.get("description", ""),
+            ])).lower()
+
+            merged = _inject_keyword_actions(ai_top, product_text, svc_cats)
+            merged_actions = merged.get(rule["category"], [])
+
+            # Check if injection actually changed the list
+            ai_names = {a["name"] for a in ai_repair}
+            merged_names = {a["name"] for a in merged_actions}
+            if ai_names == merged_names:
+                continue  # No injection happened
+
+            # Collect all candidate action names (merged pool)
+            action_names = [a["name"] for a in merged_actions]
+
+            # Also include AI actions that got bumped out
+            all_candidates = list(action_names)
+            for a in ai_repair:
+                if a["name"] not in all_candidates:
+                    all_candidates.append(a["name"])
+
+            # Ask Claude to rank these for this specific product
+            actions_list = "\n".join(f"- {name}" for name in all_candidates)
+            prompt = f"""For a specific product: "{product.get('product_name', '')}" ({product.get('qfix_clothing_type', '')} made of {product.get('qfix_material', '')}).
+
+Product description: {(product.get('description') or 'N/A')[:300]}
+
+Rank these {rule['category']} actions by how likely a customer owning THIS SPECIFIC product would need them. Consider the product's specific features mentioned in the name and description.
+
+Available actions:
+{actions_list}
+
+Return ONLY a JSON array of the action names ordered by likelihood (most likely first). Return ALL of them, not just top 5."""
+
+            try:
+                message = ai_client.messages.create(
+                    model="claude-sonnet-4-5-20250929",
+                    max_tokens=512,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                response_text = message.content[0].text.strip()
+                if response_text.startswith("```"):
+                    lines = response_text.split("\n")
+                    response_text = "\n".join(lines[1:-1])
+
+                ai_ranking = json.loads(response_text)
+
+                # Compare: our score-based top 5 vs AI's top 5
+                our_top5 = [a["name"] for a in merged_actions[:5]]
+                ai_top5 = ai_ranking[:5]
+
+                # Calculate overlap and position differences
+                our_set = set(our_top5)
+                ai_set = set(ai_top5)
+                overlap = our_set & ai_set
+                only_ours = our_set - ai_set
+                only_ai = ai_set - our_set
+
+                comparisons.append({
+                    "product_id": product["product_id"],
+                    "product_name": product.get("product_name"),
+                    "brand": product.get("brand"),
+                    "clothing_type": product.get("qfix_clothing_type"),
+                    "keyword_rule": rule["keywords"],
+                    "category": rule["category"],
+                    "our_top5": our_top5,
+                    "ai_top5": ai_top5,
+                    "ai_full_ranking": ai_ranking,
+                    "overlap_count": len(overlap),
+                    "overlap": list(overlap),
+                    "only_in_ours": list(only_ours),
+                    "only_in_ai": list(only_ai),
+                })
+
+            except Exception as e:
+                logger.warning("Failed to validate for product %s: %s",
+                              product["product_id"], e)
+
+    conn.close()
+
+    # Summary stats
+    if comparisons:
+        avg_overlap = sum(c["overlap_count"] for c in comparisons) / len(comparisons)
+    else:
+        avg_overlap = 0
+
+    return jsonify({
+        "total_comparisons": len(comparisons),
+        "avg_overlap_out_of_5": round(avg_overlap, 2),
+        "comparisons": comparisons,
     })
 
 

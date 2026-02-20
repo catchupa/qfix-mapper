@@ -237,10 +237,15 @@
           <h4>Product-Specific Action Boost (Keyword Injection)</h4>
           <p>The generic top 5 is based on clothing type only, but individual products may have specific
              features that make certain actions more relevant. The product name and description are scanned
-             for keywords, and matching actions are merged with the AI-ranked top 5 using a <strong>score-based ranking</strong>:</p>
+             for keywords, and matching actions are merged with the AI-ranked top 5 using a <strong>score-based ranking</strong>.</p>
+          <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Smart variant selection:</strong> Each keyword rule has multiple action variants
+             (e.g., "Replace button", "Replace jeans button", "Replace snap button"). Instead of injecting all variants,
+             the system uses <strong>sub-keyword matching</strong> to pick the most relevant one for each product.
+             For example, "Replace jeans button" only triggers when "jeans" or "denim" appears in the product text.
+             At most <strong>2 actions per rule</strong> are injected: the best sub-keyword match plus the generic default.</p>
           <div id="keywordStatsTable" style="font-size:13px; color:#aaa; margin:8px 0;">Loading keyword stats...</div>
-          <p style="margin-top:8px;"><strong>How the merge works:</strong> Rather than simply prepending keyword actions (which would
-             push out important generic actions like "Repair hole"), both pools are scored and the best 5 are selected:</p>
+          <p style="margin-top:8px;"><strong>How the merge works:</strong> The selected keyword actions (max 2 per rule) are scored and merged
+             with the AI-ranked top 5:</p>
           <table style="font-size:13px; margin:8px 0; border-collapse:collapse;">
             <thead><tr style="background:#f8f9fa;">
               <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Source</th>
@@ -257,35 +262,31 @@
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">6</td>
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">4</td>
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">2</td></tr>
-              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Keyword-injected (product-specific)</td>
+              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Keyword-injected (max 2 per rule)</td>
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>7</strong></td>
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">5</td>
-                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">3</td>
-                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">1</td>
-                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">1</td></tr>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;" colspan="3"></td></tr>
             </tbody>
           </table>
           <p style="margin-top:8px;"><strong>Example:</strong> "Stickad cardigan med dragkedja" (knitted cardigan with zipper) &mdash; the merged repair list:</p>
           <ol style="font-size:13px; margin:4px 0 0 20px; color:#444;">
             <li><strong>Repair hole</strong> <span style="color:#aaa;">(AI #1, score 10)</span></li>
             <li><strong>Repair wear</strong> <span style="color:#aaa;">(AI #2, score 8)</span></li>
-            <li><strong>Replace zipper</strong> <span style="color:#aaa;">(keyword #1, score 7)</span></li>
+            <li><strong>Replace zipper</strong> <span style="color:#aaa;">(keyword default, score 7)</span></li>
             <li><strong>Repair seam</strong> <span style="color:#aaa;">(AI #3, score 6)</span></li>
-            <li><strong>Replace main zipper</strong> <span style="color:#aaa;">(keyword #2, score 5)</span></li>
+            <li><strong>Replace button</strong> <span style="color:#aaa;">(AI #4, score 4)</span></li>
           </ol>
-          <p style="margin-top:4px; font-size:13px; color:#666;">The most common generic repair actions stay at the top, while product-specific zipper actions are
-             mixed in based on their relevance score.</p>
-          <p style="margin-top:8px;"><strong>Example 2:</strong> "Jeansjacka" (jeans jacket) &mdash; matches both zipper and button keywords, merged repair list:</p>
+          <p style="margin-top:4px; font-size:13px; color:#666;">Only 1 zipper action injected (the generic default). Important actions like "Repair hole" and "Repair seam" stay in the top 5.</p>
+          <p style="margin-top:8px;"><strong>Example 2:</strong> "Jeansjacka med knappar" (jeans jacket with buttons) &mdash; sub-keyword "jeans" matches "Replace jeans button":</p>
           <ol style="font-size:13px; margin:4px 0 0 20px; color:#444;">
             <li><strong>Replace main zipper</strong> <span style="color:#aaa;">(AI #1, score 10)</span></li>
             <li><strong>Repair tear</strong> <span style="color:#aaa;">(AI #2, score 8)</span></li>
-            <li><strong>Replace snap button</strong> <span style="color:#aaa;">(keyword #1, score 7)</span></li>
-            <li><strong>Replace button</strong> <span style="color:#aaa;">(keyword #2, score 5)</span></li>
-            <li><strong>Replace jeans button</strong> <span style="color:#aaa;">(keyword #3, score 3)</span></li>
+            <li><strong>Replace jeans button</strong> <span style="color:#aaa;">(keyword sub-match, score 7)</span></li>
+            <li><strong>Repair seam</strong> <span style="color:#aaa;">(AI #3, score 6)</span></li>
+            <li><strong>Replace button</strong> <span style="color:#aaa;">(keyword default, score 5)</span></li>
           </ol>
-          <p style="margin-top:4px; font-size:13px; color:#666;">When a product has multiple keyword matches (zipper + buttons), the scoring ensures a balanced mix.
-             Here the AI already ranked zipper repair #1 for this clothing type, so the keyword injection adds the
-             button-specific actions that wouldn't otherwise appear in the top 5.</p>
+          <p style="margin-top:4px; font-size:13px; color:#666;">The sub-keyword system picks "Replace jeans button" specifically for jeans products,
+             while a regular shirt with buttons would only get the generic "Replace button". Max 2 button actions instead of the previous 5.</p>
         </div>
       </div>
     </div>
