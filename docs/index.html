@@ -237,11 +237,45 @@
           <h4>Product-Specific Action Boost (Keyword Injection)</h4>
           <p>The generic top 5 is based on clothing type only, but individual products may have specific
              features that make certain actions more relevant. The product name and description are scanned
-             for keywords, and matching actions are injected into the top 5:</p>
+             for keywords, and matching actions are merged with the AI-ranked top 5 using a <strong>score-based ranking</strong>:</p>
           <div id="keywordStatsTable" style="font-size:13px; color:#aaa; margin:8px 0;">Loading keyword stats...</div>
-          <p style="margin-top:4px;"><strong>Example:</strong> A "Stickad cardigan med dragkedja" (knitted cardigan with zipper) normally gets generic
-             Knitted Jumper repair actions. With keyword injection, "Replace zipper", "Replace main zipper", and
-             "Replace zipper slider" are boosted to the top of the repair list.</p>
+          <p style="margin-top:8px;"><strong>How the merge works:</strong> Rather than simply prepending keyword actions (which would
+             push out important generic actions like "Repair hole"), both pools are scored and the best 5 are selected:</p>
+          <table style="font-size:13px; margin:8px 0; border-collapse:collapse;">
+            <thead><tr style="background:#f8f9fa;">
+              <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Source</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0;">#1</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0;">#2</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0;">#3</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0;">#4</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0;">#5</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">AI-ranked (generic)</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>10</strong></td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>8</strong></td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">6</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">4</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">2</td></tr>
+              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Keyword-injected (product-specific)</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>7</strong></td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">5</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">3</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">1</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">1</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:8px;"><strong>Example:</strong> "Stickad cardigan med dragkedja" (knitted cardigan with zipper) &mdash; the merged repair list:</p>
+          <ol style="font-size:13px; margin:4px 0 0 20px; color:#444;">
+            <li><strong>Repair hole</strong> <span style="color:#aaa;">(AI #1, score 10)</span></li>
+            <li><strong>Repair wear</strong> <span style="color:#aaa;">(AI #2, score 8)</span></li>
+            <li><strong>Replace zipper</strong> <span style="color:#aaa;">(keyword #1, score 7)</span></li>
+            <li><strong>Repair seam</strong> <span style="color:#aaa;">(AI #3, score 6)</span></li>
+            <li><strong>Replace main zipper</strong> <span style="color:#aaa;">(keyword #2, score 5)</span></li>
+          </ol>
+          <p style="margin-top:4px; font-size:13px; color:#666;">The most common generic repair actions stay at the top, while product-specific zipper actions are
+             mixed in based on their relevance score. A product with 5 button keywords won't push out "Repair hole" &mdash;
+             only the highest-scored button action makes it into the top slots.</p>
         </div>
       </div>
     </div>

@@ -1533,20 +1533,39 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
     if not injected:
         return top_actions
 
-    # Merge injected actions into top_actions (prepend, deduplicate, keep max 5)
+    # Score-based merge: combine AI-ranked and keyword actions, pick best 5
+    # AI positions get scores: #1=10, #2=8, #3=6, #4=4, #5=2
+    # Keyword matches get scores: #1=7, #2=5, #3=3, #4+=1
+    ai_scores = [10, 8, 6, 4, 2]
+    kw_scores = [7, 5, 3, 1, 1]
+
     result = dict(top_actions)
     for cat, new_actions in injected.items():
         existing = list(result.get(cat, []))
-        existing_ids = {a["id"] for a in existing}
-        existing_names = {a["name"] for a in existing}
-        to_prepend = []
+
+        # Build scored candidates from AI-ranked actions
+        scored = []
+        seen_ids = set()
+        seen_names = set()
+        for i, a in enumerate(existing):
+            score = ai_scores[i] if i < len(ai_scores) else 1
+            scored.append((score, a))
+            seen_ids.add(a["id"])
+            seen_names.add(a["name"])
+
+        # Add keyword-injected actions (skip duplicates)
+        kw_idx = 0
         for a in new_actions:
-            if a["id"] not in existing_ids and a["name"] not in existing_names:
-                to_prepend.append(a)
-                existing_ids.add(a["id"])
-                existing_names.add(a["name"])
-        if to_prepend:
-            result[cat] = (to_prepend + existing)[:5]
+            if a["id"] not in seen_ids and a["name"] not in seen_names:
+                score = kw_scores[kw_idx] if kw_idx < len(kw_scores) else 1
+                scored.append((score, a))
+                seen_ids.add(a["id"])
+                seen_names.add(a["name"])
+                kw_idx += 1
+
+        # Sort by score descending, take top 5
+        scored.sort(key=lambda x: x[0], reverse=True)
+        result[cat] = [a for _, a in scored[:5]]
 
     return result
 
