@@ -2119,6 +2119,51 @@ def docs_rankings():
     return jsonify(results)
 
 
+@app.route("/docs/missing-services")
+def docs_missing_services():
+    """Return QFix clothing types that have no service actions defined."""
+    _load_qfix_catalog()
+
+    missing = []
+    for (ct_id, mat_id), svc_cats in _qfix_services.items():
+        total_actions = sum(len(cat.get("services", [])) for cat in svc_cats)
+        if total_actions == 0:
+            ct_info = _qfix_items.get(ct_id, {})
+            mat_info = _qfix_subitems.get(mat_id, {})
+            parent = ct_info.get("parent", {})
+            missing.append({
+                "clothing_type_id": ct_id,
+                "clothing_type_name": ct_info.get("name", f"Unknown ({ct_id})"),
+                "parent_category": parent.get("name", "Unknown"),
+                "material_id": mat_id,
+                "material_name": mat_info.get("name", f"Unknown ({mat_id})"),
+                "service_categories": len(svc_cats),
+            })
+
+    # Group by clothing type for summary
+    by_type = {}
+    for m in missing:
+        ct_id = m["clothing_type_id"]
+        if ct_id not in by_type:
+            by_type[ct_id] = {
+                "clothing_type_id": ct_id,
+                "clothing_type_name": m["clothing_type_name"],
+                "parent_category": m["parent_category"],
+                "materials": [],
+            }
+        by_type[ct_id]["materials"].append({
+            "material_id": m["material_id"],
+            "material_name": m["material_name"],
+        })
+
+    grouped = sorted(by_type.values(), key=lambda x: x["clothing_type_name"])
+    return jsonify({
+        "total_types_missing": len(grouped),
+        "total_combos_missing": len(missing),
+        "types": grouped,
+    })
+
+
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
