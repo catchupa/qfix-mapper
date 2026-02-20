@@ -1,8 +1,12 @@
 import json
+import logging
 import os
+import time
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
+
+logger = logging.getLogger(__name__)
 
 DATABASE_URL = os.environ.get("DATABASE_URL")
 DATABASE_WRITE_URL = os.environ.get("DATABASE_WRITE_URL")
@@ -16,17 +20,29 @@ PRODUCT_COLUMNS = [
 ]
 
 
+def _connect_with_retry(dsn, retries=3, delay=1.0):
+    """Connect to DB with retry logic and connection timeout."""
+    last_err = None
+    for attempt in range(retries):
+        try:
+            conn = psycopg2.connect(dsn, connect_timeout=10)
+            conn.autocommit = True
+            return conn
+        except Exception as e:
+            last_err = e
+            logger.warning("DB connection attempt %d/%d failed: %s", attempt + 1, retries, e)
+            if attempt < retries - 1:
+                time.sleep(delay * (attempt + 1))
+    raise last_err
+
+
 def get_connection():
-    conn = psycopg2.connect(DATABASE_URL)
-    conn.autocommit = True
-    return conn
+    return _connect_with_retry(DATABASE_URL)
 
 
 def get_write_connection():
     url = DATABASE_WRITE_URL or DATABASE_URL
-    conn = psycopg2.connect(url)
-    conn.autocommit = True
-    return conn
+    return _connect_with_retry(url)
 
 
 def create_table(conn):

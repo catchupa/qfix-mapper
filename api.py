@@ -259,17 +259,31 @@ BRAND_ROUTES = {
 BRAND_SLUG = {v: k for k, v in BRAND_ROUTES.items()}
 
 
+# --- DB connections with retry and timeout ---
+
+def _connect_with_retry(dsn, retries=3, delay=1.0):
+    """Connect to DB with retry logic and connection timeout."""
+    last_err = None
+    for attempt in range(retries):
+        try:
+            conn = psycopg2.connect(dsn, connect_timeout=10)
+            conn.autocommit = True
+            return conn
+        except Exception as e:
+            last_err = e
+            logger.warning("DB connection attempt %d/%d failed: %s", attempt + 1, retries, e)
+            if attempt < retries - 1:
+                _time.sleep(delay * (attempt + 1))
+    raise last_err
+
+
 def get_db():
-    conn = psycopg2.connect(DATABASE_URL)
-    conn.autocommit = True
-    return conn
+    return _connect_with_retry(DATABASE_URL)
 
 
 def get_write_db():
     url = DATABASE_WRITE_URL or DATABASE_URL
-    conn = psycopg2.connect(url)
-    conn.autocommit = True
-    return conn
+    return _connect_with_retry(url)
 
 
 def _get_mapper():
@@ -1863,13 +1877,17 @@ def health():
         description: Database unreachable
     """
     try:
-        conn = get_db()
+        conn = psycopg2.connect(DATABASE_URL, connect_timeout=5)
+        conn.autocommit = True
         with conn.cursor() as cur:
             cur.execute("SELECT 1")
         conn.close()
         return jsonify({"status": "ok"})
     except Exception as e:
-        return jsonify({"status": "error", "detail": str(e)}), 500
+        # Return 200 with degraded status to avoid Fly killing the app
+        # during transient DB issues — the app itself is still running
+        logger.warning("Health check DB probe failed: %s", e)
+        return jsonify({"status": "degraded", "detail": str(e)})
 
 
 # --- QFix Widget Demo ---
