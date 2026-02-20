@@ -114,6 +114,25 @@
     }
     .kh-add-to-cart:hover { background: #333; }
 
+    /* Redirect link */
+    .kh-redirect-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 20px;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      text-decoration: none;
+    }
+    .kh-redirect-link:hover { background: #333; transform: translateY(-1px); }
+    .kh-redirect-link:active { transform: translateY(0); }
+
     /* Divider */
     .kh-divider { border: none; border-top: 1px solid #e5e5e5; }
 
@@ -191,6 +210,14 @@
       <div data-qfix data-product-id="530956" data-brand="kappahl" data-theme="light" data-lazy data-service="adjustment"></div>
       <div data-qfix data-product-id="530956" data-brand="kappahl" data-theme="light" data-lazy data-service="washing"></div>
 
+      <!-- QFix Redirect (no widget, just a link) -->
+      <div style="margin:12px 0">
+        <a id="qfix-redirect" class="kh-redirect-link" href="/kappahl/repair/?productId=530956" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Redirect demo
+        </a>
+      </div>
+
       <hr class="kh-divider">
 
       <details class="kh-details">
@@ -226,6 +253,8 @@
         document.querySelector(".kh-title").textContent = "Product " + pid;
         var artNr = document.querySelector(".kh-details:last-of-type p");
         if (artNr) artNr.textContent = pid;
+        var redirectLink = document.getElementById("qfix-redirect");
+        if (redirectLink) redirectLink.href = "/kappahl/repair/?productId=" + pid;
       }
     })();
   </script>

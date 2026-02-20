@@ -8,7 +8,7 @@ import anthropic
 import psycopg2
 import requests as http_requests
 from psycopg2.extras import RealDictCursor
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, redirect, request, send_from_directory
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -338,6 +338,76 @@ def get_brand_product(brand_slug, product_id):
         brand_slug: product,
         "qfix": qfix,
     })
+
+
+@app.route("/<brand_slug>/repair/")
+def redirect_to_repair(brand_slug):
+    """Redirect to QFix repair booking page for a product.
+
+    Usage: /<brand>/repair/?productId=534008&service=adjustment
+    ---
+    tags:
+      - Widget
+    parameters:
+      - name: brand_slug
+        in: path
+        type: string
+        required: true
+        description: "Brand slug (kappahl, ginatricot, eton, nudie, lindex)"
+      - name: productId
+        in: query
+        type: string
+        required: true
+        description: Product ID
+      - name: service
+        in: query
+        type: string
+        required: false
+        description: "Service type (repair, adjustment, washing)"
+    responses:
+      302:
+        description: Redirect to QFix booking page
+      404:
+        description: Product not found or no repair available
+    """
+    brand_name = BRAND_ROUTES.get(brand_slug)
+    if not brand_name:
+        return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
+
+    product_id = request.args.get("productId")
+    if not product_id:
+        return jsonify({"error": "Missing productId query parameter"}), 400
+
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT product_id, product_name, category, clothing_type, material_composition, materials, brand, article_number FROM products_unified WHERE brand = %s AND product_id = %s",
+            (brand_name, product_id),
+        )
+        row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"error": f"Product {product_id} not found"}), 404
+
+    product = dict(row)
+    qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
+
+    qfix_url = qfix.get("qfix_url")
+    if not qfix_url:
+        return jsonify({"error": f"No repair mapping available for product {product_id}"}), 404
+
+    service_key = request.args.get("service")
+    if service_key:
+        services = qfix.get("qfix_services", [])
+        slug_match = {"repair": "repair", "adjustment": "adjustment", "washing": "washing"}.get(service_key)
+        if slug_match and services:
+            for svc in services:
+                if svc.get("slug") and slug_match in svc["slug"]:
+                    qfix_url += ("&" if "?" in qfix_url else "?") + f"service_id={svc['id']}"
+                    break
+
+    return redirect(qfix_url, code=302)
 
 
 @app.route("/<brand_slug>/products")
