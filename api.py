@@ -1404,12 +1404,18 @@ def remap_status():
     return jsonify(rows)
 
 
-RANK_ACTIONS_PROMPT = """You are a clothing repair service expert. For a **{clothing_type}** made of **{material}**, rank the following {service_name} actions by how likely a typical customer would need them. Consider what types of damage or alterations are most common for this specific garment type.
+RANK_ACTIONS_PROMPT = """You are a clothing repair service expert. For a **{clothing_type}** made of **{material}**, rank the following {service_name} actions by how likely a typical customer would need them.
+
+CRITICAL: Only include actions that are PHYSICALLY POSSIBLE for this specific garment type.
+- Do NOT include leg/thigh actions (Tapering legs, Expand thigh, Shorten legs, Lengthen legs) for items without legs (caps, hats, gloves, scarves, bikinis, underwear, bags, belts, etc.)
+- Do NOT include sleeve actions (Shorten sleeves, Lengthen sleeves, Narrow shoulder area) for items without sleeves (caps, hats, gloves, scarves, bikinis, underwear, swimming trunks, skirts, bags, belts, etc.)
+- Do NOT include shoe actions (Replace heel, Replace sole, Resole) for non-footwear items.
+- Think carefully: does a {clothing_type} actually have the body part this action refers to?
 
 Available actions:
 {actions_list}
 
-Return ONLY a JSON array of the top 5 most relevant action names (as strings), ordered by likelihood. If fewer than 5 actions are available, return all of them. Example: ["Repair seam", "Replace button", "Repair tear"]"""
+Return ONLY a JSON array of the top 5 most relevant action names (as strings), ordered by likelihood. If fewer than 5 actions are physically applicable, return fewer. Example: ["Repair seam", "Replace button", "Repair tear"]"""
 
 
 @app.route("/remap/rank-actions", methods=["POST"])
@@ -1447,12 +1453,20 @@ def remap_rank_actions():
 
     ai_client = anthropic.Anthropic(api_key=api_key)
 
-    # Load already-ranked combos to skip them
+    # Optional: force re-rank specific clothing type IDs
+    force_ct_ids = None
+    body = request.get_json(silent=True) or {}
+    if body.get("force_clothing_type_ids"):
+        force_ct_ids = set(body["force_clothing_type_ids"])
+
+    # Load already-ranked combos to skip them (unless forced)
     read_conn = get_db()
     existing = set()
     with read_conn.cursor() as cur:
         cur.execute("SELECT clothing_type_id, material_id FROM qfix_action_rankings")
         for row in cur.fetchall():
+            if force_ct_ids and row[0] in force_ct_ids:
+                continue  # Don't skip — re-rank these
             existing.add((row[0], row[1]))
     read_conn.close()
 
@@ -1529,6 +1543,11 @@ def remap_rank_actions():
 
                 top_names = json.loads(response_text)
 
+                # Handle empty array (Claude says no actions apply)
+                if not top_names:
+                    rankings[ranking_key] = []
+                    continue
+
                 # Match names back to service objects (keep first match for dupes)
                 top_actions = []
                 seen_names = set()
@@ -1547,19 +1566,15 @@ def remap_rank_actions():
 
                 rankings[ranking_key] = top_actions[:5]
 
+            except json.JSONDecodeError:
+                # Claude likely returned text like "None of these apply" — treat as empty
+                logger.info("No applicable actions for ct=%s mat=%s svc=%s (non-JSON response)",
+                           ct_id, mat_id, svc_name)
+                rankings[ranking_key] = []
             except Exception as e:
                 logger.warning("Failed to rank actions for ct=%s mat=%s svc=%s: %s",
                               ct_id, mat_id, svc_name, e)
-                # Fallback: first 5 unique by name
-                seen = set()
-                fallback = []
-                for s in services:
-                    if s["name"] not in seen:
-                        fallback.append({"id": s["id"], "name": s["name"], "price": s.get("price")})
-                        seen.add(s["name"])
-                    if len(fallback) >= 5:
-                        break
-                rankings[ranking_key] = fallback
+                rankings[ranking_key] = []
                 errors += 1
 
         # Use a fresh connection for each persist to avoid timeout
