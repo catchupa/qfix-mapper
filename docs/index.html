@@ -97,6 +97,32 @@
     .tag-yellow { background: #fef9c3; color: #854d0e; }
     .tag-red { background: #fee2e2; color: #991b1b; }
     .tag-gray { background: #f3f4f6; color: #4b5563; }
+
+    /* Rankings */
+    .ranking-group { margin-bottom: 16px; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+    .ranking-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px; background: #f8f9fa; cursor: pointer; user-select: none;
+    }
+    .ranking-header:hover { background: #f0f0f0; }
+    .ranking-header h4 { font-size: 14px; font-weight: 600; margin: 0; }
+    .ranking-header .rh-meta { font-size: 12px; color: #888; }
+    .ranking-header .rh-arrow { color: #aaa; transition: transform 0.2s; }
+    .ranking-header.open .rh-arrow { transform: rotate(90deg); }
+    .ranking-body { display: none; padding: 0 14px 14px; }
+    .ranking-body.open { display: block; }
+    .ranking-material { margin-top: 10px; padding: 10px; background: #fafafa; border-radius: 6px; }
+    .ranking-material-label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+    .ranking-svc { margin-bottom: 8px; }
+    .ranking-svc-label { font-size: 12px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; }
+    .ranking-pills { display: flex; flex-wrap: wrap; gap: 4px; }
+    .ranking-pill {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 10px; background: #fff; border: 1px solid #e0e0e0;
+      border-radius: 14px; font-size: 12px; white-space: nowrap;
+    }
+    .ranking-pill-id { color: #aaa; font-size: 11px; }
+    .ranking-pill-price { color: #888; font-size: 11px; }
   </style>
 </head>
 <body>
@@ -234,6 +260,13 @@
           <tr><td>Other/Unsure</td><td>Fallback when material can't be determined</td></tr>
         </tbody>
       </table>
+    </details>
+
+    <details>
+      <summary>AI-Ranked Top 5 Actions per Category</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">For each clothing type + material combination, AI has ranked the 5 most relevant service actions per service category.</p>
+      <input type="text" id="rankingsFilter" placeholder="Filter by clothing type or material..." style="width:100%; padding:8px 12px; border:2px solid #e0e0e0; border-radius:6px; font-size:13px; margin-bottom:12px; outline:none;" />
+      <div id="rankingsContainer" style="font-size:13px; color:#aaa;">Loading...</div>
     </details>
 
     <details>
@@ -497,6 +530,88 @@ async function loadFullMappings() {
   }
 }
 loadFullMappings();
+
+// Load AI-ranked actions
+async function loadRankings() {
+  try {
+    const res = await fetch('/docs/rankings');
+    const data = await res.json();
+
+    // Group by clothing type
+    const groups = {};
+    for (const item of data) {
+      const key = item.clothing_type_id;
+      if (!groups[key]) {
+        groups[key] = { name: item.clothing_type_name, id: item.clothing_type_id, materials: [] };
+      }
+      groups[key].materials.push(item);
+    }
+
+    const svcLabels = {repair: 'Repair', adjustment: 'Adjustment', care: 'Washing & Care', other: 'Other'};
+    const container = document.getElementById('rankingsContainer');
+    const allGroups = Object.values(groups).sort((a, b) => a.name.localeCompare(b.name));
+
+    function renderGroups(filter) {
+      const lf = (filter || '').toLowerCase();
+      let html = '';
+      let shown = 0;
+      for (const g of allGroups) {
+        const matchesGroup = !lf || g.name.toLowerCase().includes(lf);
+        const matchingMats = g.materials.filter(function(m) {
+          return matchesGroup || m.material_name.toLowerCase().includes(lf);
+        });
+        if (matchingMats.length === 0) continue;
+        shown++;
+
+        html += '<div class="ranking-group">';
+        html += '<div class="ranking-header" onclick="this.classList.toggle(\'open\');this.nextElementSibling.classList.toggle(\'open\')">';
+        html += '<h4>' + esc(g.name) + ' <span style="color:#aaa; font-weight:400;">(ID ' + g.id + ')</span></h4>';
+        html += '<span><span class="rh-meta">' + matchingMats.length + ' material' + (matchingMats.length !== 1 ? 's' : '') + '</span> <span class="rh-arrow">&#9654;</span></span>';
+        html += '</div>';
+        html += '<div class="ranking-body">';
+
+        for (const m of matchingMats) {
+          html += '<div class="ranking-material">';
+          html += '<div class="ranking-material-label">' + esc(m.material_name) + ' (ID ' + m.material_id + ')</div>';
+          const r = m.rankings || {};
+          for (const [svcKey, svcLabel] of Object.entries(svcLabels)) {
+            const actions = r[svcKey];
+            if (!actions || actions.length === 0) continue;
+            html += '<div class="ranking-svc">';
+            html += '<div class="ranking-svc-label">' + esc(svcLabel) + '</div>';
+            html += '<div class="ranking-pills">';
+            for (const a of actions) {
+              const price = a.price ? ' ' + a.price + ' kr' : '';
+              html += '<span class="ranking-pill">';
+              html += esc(a.name);
+              if (price) html += ' <span class="ranking-pill-price">' + esc(price) + '</span>';
+              html += ' <span class="ranking-pill-id">#' + a.id + '</span>';
+              html += '</span>';
+            }
+            html += '</div></div>';
+          }
+          html += '</div>';
+        }
+
+        html += '</div></div>';
+      }
+
+      if (shown === 0) {
+        html = '<p style="color:#aaa; padding:8px;">No matches found.</p>';
+      }
+      container.innerHTML = html;
+    }
+
+    renderGroups('');
+
+    document.getElementById('rankingsFilter').addEventListener('input', function() {
+      renderGroups(this.value);
+    });
+  } catch (e) {
+    document.getElementById('rankingsContainer').innerHTML = '<p class="error-msg">Failed to load rankings</p>';
+  }
+}
+loadRankings();
 </script>
 
 </body>

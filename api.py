@@ -2056,6 +2056,36 @@ def docs_mappings():
     })
 
 
+@app.route("/docs/rankings")
+def docs_rankings():
+    """Return all AI-ranked top actions grouped by clothing type and material."""
+    _load_qfix_catalog()
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("SELECT clothing_type_id, material_id, rankings FROM qfix_action_rankings ORDER BY clothing_type_id, material_id")
+        rows = cur.fetchall()
+    conn.close()
+
+    results = []
+    for row in rows:
+        ct_id = row["clothing_type_id"]
+        mat_id = row["material_id"]
+        ct_name = _qfix_items.get(ct_id, {}).get("name", f"Unknown ({ct_id})")
+        mat_name = _qfix_subitems.get(mat_id, {}).get("name", f"Unknown ({mat_id})")
+        rankings = row["rankings"]
+        if isinstance(rankings, str):
+            rankings = json.loads(rankings)
+        results.append({
+            "clothing_type_id": ct_id,
+            "clothing_type_name": ct_name,
+            "material_id": mat_id,
+            "material_name": mat_name,
+            "rankings": rankings,
+        })
+
+    return jsonify(results)
+
+
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
