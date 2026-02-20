@@ -145,6 +145,12 @@
       padding: 8px 0;
     }
 
+    /* Mapping info */
+    .kh-mapping-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .kh-mapping-table td { padding: 4px 0; vertical-align: top; }
+    .kh-mapping-table td:first-child { color: #888; width: 120px; }
+    .kh-mapping-arrow { color: #aaa; padding: 0 6px; }
+
     /* Suggested actions */
     .kh-actions-group { margin-bottom: 10px; }
     .kh-actions-label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
@@ -181,7 +187,7 @@
   </header>
 
   <!-- Breadcrumb -->
-  <div class="kh-breadcrumb">
+  <div class="kh-breadcrumb" id="breadcrumb">
     <a href="#">Hem</a> / <a href="#">Dam</a> / <a href="#">Jackor &amp; rockar</a> / Jeansjacka
   </div>
 
@@ -237,19 +243,23 @@
 
       <hr class="kh-divider">
 
-      <details class="kh-details">
-        <summary>Produktinformation</summary>
-        <p>En klassisk jeansjacka i bomull med bröstfickor och knappar. Perfekt för vår och sommar.</p>
-      </details>
-
-      <details class="kh-details">
-        <summary>Material &amp; skötsel</summary>
-        <p>99% Bomull, 1% Elastan. Maskintvätt 40°. Torktumla ej.</p>
-      </details>
+      <!-- Product & mapping info (loaded dynamically) -->
+      <div id="mappingInfo" style="display:none;">
+        <details class="kh-details" open>
+          <summary>Produktinfo &amp; QFix-mappning</summary>
+          <table class="kh-mapping-table">
+            <tr><td>Varumärke</td><td id="infoBrand">—</td></tr>
+            <tr><td>Typ (brand)</td><td id="infoClothingType">—</td></tr>
+            <tr><td>Material (brand)</td><td id="infoMaterial">—</td></tr>
+            <tr><td>QFix typ</td><td><span id="infoQfixType">—</span></td></tr>
+            <tr><td>QFix material</td><td><span id="infoQfixMaterial">—</span></td></tr>
+          </table>
+        </details>
+      </div>
 
       <details class="kh-details">
         <summary>Art.nr</summary>
-        <p>530956</p>
+        <p id="infoArtNr">530956</p>
       </details>
     </div>
   </main>
@@ -263,19 +273,60 @@
     (function () {
       var params = new URLSearchParams(location.search);
       var pid = params.get("productId") || "530956";
-      if (params.get("productId")) {
-        document.querySelector(".kh-title").textContent = "Product " + pid;
-        var artNr = document.querySelector(".kh-details:last-of-type p");
-        if (artNr) artNr.textContent = pid;
-        document.querySelectorAll(".qfix-redirect").forEach(function (el) {
-          el.href = el.href.replace(/productId=[^&]*/, "productId=" + pid);
-        });
-      }
 
-      // Load suggested actions
+      // Update redirect links with correct product ID
+      document.querySelectorAll(".qfix-redirect").forEach(function (el) {
+        el.href = el.href.replace(/productId=[^&]*/, "productId=" + pid);
+      });
+
+      // Update art.nr
+      document.getElementById("infoArtNr").textContent = pid;
+
+      // Load product data, mapping info, and suggested actions
       fetch("/docs/verify/" + encodeURIComponent(pid))
         .then(function(r) { return r.json(); })
         .then(function(data) {
+          var p = data.product || {};
+          var m = data.mapping || {};
+
+          // Update page title and header
+          var name = p.product_name || ("Product " + pid);
+          var brand = p.brand || "KappAhl";
+          document.querySelector(".kh-title").textContent = name;
+          document.querySelector(".kh-brand-label").textContent = brand;
+          document.querySelector(".kh-logo").textContent = brand;
+          document.title = name + " — " + brand;
+
+          // Update breadcrumb
+          var category = p.category || p.clothing_type || "";
+          var qfixType = m.clothing_type_result || "";
+          var bc = '<a href="#">Hem</a>';
+          if (brand) bc += ' / <a href="#">' + brand + '</a>';
+          if (category) bc += ' / <a href="#">' + category + '</a>';
+          bc += ' / ' + name;
+          document.getElementById("breadcrumb").innerHTML = bc;
+
+          // Update redirect link brand slugs
+          var brandSlug = brand.toLowerCase().replace(/\s+/g, "");
+          if (brandSlug === "ginatricot") brandSlug = "ginatricot";
+          else if (brandSlug === "nudiejeans") brandSlug = "nudie";
+          document.querySelectorAll(".qfix-redirect").forEach(function (el) {
+            el.href = el.href.replace(/\/[^/]+\/(repair|adjustment|care)\//, "/" + brandSlug + "/$1/");
+          });
+
+          // Populate mapping info
+          document.getElementById("infoBrand").textContent = brand;
+          document.getElementById("infoClothingType").textContent = p.clothing_type || "—";
+          document.getElementById("infoMaterial").textContent = p.material_composition || "—";
+          document.getElementById("infoQfixType").textContent = m.clothing_type_result
+            ? m.clothing_type_result + " (ID " + m.clothing_type_id + ")"
+            : "—";
+          document.getElementById("infoQfixMaterial").textContent = m.material_result
+            ? m.material_result + " (ID " + m.material_id + ")"
+            : "—";
+          document.getElementById("mappingInfo").style.display = "block";
+
+          // Render suggested actions
           var ta = data.top_actions || {};
           var labels = {repair: "Reparation", adjustment: "Justering", care: "Tvätt & skötsel", other: "Övrigt"};
           var html = "";
@@ -296,7 +347,7 @@
             el.style.display = "block";
           }
         })
-        .catch(function() {});
+        .catch(function(err) { console.error("Failed to load product data:", err); });
     })();
   </script>
 
