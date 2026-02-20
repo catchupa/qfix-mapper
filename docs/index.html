@@ -386,6 +386,30 @@ async function verify() {
       html += '</div>';
     }
 
+    // Top suggested actions (AI-ranked)
+    const topActions = data.top_actions || {};
+    const hasActions = Object.values(topActions).some(function(a) { return a && a.length > 0; });
+
+    if (hasActions) {
+      html += '<h3 style="margin:20px 0 8px;">Suggested Actions</h3>';
+      html += '<p style="font-size:13px; color:#666; margin-bottom:12px;">Top 5 most relevant service actions for this product type, ranked by AI.</p>';
+
+      const actionLabels = {repair: 'Repair', adjustment: 'Adjustment', care: 'Washing & Care', other: 'Other'};
+      for (const [key, label] of Object.entries(actionLabels)) {
+        const actions = topActions[key];
+        if (!actions || actions.length === 0) continue;
+        html += '<div style="margin-bottom:12px;">';
+        html += '<div style="font-size:13px; font-weight:700; color:#555; margin-bottom:4px;">' + esc(label) + '</div>';
+        html += '<div style="display:flex; flex-wrap:wrap; gap:6px;">';
+        for (const a of actions) {
+          const priceStr = a.price ? ' — from ' + a.price + ' kr' : '';
+          html += '<span style="display:inline-block; padding:5px 12px; background:#f0f0f0; border-radius:16px; font-size:13px;">';
+          html += esc(a.name) + '<span style="color:#888;">' + esc(priceStr) + '</span></span>';
+        }
+        html += '</div></div>';
+      }
+    }
+
     el.innerHTML = html;
   } catch (e) {
     el.innerHTML = '<div class="error-msg">Request failed: ' + esc(e.message) + '</div>';

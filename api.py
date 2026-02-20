@@ -23,7 +23,9 @@ from mapping import (
     BRAND_MATERIAL_OVERRIDES,
 )
 from mapping_v2 import map_product_v2
-from database import create_table, upsert_product, update_qfix_mapping, DATABASE_URL, DATABASE_WRITE_URL
+from database import (create_table, upsert_product, update_qfix_mapping,
+                      upsert_action_ranking, get_action_ranking,
+                      DATABASE_URL, DATABASE_WRITE_URL)
 from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
 
@@ -1373,6 +1375,185 @@ def remap_status():
     return jsonify(rows)
 
 
+RANK_ACTIONS_PROMPT = """You are a clothing repair service expert. For a **{clothing_type}** made of **{material}**, rank the following {service_name} actions by how likely a typical customer would need them. Consider what types of damage or alterations are most common for this specific garment type.
+
+Available actions:
+{actions_list}
+
+Return ONLY a JSON array of the top 5 most relevant action names (as strings), ordered by likelihood. If fewer than 5 actions are available, return all of them. Example: ["Repair seam", "Replace button", "Repair tear"]"""
+
+
+@app.route("/remap/rank-actions", methods=["POST"])
+@limiter.limit("5 per minute")
+def remap_rank_actions():
+    """Use AI to rank the top 5 most relevant service actions per clothing type.
+
+    Iterates all unique (clothing_type_id, material_id) combos in the QFix catalog
+    and uses Claude to select the 5 most relevant actions per service category.
+    Results are persisted in the qfix_action_rankings table.
+    ---
+    tags:
+      - Mapping
+    responses:
+      200:
+        description: Ranking results
+        schema:
+          type: object
+          properties:
+            total_combos:
+              type: integer
+            ranked:
+              type: integer
+            errors:
+              type: integer
+    """
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    if not api_key:
+        return jsonify({"error": "ANTHROPIC_API_KEY not configured"}), 500
+
+    _load_qfix_catalog()
+
+    if not _qfix_services:
+        return jsonify({"error": "QFix catalog not loaded"}), 500
+
+    ai_client = anthropic.Anthropic(api_key=api_key)
+
+    # Load already-ranked combos to skip them
+    read_conn = get_db()
+    existing = set()
+    with read_conn.cursor() as cur:
+        cur.execute("SELECT clothing_type_id, material_id FROM qfix_action_rankings")
+        for row in cur.fetchall():
+            existing.add((row[0], row[1]))
+    read_conn.close()
+
+    total = len(_qfix_services)
+    skipped = len(existing)
+    ranked = 0
+    errors = 0
+
+    service_slug_to_key = {
+        "repair": "repair",
+        "adjustment": "adjustment",
+        "washing": "care",
+        "customize": "other",
+    }
+
+    for (ct_id, mat_id), svc_cats in _qfix_services.items():
+        if (ct_id, mat_id) in existing:
+            continue
+
+        ct_name = _qfix_items.get(ct_id, {}).get("name", f"ID {ct_id}")
+        mat_name = _qfix_subitems.get(mat_id, {}).get("name", f"ID {mat_id}")
+
+        rankings = {}
+
+        for svc_cat in svc_cats:
+            svc_slug = svc_cat.get("slug", "")
+            svc_name = svc_cat.get("name", "")
+            services = svc_cat.get("services", [])
+
+            # Determine the key for this service category
+            ranking_key = None
+            for slug_part, key in service_slug_to_key.items():
+                if slug_part in svc_slug:
+                    ranking_key = key
+                    break
+            if not ranking_key:
+                continue
+
+            if not services:
+                rankings[ranking_key] = []
+                continue
+
+            # If 5 or fewer actions, no need to rank
+            if len(services) <= 5:
+                rankings[ranking_key] = [
+                    {"id": s["id"], "name": s["name"], "price": s.get("price")}
+                    for s in services
+                ]
+                continue
+
+            # Build action list for Claude
+            action_names = list({s["name"] for s in services})
+            actions_list = "\n".join(f"- {name}" for name in sorted(action_names))
+
+            prompt = RANK_ACTIONS_PROMPT.format(
+                clothing_type=ct_name,
+                material=mat_name,
+                service_name=svc_name,
+                actions_list=actions_list,
+            )
+
+            try:
+                message = ai_client.messages.create(
+                    model="claude-sonnet-4-5-20250929",
+                    max_tokens=256,
+                    messages=[{"role": "user", "content": prompt}],
+                )
+                response_text = message.content[0].text.strip()
+
+                # Parse JSON (handle markdown code blocks)
+                if response_text.startswith("```"):
+                    lines = response_text.split("\n")
+                    response_text = "\n".join(lines[1:-1])
+
+                top_names = json.loads(response_text)
+
+                # Match names back to service objects (keep first match for dupes)
+                top_actions = []
+                seen_names = set()
+                for name in top_names:
+                    if name in seen_names:
+                        continue
+                    for s in services:
+                        if s["name"] == name and s["id"] not in {a["id"] for a in top_actions}:
+                            top_actions.append({
+                                "id": s["id"],
+                                "name": s["name"],
+                                "price": s.get("price"),
+                            })
+                            seen_names.add(name)
+                            break
+
+                rankings[ranking_key] = top_actions[:5]
+
+            except Exception as e:
+                logger.warning("Failed to rank actions for ct=%s mat=%s svc=%s: %s",
+                              ct_id, mat_id, svc_name, e)
+                # Fallback: first 5 unique by name
+                seen = set()
+                fallback = []
+                for s in services:
+                    if s["name"] not in seen:
+                        fallback.append({"id": s["id"], "name": s["name"], "price": s.get("price")})
+                        seen.add(s["name"])
+                    if len(fallback) >= 5:
+                        break
+                rankings[ranking_key] = fallback
+                errors += 1
+
+        # Use a fresh connection for each persist to avoid timeout
+        try:
+            wc = get_write_db()
+            upsert_action_ranking(wc, ct_id, mat_id, rankings)
+            wc.close()
+            ranked += 1
+            logger.info("Ranked ct=%s (%s) mat=%s (%s): %d categories",
+                       ct_id, ct_name, mat_id, mat_name,
+                       sum(1 for v in rankings.values() if v))
+        except Exception as e:
+            logger.error("Failed to persist ranking for ct=%s mat=%s: %s", ct_id, mat_id, e)
+            errors += 1
+
+    return jsonify({
+        "total_combos": total,
+        "already_ranked": skipped,
+        "newly_ranked": ranked,
+        "errors": errors,
+    })
+
+
 REMAP_PROMPT = """You are a mapping assistant for a clothing repair service (QFix). You will be given a list of unmapped {type_label} values from scraped product data. Your job is to map each value to the correct QFix category, or mark it as "skip" if it's not a repairable clothing/textile item.
 
 ## Valid QFix target values
@@ -1794,6 +1975,34 @@ def docs_verify(product_id):
         "other": product.get("qfix_url_other"),
     }
 
+    # Top ranked actions from DB (or fallback to first 5 from catalog)
+    top_actions = {}
+    if ct_id and mat_id:
+        ranking_conn = get_db()
+        top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
+        ranking_conn.close()
+
+    # Fallback: if no rankings persisted, use first 5 unique per service category
+    if not top_actions and enriched.get("qfix_services"):
+        service_slug_to_key = {
+            "repair": "repair", "adjustment": "adjustment",
+            "washing": "care", "customize": "other",
+        }
+        for svc_cat in enriched["qfix_services"]:
+            svc_slug = svc_cat.get("slug", "")
+            for slug_part, key in service_slug_to_key.items():
+                if slug_part in svc_slug:
+                    seen = set()
+                    actions = []
+                    for s in svc_cat.get("services", []):
+                        if s["name"] not in seen:
+                            actions.append({"id": s["id"], "name": s["name"], "price": s.get("price")})
+                            seen.add(s["name"])
+                        if len(actions) >= 5:
+                            break
+                    top_actions[key] = actions
+                    break
+
     return jsonify({
         "product": {
             "product_id": product["product_id"],
@@ -1817,6 +2026,7 @@ def docs_verify(product_id):
         },
         "services": services,
         "persisted_service_urls": persisted_service_urls,
+        "top_actions": top_actions,
     })
 
 

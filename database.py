@@ -1,3 +1,4 @@
+import json
 import os
 
 import psycopg2
@@ -140,3 +141,41 @@ def update_qfix_mapping(conn, brand, product_id, qfix_data):
             "qfix_url_care": qfix_data.get("qfix_url_care"),
             "qfix_url_other": qfix_data.get("qfix_url_other"),
         })
+
+
+def create_action_rankings_table(conn):
+    with conn.cursor() as cur:
+        cur.execute("""
+            CREATE TABLE IF NOT EXISTS qfix_action_rankings (
+                clothing_type_id INTEGER NOT NULL,
+                material_id INTEGER NOT NULL,
+                rankings JSONB NOT NULL,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (clothing_type_id, material_id)
+            );
+        """)
+
+
+def upsert_action_ranking(conn, clothing_type_id, material_id, rankings):
+    with conn.cursor() as cur:
+        cur.execute("""
+            INSERT INTO qfix_action_rankings (clothing_type_id, material_id, rankings)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (clothing_type_id, material_id) DO UPDATE SET
+                rankings = EXCLUDED.rankings,
+                updated_at = CURRENT_TIMESTAMP;
+        """, (clothing_type_id, material_id, json.dumps(rankings)))
+
+
+def get_action_ranking(conn, clothing_type_id, material_id):
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            "SELECT rankings FROM qfix_action_rankings "
+            "WHERE clothing_type_id = %s AND material_id = %s",
+            (clothing_type_id, material_id),
+        )
+        row = cur.fetchone()
+        if row:
+            r = row["rankings"]
+            return r if isinstance(r, dict) else json.loads(r)
+        return None
