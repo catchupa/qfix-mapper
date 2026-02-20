@@ -263,6 +263,12 @@
     </details>
 
     <details>
+      <summary>QFix Types Missing Services</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Clothing types in the QFix catalog that have zero service actions defined (repair, adjustment, care, other).</p>
+      <div id="missingServicesContainer" style="font-size:13px; color:#aaa;">Loading...</div>
+    </details>
+
+    <details>
       <summary>AI-Ranked Top 5 Actions per Category</summary>
       <p style="font-size:13px; color:#666; margin:4px 0 8px;">For each clothing type + material combination, AI has ranked the 5 most relevant service actions per service category.</p>
       <input type="text" id="rankingsFilter" placeholder="Filter by clothing type or material..." style="width:100%; padding:8px 12px; border:2px solid #e0e0e0; border-radius:6px; font-size:13px; margin-bottom:12px; outline:none;" />
@@ -612,6 +618,34 @@ async function loadRankings() {
   }
 }
 loadRankings();
+
+// Load missing services
+async function loadMissingServices() {
+  try {
+    const res = await fetch('/docs/missing-services');
+    const data = await res.json();
+    const container = document.getElementById('missingServicesContainer');
+
+    let html = '<p style="color:#1a1a1a; margin-bottom:12px;"><strong>' + data.total_types_missing + '</strong> clothing types (' + data.total_combos_missing + ' type/material combos) have no services defined.</p>';
+    html += '<table class="map-table"><thead><tr><th>Clothing Type</th><th>ID</th><th>Parent Category</th><th>Materials</th></tr></thead><tbody>';
+
+    for (const t of data.types) {
+      const mats = t.materials.map(function(m) { return m.material_name; }).join(', ');
+      html += '<tr>';
+      html += '<td>' + esc(t.clothing_type_name) + '</td>';
+      html += '<td>' + t.clothing_type_id + '</td>';
+      html += '<td>' + esc(t.parent_category) + '</td>';
+      html += '<td>' + esc(mats) + '</td>';
+      html += '</tr>';
+    }
+
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  } catch (e) {
+    document.getElementById('missingServicesContainer').innerHTML = '<p class="error-msg">Failed to load missing services</p>';
+  }
+}
+loadMissingServices();
 </script>
 
 </body>
