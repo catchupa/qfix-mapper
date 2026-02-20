@@ -1727,7 +1727,8 @@ def docs_verify(product_id):
             """SELECT product_id, product_name, brand, category, clothing_type,
                       material_composition, materials, article_number,
                       qfix_clothing_type, qfix_clothing_type_id, qfix_material,
-                      qfix_material_id, qfix_url
+                      qfix_material_id, qfix_url,
+                      qfix_url_repair, qfix_url_adjustment, qfix_url_care, qfix_url_other
                FROM products_unified WHERE product_id = %s LIMIT 1""",
             (product_id,),
         )
@@ -1785,6 +1786,14 @@ def docs_verify(product_id):
             "url": svc_url,
         })
 
+    # Persisted service URLs from DB
+    persisted_service_urls = {
+        "repair": product.get("qfix_url_repair"),
+        "adjustment": product.get("qfix_url_adjustment"),
+        "care": product.get("qfix_url_care"),
+        "other": product.get("qfix_url_other"),
+    }
+
     return jsonify({
         "product": {
             "product_id": product["product_id"],
@@ -1807,6 +1816,7 @@ def docs_verify(product_id):
             "live_url": live_url,
         },
         "services": services,
+        "persisted_service_urls": persisted_service_urls,
     })
 
 

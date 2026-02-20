@@ -339,16 +339,48 @@ async function verify() {
     }
     html += '</div></div>';
 
-    // Services
-    if (svcs.length > 0) {
-      html += '<h3 style="margin:20px 0 8px;">Service Links</h3>';
-      html += '<p style="font-size:13px; color:#666; margin-bottom:8px;">Click to open the QFix booking page for each service type.</p>';
-      html += '<div class="service-links">';
-      for (const svc of svcs) {
-        if (svc.url) {
-          html += '<a class="service-link" href="' + esc(svc.url) + '" target="_blank">' + esc(svc.name) + '</a>';
+    // Persisted service URLs from DB
+    const pUrls = data.persisted_service_urls || {};
+    const hasPersistedUrls = pUrls.repair || pUrls.adjustment || pUrls.care || pUrls.other;
+
+    if (hasPersistedUrls || svcs.length > 0) {
+      html += '<h3 style="margin:20px 0 8px;">Service URLs</h3>';
+      html += '<p style="font-size:13px; color:#666; margin-bottom:12px;">QFix booking URLs for each service type. These are persisted in the database and used by the redirect endpoints.</p>';
+
+      const serviceRows = [
+        {label: 'Repair', key: 'repair', dbUrl: pUrls.repair},
+        {label: 'Adjustment', key: 'adjustment', dbUrl: pUrls.adjustment},
+        {label: 'Care', key: 'care', dbUrl: pUrls.care},
+        {label: 'Other', key: 'other', dbUrl: pUrls.other},
+      ];
+
+      html += '<table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:12px;">';
+      html += '<thead><tr><th style="text-align:left; padding:8px; border-bottom:2px solid #e0e0e0;">Service</th>';
+      html += '<th style="text-align:left; padding:8px; border-bottom:2px solid #e0e0e0;">URL</th>';
+      html += '<th style="text-align:left; padding:8px; border-bottom:2px solid #e0e0e0;">Status</th></tr></thead>';
+      html += '<tbody>';
+      for (const sr of serviceRows) {
+        const url = sr.dbUrl;
+        html += '<tr>';
+        html += '<td style="padding:8px; border-bottom:1px solid #f0f0f0; font-weight:600;">' + esc(sr.label) + '</td>';
+        if (url) {
+          html += '<td style="padding:8px; border-bottom:1px solid #f0f0f0;"><a href="' + esc(url) + '" target="_blank" style="color:#1a1a1a; word-break:break-all; font-size:13px;">' + esc(url) + '</a></td>';
+          html += '<td style="padding:8px; border-bottom:1px solid #f0f0f0;"><span class="tag tag-green">Persisted</span></td>';
         } else {
-          html += '<span class="service-link disabled">' + esc(svc.name) + ' (unavailable)</span>';
+          html += '<td style="padding:8px; border-bottom:1px solid #f0f0f0; color:#aaa;">—</td>';
+          html += '<td style="padding:8px; border-bottom:1px solid #f0f0f0;"><span class="tag tag-gray">Not available</span></td>';
+        }
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+
+      // Quick-access buttons
+      html += '<div class="service-links">';
+      for (const sr of serviceRows) {
+        if (sr.dbUrl) {
+          html += '<a class="service-link" href="' + esc(sr.dbUrl) + '" target="_blank">' + esc(sr.label) + '</a>';
+        } else {
+          html += '<span class="service-link disabled">' + esc(sr.label) + '</span>';
         }
       }
       html += '</div>';
