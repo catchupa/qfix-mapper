@@ -1226,23 +1226,27 @@ def remap_run():
     if brand_filter and brand_filter not in BRAND_ROUTES:
         return jsonify({"error": f"Unknown brand: {brand_filter}"}), 400
 
+    limit = request.args.get("limit", type=int)
+    offset = request.args.get("offset", 0, type=int)
+
     # Load products from DB
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        base_query = (
+            "SELECT product_id, product_name, category, clothing_type, "
+            "material_composition, materials, brand, article_number "
+            "FROM products_unified"
+        )
+        params = []
         if brand_filter:
             brand_name = BRAND_ROUTES[brand_filter]
-            cur.execute(
-                "SELECT product_id, product_name, category, clothing_type, "
-                "material_composition, materials, brand, article_number "
-                "FROM products_unified WHERE brand = %s",
-                (brand_name,),
-            )
-        else:
-            cur.execute(
-                "SELECT product_id, product_name, category, clothing_type, "
-                "material_composition, materials, brand, article_number "
-                "FROM products_unified"
-            )
+            base_query += " WHERE brand = %s"
+            params.append(brand_name)
+        base_query += " ORDER BY id"
+        if limit:
+            base_query += " LIMIT %s OFFSET %s"
+            params.extend([limit, offset])
+        cur.execute(base_query, params)
         rows = cur.fetchall()
     conn.close()
 
@@ -1258,6 +1262,17 @@ def remap_run():
     write_conn.autocommit = False
     batch_count = 0
 
+    # Ensure QFix catalog is loaded for service ID resolution
+    _load_qfix_catalog()
+
+    # Slug-to-service-category mapping
+    _SERVICE_SLUG_MAP = {
+        "repair": "qfix_url_repair",
+        "adjustment": "qfix_url_adjustment",
+        "washing": "qfix_url_care",
+        "customize": "qfix_url_other",
+    }
+
     try:
         for row in rows:
             product = dict(row)
@@ -1268,6 +1283,23 @@ def remap_run():
                 mapped += 1
             else:
                 unmapped += 1
+
+            # Resolve service URLs
+            base_url = qfix.get("qfix_url")
+            ct_id = qfix.get("qfix_clothing_type_id")
+            mat_id = qfix.get("qfix_material_id")
+            if base_url and ct_id and mat_id:
+                service_cats = _qfix_services.get((ct_id, mat_id), [])
+                for svc_cat in service_cats:
+                    svc_slug = svc_cat.get("slug", "")
+                    svc_id = svc_cat.get("id")
+                    if svc_id:
+                        sep = "&" if "?" in base_url else "?"
+                        svc_url = f"{base_url}{sep}service_id={svc_id}"
+                        for key, col in _SERVICE_SLUG_MAP.items():
+                            if key in svc_slug:
+                                qfix[col] = svc_url
+                                break
 
             update_qfix_mapping(
                 write_conn,

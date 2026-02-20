@@ -61,6 +61,10 @@ def create_table(conn):
             ("qfix_material", "TEXT"),
             ("qfix_material_id", "INTEGER"),
             ("qfix_url", "TEXT"),
+            ("qfix_url_repair", "TEXT"),
+            ("qfix_url_adjustment", "TEXT"),
+            ("qfix_url_care", "TEXT"),
+            ("qfix_url_other", "TEXT"),
         ]:
             cur.execute(f"ALTER TABLE products_unified ADD COLUMN IF NOT EXISTS {col} {col_type};")
 
@@ -103,11 +107,12 @@ def upsert_product(conn, product):
 
 
 def update_qfix_mapping(conn, brand, product_id, qfix_data):
-    """Update only the 5 QFix mapping columns for a given product.
+    """Update the QFix mapping columns for a given product.
 
     qfix_data should be a dict with keys:
       qfix_clothing_type, qfix_clothing_type_id, qfix_material,
-      qfix_material_id, qfix_url
+      qfix_material_id, qfix_url, qfix_url_repair, qfix_url_adjustment,
+      qfix_url_care, qfix_url_other
     """
     with conn.cursor() as cur:
         cur.execute("""
@@ -116,7 +121,11 @@ def update_qfix_mapping(conn, brand, product_id, qfix_data):
                 qfix_clothing_type_id = %(qfix_clothing_type_id)s,
                 qfix_material = %(qfix_material)s,
                 qfix_material_id = %(qfix_material_id)s,
-                qfix_url = %(qfix_url)s
+                qfix_url = %(qfix_url)s,
+                qfix_url_repair = %(qfix_url_repair)s,
+                qfix_url_adjustment = %(qfix_url_adjustment)s,
+                qfix_url_care = %(qfix_url_care)s,
+                qfix_url_other = %(qfix_url_other)s
             WHERE brand = %(brand)s AND product_id = %(product_id)s
         """, {
             "brand": brand,
@@ -126,4 +135,8 @@ def update_qfix_mapping(conn, brand, product_id, qfix_data):
             "qfix_material": qfix_data.get("qfix_material"),
             "qfix_material_id": qfix_data.get("qfix_material_id"),
             "qfix_url": qfix_data.get("qfix_url"),
+            "qfix_url_repair": qfix_data.get("qfix_url_repair"),
+            "qfix_url_adjustment": qfix_data.get("qfix_url_adjustment"),
+            "qfix_url_care": qfix_data.get("qfix_url_care"),
+            "qfix_url_other": qfix_data.get("qfix_url_other"),
         })
