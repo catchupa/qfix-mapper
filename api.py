@@ -2164,6 +2164,43 @@ def docs_missing_services():
     })
 
 
+@app.route("/docs/category-products")
+def docs_category_products():
+    """Return sample products that have a given category value.
+
+    Query params:
+      - category: the Swedish category string to search for
+      - limit: max products to return (default 20)
+    """
+    category = request.args.get("category", "").strip()
+    if not category:
+        return jsonify({"error": "category parameter required"}), 400
+
+    limit = min(int(request.args.get("limit", 20)), 100)
+
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # Search in category, clothing_type columns (case-insensitive)
+        cur.execute("""
+            SELECT product_id, brand, product_name, category, clothing_type,
+                   material_composition, qfix_clothing_type, qfix_material,
+                   product_url
+            FROM products_unified
+            WHERE LOWER(category) LIKE %s
+               OR LOWER(clothing_type) LIKE %s
+            ORDER BY brand, product_name
+            LIMIT %s
+        """, (f"%{category.lower()}%", f"%{category.lower()}%", limit))
+        products = cur.fetchall()
+    conn.close()
+
+    return jsonify({
+        "category": category,
+        "count": len(products),
+        "products": products,
+    })
+
+
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()

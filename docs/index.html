@@ -123,6 +123,24 @@
     }
     .ranking-pill-id { color: #aaa; font-size: 11px; }
     .ranking-pill-price { color: #888; font-size: 11px; }
+
+    /* Category drilldown */
+    .cat-link { cursor: pointer; color: #2563eb; text-decoration: underline; }
+    .cat-link:hover { color: #1d4ed8; }
+    .drilldown-overlay {
+      display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.4); z-index: 1000; justify-content: center; align-items: center;
+    }
+    .drilldown-overlay.open { display: flex; }
+    .drilldown-modal {
+      background: #fff; border-radius: 12px; padding: 20px 24px; max-width: 900px; width: 95%;
+      max-height: 80vh; overflow-y: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+    }
+    .drilldown-modal h3 { margin: 0 0 4px; font-size: 16px; }
+    .drilldown-modal .dm-sub { font-size: 13px; color: #666; margin-bottom: 12px; }
+    .drilldown-modal table { width: 100%; }
+    .drilldown-close { float: right; cursor: pointer; font-size: 20px; color: #aaa; background: none; border: none; }
+    .drilldown-close:hover { color: #333; }
   </style>
 </head>
 <body>
@@ -522,7 +540,7 @@ async function loadFullMappings() {
     const cmBody = document.getElementById('clothingMapBody');
     const entries = Object.entries(data.clothing_type_map || {});
     cmBody.innerHTML = entries.map(function(e) {
-      return '<tr><td>' + esc(e[0]) + '</td><td><span class="tag tag-green">' + esc(e[1]) + '</span></td></tr>';
+      return '<tr><td><span class="cat-link" onclick="showCategoryProducts(\'' + esc(e[0]).replace(/'/g, "\\'") + '\',\'' + esc(e[1]).replace(/'/g, "\\'") + '\')">' + esc(e[0]) + '</span></td><td><span class="tag tag-green">' + esc(e[1]) + '</span></td></tr>';
     }).join('');
 
     const mmBody = document.getElementById('materialMapBody');
@@ -646,7 +664,54 @@ async function loadMissingServices() {
   }
 }
 loadMissingServices();
+
+// Category drilldown
+async function showCategoryProducts(category, qfixType) {
+  const overlay = document.getElementById('drilldownOverlay');
+  const modal = document.getElementById('drilldownModal');
+  modal.innerHTML = '<p style="color:#aaa;">Loading products for "' + esc(category) + '"...</p>';
+  overlay.classList.add('open');
+
+  try {
+    const res = await fetch('/docs/category-products?category=' + encodeURIComponent(category) + '&limit=30');
+    const data = await res.json();
+
+    let html = '<button class="drilldown-close" onclick="closeDrilldown()">&times;</button>';
+    html += '<h3>Products matching "' + esc(category) + '"</h3>';
+    html += '<p class="dm-sub">Mapped to <span class="tag tag-green">' + esc(qfixType) + '</span> &mdash; ' + data.count + ' products found</p>';
+
+    if (data.count === 0) {
+      html += '<p style="color:#888;">No products in the database have this category.</p>';
+    } else {
+      html += '<table class="map-table"><thead><tr><th>Brand</th><th>Product</th><th>Category (brand)</th><th>Clothing Type (brand)</th><th>Material</th><th>QFix Mapping</th></tr></thead><tbody>';
+      for (const p of data.products) {
+        const qfix = p.qfix_clothing_type ? esc(p.qfix_clothing_type) + ' / ' + esc(p.qfix_material || '?') : '<span style="color:#aaa;">unmapped</span>';
+        html += '<tr>';
+        html += '<td>' + esc(p.brand || '') + '</td>';
+        html += '<td>' + esc(p.product_name || '') + '</td>';
+        html += '<td>' + esc(p.category || '') + '</td>';
+        html += '<td>' + esc(p.clothing_type || '') + '</td>';
+        html += '<td style="max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="' + esc(p.material_composition || '') + '">' + esc(p.material_composition || '') + '</td>';
+        html += '<td>' + qfix + '</td>';
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+    }
+
+    modal.innerHTML = html;
+  } catch (e) {
+    modal.innerHTML = '<button class="drilldown-close" onclick="closeDrilldown()">&times;</button><p class="error-msg">Failed to load products</p>';
+  }
+}
+
+function closeDrilldown() {
+  document.getElementById('drilldownOverlay').classList.remove('open');
+}
 </script>
+
+<div class="drilldown-overlay" id="drilldownOverlay" onclick="if(event.target===this)closeDrilldown()">
+  <div class="drilldown-modal" id="drilldownModal"></div>
+</div>
 
 </body>
 </html>
