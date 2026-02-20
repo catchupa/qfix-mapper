@@ -683,11 +683,12 @@ async function showCategoryProducts(category, qfixType) {
     if (data.count === 0) {
       html += '<p style="color:#888;">No products in the database have this category.</p>';
     } else {
-      html += '<table class="map-table"><thead><tr><th>Brand</th><th>Product</th><th>Category (brand)</th><th>Clothing Type (brand)</th><th>Material</th><th>QFix Mapping</th></tr></thead><tbody>';
+      html += '<table class="map-table"><thead><tr><th>Brand</th><th>Product ID</th><th>Product</th><th>Category (brand)</th><th>Clothing Type (brand)</th><th>Material</th><th>QFix Mapping</th></tr></thead><tbody>';
       for (const p of data.products) {
         const qfix = p.qfix_clothing_type ? esc(p.qfix_clothing_type) + ' / ' + esc(p.qfix_material || '?') : '<span style="color:#aaa;">unmapped</span>';
         html += '<tr>';
         html += '<td>' + esc(p.brand || '') + '</td>';
+        html += '<td>' + esc(p.product_id || '') + '</td>';
         html += '<td>' + esc(p.product_name || '') + '</td>';
         html += '<td>' + esc(p.category || '') + '</td>';
         html += '<td>' + esc(p.clothing_type || '') + '</td>';
