@@ -382,7 +382,7 @@ def _redirect_to_qfix(brand_slug, service_key=None):
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
-            "SELECT product_id, product_name, category, clothing_type, material_composition, materials, brand, article_number, qfix_clothing_type, qfix_clothing_type_id, qfix_material, qfix_material_id, qfix_url FROM products_unified WHERE brand = %s AND product_id = %s",
+            "SELECT product_id, product_name, description, category, clothing_type, material_composition, materials, brand, article_number, qfix_clothing_type, qfix_clothing_type_id, qfix_material, qfix_material_id, qfix_url FROM products_unified WHERE brand = %s AND product_id = %s",
             (brand_name, product_id),
         )
         row = cur.fetchone()
@@ -426,6 +426,16 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                 ranking_conn = get_db()
                 top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
                 ranking_conn.close()
+
+                # Apply keyword-based injection for this product
+                product_text = " ".join(filter(None, [
+                    product.get("product_name", ""),
+                    product.get("description", ""),
+                ])).lower()
+                if product_text and qfix.get("qfix_services"):
+                    top_actions = _inject_keyword_actions(
+                        top_actions, product_text, qfix["qfix_services"])
+
                 actions = top_actions.get(ranking_key, [])
                 if actions:
                     ids = ",".join(str(a["id"]) for a in actions)
@@ -1417,6 +1427,129 @@ Available actions:
 
 Return ONLY a JSON array of the top 5 most relevant action names (as strings), ordered by likelihood. If fewer than 5 actions are physically applicable, return fewer. Example: ["Repair seam", "Replace button", "Repair tear"]"""
 
+# Keyword → action injection: Swedish/English keywords in product text → actions to boost
+# Each entry: list of keywords (any match triggers), action names to inject, which ranking category
+KEYWORD_ACTION_RULES = [
+    {
+        "keywords": ["dragkedja", "zipper", "blixtlås", "zip"],
+        "actions": ["Replace zipper", "Replace main zipper", "Replace zipper slider"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["knapp", "knappar", "button", "buttons"],
+        "actions": ["Replace button", "Replace snap button", "Replace jeans button", "Place new button", "Exchange button"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["spänne", "buckle"],
+        "actions": ["Replace buckle"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["foder", "lining", "fodrad"],
+        "actions": ["Replace lining", "Attach new inner lining"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["resår", "elastic", "elastisk"],
+        "actions": ["Replace elastic"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["kardborre", "velcro"],
+        "actions": ["Replace velcro"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["reflex", "reflexer", "reflective"],
+        "actions": ["Replace reflectors"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["läder", "leather", "skinn", "mocka", "suede", "nubuck"],
+        "actions": ["Clean and condition"],
+        "category": "care",
+    },
+    {
+        "keywords": ["dun", "dunfyllning", "down filled", "down jacket"],
+        "actions": ["Dry cleaning"],
+        "category": "care",
+    },
+    {
+        "keywords": ["impregnera", "waterproof", "vattentät", "gore-tex", "shell"],
+        "actions": ["Waterproofing"],
+        "category": "care",
+    },
+]
+
+
+def _inject_keyword_actions(top_actions, product_text, qfix_services):
+    """Inject relevant actions into top_actions based on keywords found in product text."""
+    if not product_text:
+        return top_actions
+
+    # Build a lookup: action name -> {id, name, price} from all services
+    all_actions = {}  # name -> list of {id, name, price, category_key}
+    service_slug_to_key = {
+        "repair": "repair", "adjustment": "adjustment",
+        "washing": "care", "customize": "other",
+    }
+    for svc_cat in qfix_services:
+        svc_slug = svc_cat.get("slug", "")
+        cat_key = None
+        for slug_part, key in service_slug_to_key.items():
+            if slug_part in svc_slug:
+                cat_key = key
+                break
+        if not cat_key:
+            continue
+        for s in svc_cat.get("services", []):
+            name = s["name"]
+            if name not in all_actions:
+                all_actions[name] = []
+            all_actions[name].append({
+                "id": s["id"], "name": name,
+                "price": s.get("price"), "category_key": cat_key,
+            })
+
+    # Check each keyword rule
+    injected = {}  # category_key -> list of actions to inject
+    for rule in KEYWORD_ACTION_RULES:
+        if any(kw in product_text for kw in rule["keywords"]):
+            cat = rule["category"]
+            if cat not in injected:
+                injected[cat] = []
+            for action_name in rule["actions"]:
+                if action_name in all_actions:
+                    # Pick the cheapest variant
+                    variants = [a for a in all_actions[action_name] if a["category_key"] == cat]
+                    if not variants:
+                        variants = all_actions[action_name]
+                    best = min(variants, key=lambda a: a["price"] or 9999)
+                    injected[cat].append({
+                        "id": best["id"], "name": best["name"], "price": best["price"],
+                    })
+
+    if not injected:
+        return top_actions
+
+    # Merge injected actions into top_actions (prepend, deduplicate, keep max 5)
+    result = dict(top_actions)
+    for cat, new_actions in injected.items():
+        existing = list(result.get(cat, []))
+        existing_ids = {a["id"] for a in existing}
+        existing_names = {a["name"] for a in existing}
+        to_prepend = []
+        for a in new_actions:
+            if a["id"] not in existing_ids and a["name"] not in existing_names:
+                to_prepend.append(a)
+                existing_ids.add(a["id"])
+                existing_names.add(a["name"])
+        if to_prepend:
+            result[cat] = (to_prepend + existing)[:5]
+
+    return result
+
 
 @app.route("/remap/rank-actions", methods=["POST"])
 @limiter.limit("5 per minute")
@@ -1953,7 +2086,7 @@ def docs_verify(product_id):
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
-            """SELECT product_id, product_name, brand, category, clothing_type,
+            """SELECT product_id, product_name, description, brand, category, clothing_type,
                       material_composition, materials, article_number,
                       qfix_clothing_type, qfix_clothing_type_id, qfix_material,
                       qfix_material_id, qfix_url,
@@ -2050,6 +2183,15 @@ def docs_verify(product_id):
                             break
                     top_actions[key] = actions
                     break
+
+    # Keyword-based action injection: boost relevant actions based on product text
+    if top_actions and enriched.get("qfix_services"):
+        product_text = " ".join(filter(None, [
+            product.get("product_name", ""),
+            product.get("description", ""),
+        ])).lower()
+
+        top_actions = _inject_keyword_actions(top_actions, product_text, enriched["qfix_services"])
 
     return jsonify({
         "product": {
