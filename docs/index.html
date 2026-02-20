@@ -217,6 +217,33 @@
              For specific services (repair, adjustment, care), a <code>service_id</code> is appended.</p>
         </div>
       </div>
+      <div class="flow-arrow">&#8595;</div>
+
+      <div class="flow-step">
+        <div class="flow-icon">5</div>
+        <div class="flow-text">
+          <h4>Select Top 5 Service Actions</h4>
+          <p>Each clothing type + material combination in the QFix catalog has many available service actions
+             (often 20+ per category). AI has pre-ranked the 5 most relevant actions per service category
+             (repair, adjustment, care, other) for all 259 combinations. These are stored in the database
+             and passed as <code>variants_id</code> in the redirect URL to pre-select them on QFix.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">&#8595;</div>
+
+      <div class="flow-step">
+        <div class="flow-icon">6</div>
+        <div class="flow-text">
+          <h4>Product-Specific Action Boost (Keyword Injection)</h4>
+          <p>The generic top 5 is based on clothing type only, but individual products may have specific
+             features that make certain actions more relevant. The product name and description are scanned
+             for keywords, and matching actions are injected into the top 5:</p>
+          <div id="keywordStatsTable" style="font-size:13px; color:#aaa; margin:8px 0;">Loading keyword stats...</div>
+          <p style="margin-top:4px;"><strong>Example:</strong> A "Stickad cardigan med dragkedja" (knitted cardigan with zipper) normally gets generic
+             Knitted Jumper repair actions. With keyword injection, "Replace zipper", "Replace main zipper", and
+             "Replace zipper slider" are boosted to the top of the repair list.</p>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -664,6 +691,41 @@ async function loadMissingServices() {
   }
 }
 loadMissingServices();
+
+// Load keyword injection stats
+async function loadKeywordStats() {
+  try {
+    const res = await fetch('/docs/keyword-stats');
+    const data = await res.json();
+    const container = document.getElementById('keywordStatsTable');
+
+    let html = '<table style="border-collapse:collapse; width:100%;">';
+    html += '<thead><tr style="background:#f8f9fa;">';
+    html += '<th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Keyword (SV/EN)</th>';
+    html += '<th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Injected Actions</th>';
+    html += '<th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Category</th>';
+    html += '<th style="text-align:right; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Products</th>';
+    html += '</tr></thead><tbody>';
+
+    for (const rule of data.rules) {
+      const pct = data.total_products > 0 ? (rule.product_count / data.total_products * 100).toFixed(1) : '0';
+      html += '<tr>';
+      html += '<td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">' + esc(rule.keywords.join(', ')) + '</td>';
+      html += '<td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">' + esc(rule.actions.join(', ')) + '</td>';
+      html += '<td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;"><span class="tag tag-green">' + esc(rule.category) + '</span></td>';
+      html += '<td style="padding:3px 8px; border-bottom:1px solid #f0f0f0; text-align:right;">';
+      html += '<strong>' + rule.product_count + '</strong> <span style="color:#aaa;">(' + pct + '%)</span>';
+      html += '</td></tr>';
+    }
+
+    html += '</tbody></table>';
+    html += '<p style="margin-top:6px; color:#888;">Out of ' + data.total_products.toLocaleString() + ' total products in the database.</p>';
+    container.innerHTML = html;
+  } catch (e) {
+    document.getElementById('keywordStatsTable').innerHTML = '<p class="error-msg">Failed to load keyword stats</p>';
+  }
+}
+loadKeywordStats();
 
 // Category drilldown
 async function showCategoryProducts(category, qfixType) {

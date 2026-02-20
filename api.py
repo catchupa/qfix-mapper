@@ -2343,6 +2343,43 @@ def docs_category_products():
     })
 
 
+@app.route("/docs/keyword-stats")
+def docs_keyword_stats():
+    """Return product counts per keyword injection rule."""
+    conn = get_db()
+    results = []
+    with conn.cursor() as cur:
+        for rule in KEYWORD_ACTION_RULES:
+            # Build OR condition for all keywords in this rule
+            conditions = []
+            params = []
+            for kw in rule["keywords"]:
+                conditions.append("LOWER(product_name) LIKE %s OR LOWER(description) LIKE %s")
+                params.extend([f"%{kw}%", f"%{kw}%"])
+
+            where = " OR ".join(conditions)
+            cur.execute(f"SELECT COUNT(*) FROM products_unified WHERE {where}", params)
+            count = cur.fetchone()[0]
+            results.append({
+                "keywords": rule["keywords"],
+                "actions": rule["actions"],
+                "category": rule["category"],
+                "product_count": count,
+            })
+    conn.close()
+
+    total_products = 0
+    with get_db() as c2:
+        with c2.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM products_unified")
+            total_products = cur.fetchone()[0]
+
+    return jsonify({
+        "total_products": total_products,
+        "rules": results,
+    })
+
+
 if __name__ == "__main__":
     from dotenv import load_dotenv
     load_dotenv()
