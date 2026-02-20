@@ -22,7 +22,7 @@ from mapping import (
     BRAND_MATERIAL_OVERRIDES,
 )
 from mapping_v2 import map_product_v2
-from database import create_table, upsert_product, DATABASE_URL, DATABASE_WRITE_URL
+from database import create_table, upsert_product, update_qfix_mapping, DATABASE_URL, DATABASE_WRITE_URL
 from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
 
@@ -322,7 +322,7 @@ def get_brand_product(brand_slug, product_id):
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
-            "SELECT product_id, product_name, category, clothing_type, material_composition, materials, product_url, description, color, brand, image_url, gtin, article_number, care_text, size, country_of_origin FROM products_unified WHERE brand = %s AND product_id = %s",
+            "SELECT product_id, product_name, category, clothing_type, material_composition, materials, product_url, description, color, brand, image_url, gtin, article_number, care_text, size, country_of_origin, qfix_clothing_type, qfix_clothing_type_id, qfix_material, qfix_material_id, qfix_url FROM products_unified WHERE brand = %s AND product_id = %s",
             (brand_name, product_id),
         )
         row = cur.fetchone()
@@ -332,7 +332,18 @@ def get_brand_product(brand_slug, product_id):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
+
+    # Use persisted mapping as base if available, otherwise compute live
+    if product.get("qfix_url"):
+        qfix = enrich_qfix({
+            "qfix_clothing_type": product["qfix_clothing_type"],
+            "qfix_clothing_type_id": product["qfix_clothing_type_id"],
+            "qfix_material": product["qfix_material"],
+            "qfix_material_id": product["qfix_material_id"],
+            "qfix_url": product["qfix_url"],
+        })
+    else:
+        qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
 
     return jsonify({
         brand_slug: product,
@@ -353,7 +364,7 @@ def _redirect_to_qfix(brand_slug, service_key=None):
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
-            "SELECT product_id, product_name, category, clothing_type, material_composition, materials, brand, article_number FROM products_unified WHERE brand = %s AND product_id = %s",
+            "SELECT product_id, product_name, category, clothing_type, material_composition, materials, brand, article_number, qfix_clothing_type, qfix_clothing_type_id, qfix_material, qfix_material_id, qfix_url FROM products_unified WHERE brand = %s AND product_id = %s",
             (brand_name, product_id),
         )
         row = cur.fetchone()
@@ -363,7 +374,18 @@ def _redirect_to_qfix(brand_slug, service_key=None):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
+
+    # Use persisted mapping if available, otherwise fall back to live mapping
+    if product.get("qfix_url"):
+        qfix = enrich_qfix({
+            "qfix_clothing_type": product["qfix_clothing_type"],
+            "qfix_clothing_type_id": product["qfix_clothing_type_id"],
+            "qfix_material": product["qfix_material"],
+            "qfix_material_id": product["qfix_material_id"],
+            "qfix_url": product["qfix_url"],
+        })
+    else:
+        qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
 
     qfix_url = qfix.get("qfix_url")
     if not qfix_url:
@@ -848,7 +870,9 @@ def v4_get_product(product_id):
         cur.execute(
             """SELECT product_id, product_name, category, clothing_type, material_composition,
                       product_url, description, color, brand, image_url, materials, care_text,
-                      country_of_origin, article_number
+                      country_of_origin, article_number,
+                      qfix_clothing_type, qfix_clothing_type_id, qfix_material,
+                      qfix_material_id, qfix_url
                FROM products_unified WHERE product_id = %s LIMIT 1""",
             (product_id,),
         )
@@ -861,11 +885,21 @@ def v4_get_product(product_id):
     product = dict(row)
     merged, materials_list = _merge_product(product)
 
-    brand_slug = BRAND_SLUG.get(product.get("brand"))
-    if product.get("article_number"):
-        qfix = enrich_qfix(map_product_v2(product, materials=materials_list))
+    # Use persisted mapping if available, otherwise compute live
+    if product.get("qfix_url"):
+        qfix = enrich_qfix({
+            "qfix_clothing_type": product["qfix_clothing_type"],
+            "qfix_clothing_type_id": product["qfix_clothing_type_id"],
+            "qfix_material": product["qfix_material"],
+            "qfix_material_id": product["qfix_material_id"],
+            "qfix_url": product["qfix_url"],
+        })
     else:
-        qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
+        brand_slug = BRAND_SLUG.get(product.get("brand"))
+        if product.get("article_number"):
+            qfix = enrich_qfix(map_product_v2(product, materials=materials_list))
+        else:
+            qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
 
     return jsonify({
         "product": merged,
@@ -1140,6 +1174,122 @@ def add_mapping():
 
 
 logger = logging.getLogger(__name__)
+
+
+@app.route("/remap/run", methods=["POST"])
+@limiter.limit("5 per minute")
+def remap_run():
+    """Batch-compute and persist QFix mappings for all (or per-brand) products.
+    ---
+    tags:
+      - Mapping
+    parameters:
+      - name: brand
+        in: query
+        type: string
+        description: "Optional brand slug to limit to (e.g. kappahl, eton)"
+    responses:
+      200:
+        description: Summary of mapping run
+    """
+    brand_filter = request.args.get("brand")
+    if brand_filter and brand_filter not in BRAND_ROUTES:
+        return jsonify({"error": f"Unknown brand: {brand_filter}"}), 400
+
+    # Load products from DB
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        if brand_filter:
+            brand_name = BRAND_ROUTES[brand_filter]
+            cur.execute(
+                "SELECT product_id, product_name, category, clothing_type, "
+                "material_composition, materials, brand, article_number "
+                "FROM products_unified WHERE brand = %s",
+                (brand_name,),
+            )
+        else:
+            cur.execute(
+                "SELECT product_id, product_name, category, clothing_type, "
+                "material_composition, materials, brand, article_number "
+                "FROM products_unified"
+            )
+        rows = cur.fetchall()
+    conn.close()
+
+    mapper = _get_mapper()
+    total = len(rows)
+    mapped = 0
+    unmapped = 0
+    updated = 0
+
+    # Process in batches of 100
+    write_conn = get_write_db()
+    write_conn.autocommit = False
+    batch_count = 0
+
+    try:
+        for row in rows:
+            product = dict(row)
+            slug = BRAND_SLUG.get(product.get("brand"))
+            qfix = mapper(product, brand=slug)
+
+            if qfix.get("qfix_url"):
+                mapped += 1
+            else:
+                unmapped += 1
+
+            update_qfix_mapping(
+                write_conn,
+                product["brand"],
+                product["product_id"],
+                qfix,
+            )
+            batch_count += 1
+            updated += 1
+
+            if batch_count >= 100:
+                write_conn.commit()
+                batch_count = 0
+
+        # Commit remaining
+        if batch_count > 0:
+            write_conn.commit()
+    except Exception:
+        write_conn.rollback()
+        raise
+    finally:
+        write_conn.close()
+
+    return jsonify({
+        "total": total,
+        "mapped": mapped,
+        "unmapped": unmapped,
+        "updated": updated,
+    })
+
+
+@app.route("/remap/status")
+def remap_status():
+    """Get per-brand QFix mapping coverage.
+    ---
+    tags:
+      - Mapping
+    responses:
+      200:
+        description: Per-brand mapping counts
+    """
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT brand, COUNT(*) as total,
+                   COUNT(qfix_url) as mapped,
+                   COUNT(*) - COUNT(qfix_url) as unmapped
+            FROM products_unified GROUP BY brand
+        """)
+        rows = cur.fetchall()
+    conn.close()
+    return jsonify(rows)
+
 
 REMAP_PROMPT = """You are a mapping assistant for a clothing repair service (QFix). You will be given a list of unmapped {type_label} values from scraped product data. Your job is to map each value to the correct QFix category, or mark it as "skip" if it's not a repairable clothing/textile item.
 

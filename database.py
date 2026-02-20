@@ -54,6 +54,15 @@ def create_table(conn):
                 UNIQUE (brand, product_id)
             );
         """)
+        # QFix mapping columns (persisted by /remap/run, not by scrapers)
+        for col, col_type in [
+            ("qfix_clothing_type", "TEXT"),
+            ("qfix_clothing_type_id", "INTEGER"),
+            ("qfix_material", "TEXT"),
+            ("qfix_material_id", "INTEGER"),
+            ("qfix_url", "TEXT"),
+        ]:
+            cur.execute(f"ALTER TABLE products_unified ADD COLUMN IF NOT EXISTS {col} {col_type};")
 
 
 def upsert_product(conn, product):
@@ -91,3 +100,30 @@ def upsert_product(conn, product):
                 country_of_origin = EXCLUDED.country_of_origin,
                 updated_at = CURRENT_TIMESTAMP;
         """, values)
+
+
+def update_qfix_mapping(conn, brand, product_id, qfix_data):
+    """Update only the 5 QFix mapping columns for a given product.
+
+    qfix_data should be a dict with keys:
+      qfix_clothing_type, qfix_clothing_type_id, qfix_material,
+      qfix_material_id, qfix_url
+    """
+    with conn.cursor() as cur:
+        cur.execute("""
+            UPDATE products_unified
+            SET qfix_clothing_type = %(qfix_clothing_type)s,
+                qfix_clothing_type_id = %(qfix_clothing_type_id)s,
+                qfix_material = %(qfix_material)s,
+                qfix_material_id = %(qfix_material_id)s,
+                qfix_url = %(qfix_url)s
+            WHERE brand = %(brand)s AND product_id = %(product_id)s
+        """, {
+            "brand": brand,
+            "product_id": product_id,
+            "qfix_clothing_type": qfix_data.get("qfix_clothing_type"),
+            "qfix_clothing_type_id": qfix_data.get("qfix_clothing_type_id"),
+            "qfix_material": qfix_data.get("qfix_material"),
+            "qfix_material_id": qfix_data.get("qfix_material_id"),
+            "qfix_url": qfix_data.get("qfix_url"),
+        })
