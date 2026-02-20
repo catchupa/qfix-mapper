@@ -16,6 +16,7 @@ from flasgger import Swagger
 
 from mapping import (
     map_product, map_product_legacy, map_clothing_type, map_material,
+    map_category, _resolve_clothing_type_id, _resolve_material_id,
     QFIX_CLOTHING_TYPE_IDS, VALID_MATERIAL_IDS,
     CLOTHING_TYPE_MAP, MATERIAL_MAP, _KEYWORD_CLOTHING_MAP,
     BRAND_CLOTHING_TYPE_OVERRIDES, BRAND_KEYWORD_CLOTHING_OVERRIDES,
@@ -1657,6 +1658,135 @@ def widget_js():
 @app.route("/demo/")
 def widget_demo():
     return send_from_directory(os.path.join(WIDGET_DIR, "demo"), "index.html")
+
+
+# --- Mapping Documentation & Verification ---
+
+DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs")
+
+
+@app.route("/docs")
+@app.route("/docs/")
+def docs_page():
+    return send_from_directory(DOCS_DIR, "index.html")
+
+
+@app.route("/docs/verify/<product_id>")
+def docs_verify(product_id):
+    """Verify the QFix mapping for a product, showing each step.
+    ---
+    tags:
+      - Mapping
+    parameters:
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Product ID to verify
+    responses:
+      200:
+        description: Step-by-step mapping breakdown with service URLs
+      404:
+        description: Product not found
+    """
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """SELECT product_id, product_name, brand, category, clothing_type,
+                      material_composition, materials, article_number,
+                      qfix_clothing_type, qfix_clothing_type_id, qfix_material,
+                      qfix_material_id, qfix_url
+               FROM products_unified WHERE product_id = %s LIMIT 1""",
+            (product_id,),
+        )
+        row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        return jsonify({"error": f"Product {product_id} not found"}), 404
+
+    product = dict(row)
+    brand_slug = BRAND_SLUG.get(product.get("brand"))
+
+    # Run live mapping to show each step
+    ct_input = product.get("clothing_type")
+    mat_input = product.get("material_composition")
+    cat_input = product.get("category")
+
+    ct_result = map_clothing_type(ct_input, brand=brand_slug)
+    mat_result = map_material(mat_input, brand=brand_slug)
+    subcat = map_category(cat_input)
+
+    ct_id = _resolve_clothing_type_id(ct_result, subcat) if ct_result else None
+    mat_id = _resolve_material_id(ct_id, mat_result) if ct_id and mat_result else None
+
+    live_url = None
+    if ct_id and mat_id:
+        live_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={ct_id}&material_id={mat_id}"
+
+    # Check persisted vs live
+    persisted_url = product.get("qfix_url")
+    final_url = persisted_url or live_url
+
+    # Build enriched qfix with services
+    qfix_data = {
+        "qfix_clothing_type": ct_result,
+        "qfix_clothing_type_id": ct_id,
+        "qfix_material": mat_result,
+        "qfix_material_id": mat_id,
+        "qfix_url": final_url,
+    }
+    enriched = enrich_qfix(qfix_data)
+
+    # Build service URLs
+    services = []
+    for svc_cat in enriched.get("qfix_services", []):
+        slug = svc_cat.get("slug", "")
+        svc_url = None
+        if final_url and svc_cat.get("id"):
+            sep = "&" if "?" in final_url else "?"
+            svc_url = f"{final_url}{sep}service_id={svc_cat['id']}"
+        services.append({
+            "name": svc_cat.get("name"),
+            "slug": slug,
+            "service_id": svc_cat.get("id"),
+            "url": svc_url,
+        })
+
+    return jsonify({
+        "product": {
+            "product_id": product["product_id"],
+            "product_name": product.get("product_name"),
+            "brand": product.get("brand"),
+            "category": cat_input,
+            "clothing_type": ct_input,
+            "material_composition": mat_input,
+        },
+        "mapping": {
+            "clothing_type_input": ct_input,
+            "clothing_type_result": ct_result,
+            "clothing_type_id": ct_id,
+            "material_input": mat_input,
+            "material_result": mat_result,
+            "material_id": mat_id,
+            "subcategory": subcat,
+            "qfix_url": final_url,
+            "persisted": persisted_url is not None,
+            "live_url": live_url,
+        },
+        "services": services,
+    })
+
+
+@app.route("/docs/mappings")
+def docs_mappings():
+    """Return the full mapping tables for the documentation page."""
+    clothing = {k: v for k, v in sorted(CLOTHING_TYPE_MAP.items()) if v is not None}
+    materials = {k: v for k, v in sorted(MATERIAL_MAP.items()) if v is not None}
+    return jsonify({
+        "clothing_type_map": clothing,
+        "material_map": materials,
+    })
 
 
 if __name__ == "__main__":

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QFix Mapping Documentation</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; background: #f8f9fa; line-height: 1.6; }
+
+    .header { background: #1a1a1a; color: #fff; padding: 24px 32px; }
+    .header h1 { font-size: 22px; font-weight: 600; }
+    .header p { font-size: 14px; color: #aaa; margin-top: 4px; }
+
+    .container { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
+
+    .card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 18px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #f0f0f0; }
+    .card h3 { font-size: 15px; margin: 16px 0 8px; color: #555; }
+
+    /* Verify form */
+    .verify-form { display: flex; gap: 8px; margin-bottom: 16px; }
+    .verify-form input {
+      flex: 1; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 6px;
+      font-size: 15px; outline: none; transition: border-color 0.2s;
+    }
+    .verify-form input:focus { border-color: #1a1a1a; }
+    .verify-form button {
+      padding: 10px 24px; background: #1a1a1a; color: #fff; border: none;
+      border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer;
+    }
+    .verify-form button:hover { background: #333; }
+
+    .verify-result { display: none; }
+    .verify-result.active { display: block; }
+
+    .step { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+    .step:last-child { border-bottom: none; }
+    .step-num {
+      width: 28px; height: 28px; border-radius: 50%; background: #1a1a1a; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .step-num.ok { background: #22c55e; }
+    .step-num.fail { background: #ef4444; }
+    .step-body { flex: 1; }
+    .step-label { font-size: 13px; color: #888; }
+    .step-value { font-size: 15px; font-weight: 500; }
+    .step-detail { font-size: 13px; color: #666; margin-top: 2px; }
+
+    .service-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .service-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 16px; background: #1a1a1a; color: #fff;
+      border-radius: 6px; font-size: 13px; font-weight: 600;
+      text-decoration: none; transition: background 0.2s;
+    }
+    .service-link:hover { background: #333; }
+    .service-link.disabled { background: #ccc; pointer-events: none; }
+
+    .product-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; }
+    .product-info dt { color: #888; }
+    .product-info dd { font-weight: 500; word-break: break-word; }
+    @media (max-width: 600px) { .product-info { grid-template-columns: 1fr; } }
+
+    .error-msg { color: #ef4444; font-weight: 500; padding: 12px; background: #fef2f2; border-radius: 6px; }
+
+    /* How it works */
+    .flow { display: flex; flex-direction: column; gap: 0; }
+    .flow-step { display: flex; gap: 14px; padding: 14px 0; }
+    .flow-icon {
+      width: 36px; height: 36px; border-radius: 50%; background: #f0f0f0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .flow-arrow { text-align: center; color: #ccc; font-size: 20px; padding: 0 0 0 12px; }
+    .flow-text h4 { font-size: 14px; font-weight: 600; }
+    .flow-text p { font-size: 13px; color: #666; }
+
+    /* Coverage table */
+    .coverage-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    .coverage-table th { text-align: left; padding: 8px; border-bottom: 2px solid #e0e0e0; font-weight: 600; }
+    .coverage-table td { padding: 8px; border-bottom: 1px solid #f0f0f0; }
+    .coverage-bar { height: 8px; border-radius: 4px; background: #e0e0e0; overflow: hidden; min-width: 100px; }
+    .coverage-fill { height: 100%; border-radius: 4px; background: #22c55e; }
+
+    /* Mapping tables */
+    details { margin: 8px 0; }
+    details summary { cursor: pointer; font-weight: 600; font-size: 14px; padding: 8px 0; color: #333; }
+    details summary:hover { color: #1a1a1a; }
+    .map-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    .map-table th { text-align: left; padding: 6px 8px; background: #f8f9fa; border-bottom: 2px solid #e0e0e0; font-weight: 600; }
+    .map-table td { padding: 5px 8px; border-bottom: 1px solid #f0f0f0; }
+    .map-table tr:hover { background: #f8f9fa; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-yellow { background: #fef9c3; color: #854d0e; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    .tag-gray { background: #f3f4f6; color: #4b5563; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1>QFix Mapping Documentation</h1>
+  <p>How product data is mapped to QFix repair booking categories</p>
+</div>
+
+<div class="container">
+
+  <!-- Verify -->
+  <div class="card">
+    <h2>Verify a Product Mapping</h2>
+    <p style="font-size:14px; color:#666; margin-bottom:12px;">Enter a product ID to see exactly how it gets mapped to a QFix repair category.</p>
+    <div class="verify-form">
+      <input type="text" id="productId" placeholder="Enter product ID (e.g. 530956)" />
+      <button onclick="verify()">Verify</button>
+    </div>
+    <div id="verifyResult" class="verify-result"></div>
+  </div>
+
+  <!-- How it works -->
+  <div class="card">
+    <h2>How the Mapping Works</h2>
+    <p style="font-size:14px; color:#666; margin-bottom:16px;">
+      Each product in the database has a <strong>clothing type</strong> (e.g. "Jackor &amp; rockar") and a
+      <strong>material composition</strong> (e.g. "99% Bomull, 1% Elastan"). The mapping system translates
+      these into QFix repair categories so customers can book the right repair service.
+    </p>
+
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-icon">1</div>
+        <div class="flow-text">
+          <h4>Identify Clothing Type</h4>
+          <p>The scraped Swedish category (e.g. "Jackor &amp; rockar &gt; Varjackor") is looked up in a mapping table
+             of ~460 entries. Multi-level categories are split and matched segment by segment.
+             If no direct match is found, keyword matching is tried against the product name.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">&#8595;</div>
+
+      <div class="flow-step">
+        <div class="flow-icon">2</div>
+        <div class="flow-text">
+          <h4>Identify Material</h4>
+          <p>The material composition string is parsed to extract individual materials and their percentages
+             (e.g. "99% Bomull" = Cotton 99%). The dominant material (highest percentage) determines the
+             QFix material category: Standard textile, Linen/Wool, Cashmere, Silk, Leather/Suede, Down, or Fur.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">&#8595;</div>
+
+      <div class="flow-step">
+        <div class="flow-icon">3</div>
+        <div class="flow-text">
+          <h4>Resolve Gender-Specific IDs</h4>
+          <p>The same clothing type (e.g. "Jacket") has different QFix IDs for Men's, Women's, and Children's clothing.
+             The product's category (dam/herr/barn) determines which ID to use.
+             The material also gets an ID that depends on the clothing type (shoes use different IDs than clothing).</p>
+        </div>
+      </div>
+      <div class="flow-arrow">&#8595;</div>
+
+      <div class="flow-step">
+        <div class="flow-icon">4</div>
+        <div class="flow-text">
+          <h4>Build QFix URL</h4>
+          <p>The final URL combines the clothing type ID and material ID:<br>
+             <code style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:13px;">
+               https://kappahl.dev.qfixr.me/sv/?category_id=85&amp;material_id=69
+             </code><br>
+             For specific services (repair, adjustment, care), a <code>service_id</code> is appended.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Unmapped products -->
+  <div class="card">
+    <h2>What Happens When a Product Can't Be Mapped?</h2>
+    <p style="font-size:14px; color:#666;">
+      If the clothing type or material doesn't match any rule, the product is marked as <strong>unmapped</strong>.
+      This happens for:
+    </p>
+    <ul style="font-size:14px; color:#666; margin:8px 0 0 20px;">
+      <li>Non-repairable items (accessories, jewelry, sunglasses, bags without a category)</li>
+      <li>New product categories the scrapers haven't seen before</li>
+      <li>Material compositions that don't match any known pattern</li>
+    </ul>
+    <p style="font-size:14px; color:#666; margin-top:8px;">
+      Unmapped products can be reviewed at <a href="/unmapped" style="color:#1a1a1a;">/unmapped</a> and new mapping
+      rules can be added via <a href="/remap" style="color:#1a1a1a;">/remap</a> (AI-assisted) or manually.
+    </p>
+  </div>
+
+  <!-- Coverage -->
+  <div class="card">
+    <h2>Mapping Coverage</h2>
+    <p style="font-size:14px; color:#666; margin-bottom:12px;">How many products per brand have a working QFix mapping.</p>
+    <table class="coverage-table">
+      <thead><tr><th>Brand</th><th>Total</th><th>Mapped</th><th>Unmapped</th><th>Coverage</th></tr></thead>
+      <tbody id="coverageBody"><tr><td colspan="5" style="color:#aaa;">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Mapping tables -->
+  <div class="card">
+    <h2>Mapping Rules Reference</h2>
+    <p style="font-size:14px; color:#666; margin-bottom:12px;">These are the actual mapping tables used by the system.</p>
+
+    <details>
+      <summary>Valid QFix Clothing Types (88 types)</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">These are the target clothing types in the QFix system. Each product is mapped to one of these.</p>
+      <table class="map-table">
+        <thead><tr><th>QFix Clothing Type</th><th>ID</th></tr></thead>
+        <tbody id="clothingTypesBody"></tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Material Categories</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Products are classified into one of these material categories based on their composition.</p>
+      <table class="map-table">
+        <thead><tr><th>QFix Material</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Standard textile</td><td>Cotton, polyester, nylon, viscose, elastane, and most common fabrics</td></tr>
+          <tr><td>Linen/Wool</td><td>Linen, wool, merino, alpaca, and blends where these dominate</td></tr>
+          <tr><td>Cashmere</td><td>Cashmere and cashmere-dominant blends</td></tr>
+          <tr><td>Silk</td><td>Silk and silk-dominant blends</td></tr>
+          <tr><td>Leather/Suede</td><td>Leather, suede, and similar animal hides</td></tr>
+          <tr><td>Down</td><td>Down-filled garments</td></tr>
+          <tr><td>Fur</td><td>Fur garments</td></tr>
+          <tr><td>Other/Unsure</td><td>Fallback when material can't be determined</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Swedish Clothing Type Mappings (~460 rules)</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">How Swedish scraped categories map to QFix types. Showing mapped entries only.</p>
+      <table class="map-table">
+        <thead><tr><th>Swedish Category</th><th>QFix Type</th></tr></thead>
+        <tbody id="clothingMapBody"></tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Material Composition Mappings (~110 rules)</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">How individual material names map to QFix material categories.</p>
+      <table class="map-table">
+        <thead><tr><th>Material Name</th><th>QFix Material</th></tr></thead>
+        <tbody id="materialMapBody"></tbody>
+      </table>
+    </details>
+  </div>
+
+</div>
+
+<script>
+// Verify product
+async function verify() {
+  const pid = document.getElementById('productId').value.trim();
+  if (!pid) return;
+
+  const el = document.getElementById('verifyResult');
+  el.className = 'verify-result active';
+  el.innerHTML = '<p style="color:#888;">Loading...</p>';
+
+  try {
+    const res = await fetch('/docs/verify/' + encodeURIComponent(pid));
+    const data = await res.json();
+
+    if (data.error) {
+      el.innerHTML = '<div class="error-msg">' + data.error + '</div>';
+      return;
+    }
+
+    const p = data.product;
+    const m = data.mapping;
+    const svcs = data.services || [];
+
+    let html = '<h3 style="margin-bottom:12px;">Product</h3>';
+    html += '<dl class="product-info">';
+    html += '<dt>Product ID</dt><dd>' + esc(p.product_id) + '</dd>';
+    html += '<dt>Name</dt><dd>' + esc(p.product_name || '—') + '</dd>';
+    html += '<dt>Brand</dt><dd>' + esc(p.brand || '—') + '</dd>';
+    html += '<dt>Category</dt><dd>' + esc(p.category || '—') + '</dd>';
+    html += '<dt>Clothing Type</dt><dd>' + esc(p.clothing_type || '—') + '</dd>';
+    html += '<dt>Material</dt><dd>' + esc(p.material_composition || '—') + '</dd>';
+    html += '</dl>';
+
+    html += '<h3 style="margin:20px 0 12px;">Mapping Steps</h3>';
+
+    // Step 1: Clothing type
+    const ctOk = m.clothing_type_result != null;
+    html += '<div class="step">';
+    html += '<div class="step-num ' + (ctOk ? 'ok' : 'fail') + '">1</div>';
+    html += '<div class="step-body">';
+    html += '<div class="step-label">Clothing Type</div>';
+    html += '<div class="step-value">' + esc(m.clothing_type_input || '(empty)') + ' &rarr; ';
+    html += ctOk ? '<span class="tag tag-green">' + esc(m.clothing_type_result) + '</span>'
+                 : '<span class="tag tag-red">No match</span>';
+    html += '</div>';
+    if (ctOk) html += '<div class="step-detail">QFix ID: ' + m.clothing_type_id + '</div>';
+    html += '</div></div>';
+
+    // Step 2: Material
+    const matOk = m.material_result != null && m.material_result !== 'Other/Unsure';
+    html += '<div class="step">';
+    html += '<div class="step-num ' + (m.material_result ? 'ok' : 'fail') + '">2</div>';
+    html += '<div class="step-body">';
+    html += '<div class="step-label">Material</div>';
+    html += '<div class="step-value">' + esc(m.material_input || '(empty)') + ' &rarr; ';
+    html += m.material_result ? '<span class="tag ' + (matOk ? 'tag-green' : 'tag-yellow') + '">' + esc(m.material_result) + '</span>'
+                              : '<span class="tag tag-red">No match</span>';
+    html += '</div>';
+    if (m.material_id) html += '<div class="step-detail">QFix ID: ' + m.material_id + '</div>';
+    html += '</div></div>';
+
+    // Step 3: Subcategory
+    html += '<div class="step">';
+    html += '<div class="step-num ok">3</div>';
+    html += '<div class="step-body">';
+    html += '<div class="step-label">Gender / Subcategory</div>';
+    html += '<div class="step-value">' + esc(m.subcategory || 'Unknown') + '</div>';
+    html += '</div></div>';
+
+    // Step 4: URL
+    const urlOk = m.qfix_url != null;
+    html += '<div class="step">';
+    html += '<div class="step-num ' + (urlOk ? 'ok' : 'fail') + '">4</div>';
+    html += '<div class="step-body">';
+    html += '<div class="step-label">QFix URL ' + (m.persisted ? '<span class="tag tag-gray">persisted</span>' : '<span class="tag tag-yellow">live</span>') + '</div>';
+    if (urlOk) {
+      html += '<div class="step-value"><a href="' + esc(m.qfix_url) + '" target="_blank" style="color:#1a1a1a; word-break:break-all;">' + esc(m.qfix_url) + '</a></div>';
+    } else {
+      html += '<div class="step-value"><span class="tag tag-red">No URL — mapping incomplete</span></div>';
+    }
+    html += '</div></div>';
+
+    // Services
+    if (svcs.length > 0) {
+      html += '<h3 style="margin:20px 0 8px;">Service Links</h3>';
+      html += '<p style="font-size:13px; color:#666; margin-bottom:8px;">Click to open the QFix booking page for each service type.</p>';
+      html += '<div class="service-links">';
+      for (const svc of svcs) {
+        if (svc.url) {
+          html += '<a class="service-link" href="' + esc(svc.url) + '" target="_blank">' + esc(svc.name) + '</a>';
+        } else {
+          html += '<span class="service-link disabled">' + esc(svc.name) + ' (unavailable)</span>';
+        }
+      }
+      html += '</div>';
+    }
+
+    el.innerHTML = html;
+  } catch (e) {
+    el.innerHTML = '<div class="error-msg">Request failed: ' + esc(e.message) + '</div>';
+  }
+}
+
+// Allow Enter key
+document.getElementById('productId').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') verify();
+});
+
+// URL param support
+(function() {
+  const params = new URLSearchParams(location.search);
+  const pid = params.get('productId') || params.get('product_id');
+  if (pid) {
+    document.getElementById('productId').value = pid;
+    verify();
+  }
+})();
+
+function esc(s) {
+  if (s == null) return '';
+  const d = document.createElement('div');
+  d.textContent = String(s);
+  return d.innerHTML;
+}
+
+// Load coverage stats
+async function loadCoverage() {
+  try {
+    const res = await fetch('/remap/status');
+    const data = await res.json();
+    const tbody = document.getElementById('coverageBody');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:#aaa;">No data</td></tr>'; return; }
+    data.sort((a, b) => b.total - a.total);
+    tbody.innerHTML = data.map(function(r) {
+      const pct = r.total > 0 ? Math.round(100 * r.mapped / r.total) : 0;
+      const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#eab308' : '#ef4444';
+      return '<tr><td><strong>' + esc(r.brand) + '</strong></td><td>' + r.total + '</td><td>' + r.mapped + '</td><td>' + r.unmapped + '</td>'
+        + '<td><div style="display:flex;align-items:center;gap:8px;"><div class="coverage-bar"><div class="coverage-fill" style="width:' + pct + '%;background:' + color + '"></div></div><span style="font-size:13px;font-weight:600;">' + pct + '%</span></div></td></tr>';
+    }).join('');
+  } catch (e) {
+    document.getElementById('coverageBody').innerHTML = '<tr><td colspan="5" class="error-msg">Failed to load</td></tr>';
+  }
+}
+loadCoverage();
+
+// Load mapping reference tables
+async function loadMappingTables() {
+  try {
+    const res = await fetch('/unmapped');
+    const data = await res.json();
+
+    // QFix clothing types
+    const types = data.qfix_valid_clothing_types || {};
+    const tbody1 = document.getElementById('clothingTypesBody');
+    tbody1.innerHTML = Object.entries(types).sort((a,b) => a[0].localeCompare(b[0])).map(function(e) {
+      return '<tr><td>' + esc(e[0]) + '</td><td>' + e[1] + '</td></tr>';
+    }).join('');
+  } catch (e) {}
+}
+loadMappingTables();
+
+// Load clothing type and material mapping tables
+async function loadFullMappings() {
+  try {
+    const res = await fetch('/docs/mappings');
+    const data = await res.json();
+
+    const cmBody = document.getElementById('clothingMapBody');
+    const entries = Object.entries(data.clothing_type_map || {});
+    cmBody.innerHTML = entries.map(function(e) {
+      return '<tr><td>' + esc(e[0]) + '</td><td><span class="tag tag-green">' + esc(e[1]) + '</span></td></tr>';
+    }).join('');
+
+    const mmBody = document.getElementById('materialMapBody');
+    const mEntries = Object.entries(data.material_map || {});
+    mmBody.innerHTML = mEntries.map(function(e) {
+      return '<tr><td>' + esc(e[0]) + '</td><td><span class="tag tag-green">' + esc(e[1]) + '</span></td></tr>';
+    }).join('');
+  } catch (e) {
+    document.getElementById('clothingMapBody').innerHTML = '<tr><td colspan="2" class="error-msg">Failed to load</td></tr>';
+    document.getElementById('materialMapBody').innerHTML = '<tr><td colspan="2" class="error-msg">Failed to load</td></tr>';
+  }
+}
+loadFullMappings();
+</script>
+
+</body>
+</html>
