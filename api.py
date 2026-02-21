@@ -431,6 +431,7 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                 product_text = " ".join(filter(None, [
                     product.get("product_name", ""),
                     product.get("description", ""),
+                    product.get("clothing_type", ""),
                 ])).lower()
                 if product_text and qfix.get("qfix_services"):
                     top_actions = _inject_keyword_actions(
@@ -1546,6 +1547,47 @@ KEYWORD_EXCLUSION_RULES = [
                             "Narrow shoulder area", "Shorten sleeves", "Lengthen sleeves", "Tapering legs"],
         "category": "adjustment",
     },
+    {
+        "keywords": ["strumpbyxa", "strumpbyxor", "tights", "pantyhose"],
+        "exclude_actions": ["Take in waist", "Expand waist", "Take in sides", "Shorten length", "Take in the back",
+                            "Narrow shoulder area", "Shorten sleeves", "Lengthen sleeves", "Tapering legs"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["poncho"],
+        "exclude_actions": ["Shorten sleeves", "Lengthen sleeves"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["cape"],
+        "exclude_actions": ["Shorten sleeves", "Lengthen sleeves"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["leggings"],
+        "exclude_actions": ["Tapering legs"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["leggings"],
+        "exclude_actions": ["Replace main zipper", "Replace zipper", "Replace zipper slider"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["bandeau", "tubtopp", "tube top", "strapless"],
+        "exclude_actions": ["Narrow shoulder area"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["träningstights", "traningstights", "cykelbyxa", "cykelbyxor", "cycling shorts"],
+        "exclude_actions": ["Shorten sleeves", "Lengthen sleeves", "Narrow shoulder area"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["träningstights", "traningstights", "cykelbyxa", "cykelbyxor", "cycling shorts"],
+        "exclude_actions": ["Replace main zipper", "Replace zipper", "Replace zipper slider"],
+        "category": "repair",
+    },
 ]
 
 
@@ -2302,6 +2344,7 @@ def docs_verify(product_id):
         product_text = " ".join(filter(None, [
             product.get("product_name", ""),
             product.get("description", ""),
+            product.get("clothing_type", ""),
         ])).lower()
 
         top_actions = _inject_keyword_actions(top_actions, product_text, enriched["qfix_services"])
@@ -2555,6 +2598,7 @@ def validate_keyword_scores():
             product_text = " ".join(filter(None, [
                 product.get("product_name", ""),
                 product.get("description", ""),
+                product.get("clothing_type", ""),
             ])).lower()
 
             merged = _inject_keyword_actions(ai_top, product_text, svc_cats)

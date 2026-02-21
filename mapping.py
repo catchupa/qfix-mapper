@@ -717,6 +717,35 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
             return "Sneakers"
         return "Other shoes"
 
+    # Träningskläder sub-mapping (tights/cycling vs tops/hoodies)
+    if first in ("träningskläder", "traningsklader") and len(parts) > 1:
+        sub = parts[1]
+        if any(kw in sub for kw in ("tights", "cykelbyxor", "cykelbyxa", "leggings", "byxor")):
+            return "Trousers"
+        if any(kw in sub for kw in ("shorts", "cykelshorts")):
+            return "Trousers / Shorts"
+        if any(kw in sub for kw in ("linne", "topp", "sport-bh", "bh")):
+            return "Top / T-shirt"
+        return "Sweatshirt / Hoodie"  # default for hoodies, jackets, etc.
+
+    # Mammakläder sub-mapping (tops vs bottoms)
+    if first in ("mammakläder", "mammaklader") and len(parts) > 1:
+        sub = parts[1]
+        if any(kw in sub for kw in ("toppar", "trojor", "blusar", "linne", "amning")):
+            return "Top / T-shirt"
+        if any(kw in sub for kw in ("klänningar", "klanningar")):
+            return "Skirt / Dress"
+        return "Trousers"  # default for maternity pants, leggings
+
+    # Basplagg sub-mapping (basics include shorts, tops, etc.)
+    if first == "basplagg" and len(parts) > 1:
+        sub = parts[1]
+        if any(kw in sub for kw in ("shorts", "biker", "cykel")):
+            return "Trousers / Shorts"
+        if any(kw in sub for kw in ("leggings", "tights", "byxor")):
+            return "Trousers"
+        return "Top / T-shirt"  # default for basic tops, bodys, etc.
+
     # Trojor sub-mapping (sweaters vs hoodies)
     if first == "trojor" and len(parts) > 1:
         sub = parts[1]
