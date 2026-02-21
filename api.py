@@ -1694,8 +1694,9 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
                 seen_names.add(a["name"])
 
             kw_idx = 0
+            excluded_names = excluded.get(cat, set())
             for a in new_actions:
-                if a["id"] not in seen_ids and a["name"] not in seen_names:
+                if a["id"] not in seen_ids and a["name"] not in seen_names and a["name"] not in excluded_names:
                     score = kw_scores[kw_idx] if kw_idx < len(kw_scores) else 1
                     scored.append((score, a))
                     seen_ids.add(a["id"])
@@ -1704,6 +1705,10 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
 
             scored.sort(key=lambda x: x[0], reverse=True)
             result[cat] = [a for _, a in scored[:5]]
+        # Trim non-injected categories to 5
+        for cat in result:
+            if cat not in injected:
+                result[cat] = result[cat][:5]
     else:
         # No injection — just trim to 5 after exclusions
         result = {cat: actions[:5] for cat, actions in result.items()}
