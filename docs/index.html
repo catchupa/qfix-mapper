@@ -177,13 +177,36 @@
         <div class="flow-icon">1</div>
         <div class="flow-text">
           <h4>Identify Clothing Type</h4>
-          <p>The scraped Swedish category (e.g. "Jackor &amp; rockar &gt; Varjackor") is looked up in a mapping table
-             of ~460 entries. Multi-level categories are split and matched segment by segment.
-             Brand-specific sub-mappings are applied first for categories that need finer-grained classification
-             (e.g. KappAhl's "Badkl&auml;der &gt; Bikini" &rarr; Bikini, Lindex "trojor koftor" with sweatshirts &rarr; Sweatshirt/Hoodie).
-             For ambiguous flat categories, the <strong>product name</strong> and <strong>description</strong> are also
-             used as keyword signals (e.g. a Lindex "badklader" product named "Bikiniset" maps to Bikini instead of Swimsuit).
-             If no direct match is found, keyword matching is tried as a final fallback.</p>
+          <p>Each product's scraped Swedish category (e.g. "Jackor &amp; rockar &gt; Varjackor") is translated
+             into a QFix clothing type (e.g. "Jacket"). The mapper uses four inputs:</p>
+          <ul style="font-size:13px; margin:4px 0 8px 20px; color:#444;">
+            <li><strong>clothing_type</strong> &mdash; the scraped category string</li>
+            <li><strong>brand</strong> &mdash; which brand the product belongs to</li>
+            <li><strong>product_name</strong> &mdash; the product's name/title</li>
+            <li><strong>description</strong> &mdash; the product's description text</li>
+          </ul>
+          <p>The category is first <strong>normalized</strong>: split on "&gt;" into segments, lowercased, and
+             gender prefixes (dam, herr, barn, flicka, pojke&hellip;) are stripped. For example,
+             "Dam &gt; Jackor &amp; rockar &gt; Varjackor" becomes <code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">["jackor &amp; rockar", "varjackor"]</code>.</p>
+          <p style="margin-top:8px;">The mapper then tries four strategies <strong>in priority order</strong>, returning the first match:</p>
+          <ol style="font-size:13px; margin:4px 0 0 20px; color:#444;">
+            <li style="margin-bottom:6px;"><strong>Brand-specific exact override</strong> &mdash; A per-brand dictionary that overrides the
+              generic mapping for specific clothing types. For example, if KappAhl's "Jacket" should map differently
+              than the default, an entry in <code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">BRAND_CLOTHING_TYPE_OVERRIDES</code> takes precedence.</li>
+            <li style="margin-bottom:6px;"><strong>Brand-specific sub-mappings</strong> &mdash; For categories that need finer-grained
+              classification, brand-specific logic examines the full category path and product name/description.
+              <br><em>Hierarchical categories</em> (KappAhl, Gina Tricot) use sub-path segments:
+              e.g. "Badkl&auml;der &gt; Bikini" &rarr; Bikini, "Jackor &amp; rockar &gt; V&auml;star" &rarr; Unlined Jacket/Vest.
+              <br><em>Flat categories</em> (Lindex) combine the <strong>product name</strong> and <strong>description</strong>
+              as keyword signals to disambiguate: e.g. a "badklader" product named "Bikiniset" maps to Bikini instead of Swimsuit;
+              a "trojor koftor" product with "sweatshirt" in the name maps to Sweatshirt/Hoodie instead of Knitted Jumper.</li>
+            <li style="margin-bottom:6px;"><strong>Generic mapping table</strong> &mdash; A table of ~460 Swedish category names mapped
+              to QFix clothing types. Multi-level categories are matched segment by segment (first the full path,
+              then just the first segment). This handles the vast majority of products.</li>
+            <li style="margin-bottom:6px;"><strong>Keyword fallback</strong> &mdash; If no direct match is found, individual words from
+              the category string are checked against known clothing keywords (e.g. "jacka" &rarr; Jacket,
+              "byxor" &rarr; Trousers). This catches edge cases and new categories not yet in the mapping table.</li>
+          </ol>
         </div>
       </div>
       <div class="flow-arrow">&#8595;</div>
@@ -213,25 +236,12 @@
       <div class="flow-step">
         <div class="flow-icon">4</div>
         <div class="flow-text">
-          <h4>Build QFix URL</h4>
-          <p>The final URL combines the clothing type ID and material ID:<br>
-             <code style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:13px;">
-               https://kappahl.dev.qfixr.me/sv/?category_id=85&amp;material_id=69
-             </code><br>
-             For specific services (repair, adjustment, care), a <code>service_id</code> is appended.</p>
-        </div>
-      </div>
-      <div class="flow-arrow">&#8595;</div>
-
-      <div class="flow-step">
-        <div class="flow-icon">5</div>
-        <div class="flow-text">
           <h4>Select Top 5 Service Actions</h4>
           <p>Each clothing type + material combination in the QFix catalog has many available service actions
              (often 20+ per category). AI has pre-ranked the <strong>top 10</strong> most relevant actions per service category
              (repair, adjustment, care, other) for all 259 combinations. These are stored in the database.</p>
           <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Backfill mechanism:</strong> The system stores 10 actions (not 5) so that when
-             exclusion rules (Step 7) remove irrelevant actions, the remaining slots are filled from positions 6&ndash;10
+             exclusion rules (Step 6) remove irrelevant actions, the remaining slots are filled from positions 6&ndash;10
              instead of leaving gaps. For example, a vest has 10 ranked adjustments &rarr; "Shorten sleeves" and "Lengthen sleeves"
              are excluded &rarr; 8 remain &rarr; top 5 selected (positions 6&ndash;7 backfill the gaps left by the 2 excluded actions).
              The final 5 are passed as <code>variants_id</code> in the redirect URL to pre-select them on QFix.</p>
@@ -240,7 +250,7 @@
       <div class="flow-arrow">&#8595;</div>
 
       <div class="flow-step">
-        <div class="flow-icon">6</div>
+        <div class="flow-icon">5</div>
         <div class="flow-text">
           <h4>Product-Specific Action Boost (Keyword Injection)</h4>
           <p>The generic top 5 is based on clothing type only, but individual products may have specific
@@ -289,7 +299,7 @@
           <p style="margin-top:4px; font-size:13px; color:#666;">Positions #6&ndash;#10 (greyed out) are stored for backfill but normally trimmed away.
              They only surface when exclusion rules remove higher-ranked actions.</p>
           <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Exclusion check:</strong> Keyword-injected actions are also checked against
-             the exclusion rules (Step 7). If a product triggers both a keyword injection and an exclusion for the same action,
+             the exclusion rules (Step 6). If a product triggers both a keyword injection and an exclusion for the same action,
              the exclusion wins. For example, leggings with "dragkedja" in the description will NOT get "Replace zipper" injected
              because the leggings exclusion rule blocks it.</p>
           <p style="margin-top:8px;"><strong>Example:</strong> "Stickad cardigan med dragkedja" (knitted cardigan with zipper) &mdash; the merged repair list:</p>
@@ -315,7 +325,7 @@
       </div>
 
       <div class="flow-step">
-        <div class="flow-icon">7</div>
+        <div class="flow-icon">6</div>
         <div class="flow-text">
           <h4>Action Exclusion Rules</h4>
           <p>Some products are mapped to broad QFix categories (e.g., a vest mapped to "Suit") which include
@@ -381,6 +391,27 @@
              The exclusion rule removes "Shorten sleeves" (#3) and "Lengthen sleeves" (#6) &rarr; 8 remain &rarr;
              top 5 selected: "Take in waist", "Shorten length", "Take in sides", "Narrow shoulder area", "Take in the back".
              Positions #6&ndash;#7 ("Take in shoulders", "Expand waist") backfilled the gaps left by the excluded sleeve actions.</p>
+        </div>
+      </div>
+      <div class="flow-arrow">&#8595;</div>
+
+      <div class="flow-step">
+        <div class="flow-icon">7</div>
+        <div class="flow-text">
+          <h4>Build QFix URL</h4>
+          <p>The final redirect URL combines all resolved IDs from the previous steps:</p>
+          <ul style="font-size:13px; margin:4px 0 8px 20px; color:#444;">
+            <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">category_id</code> &mdash; the gender-specific clothing type ID (Step 3)</li>
+            <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">material_id</code> &mdash; the material ID (Step 3)</li>
+            <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">service_id</code> &mdash; which service type (repair, adjustment, care)</li>
+            <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">variants_id</code> &mdash; the final top 5 action IDs after keyword injection and exclusion filtering (Steps 4&ndash;6)</li>
+          </ul>
+          <p>Example URL:<br>
+             <code style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:13px;">
+               https://kappahl.dev.qfixr.me/sv/?category_id=85&amp;material_id=69&amp;service_id=3&amp;variants_id=101,102,103,104,105
+             </code></p>
+          <p style="margin-top:4px; font-size:13px; color:#666;">This URL pre-selects the clothing type, material, service, and
+             the most relevant actions for the specific product, so the customer lands directly on the right booking page.</p>
         </div>
       </div>
     </div>
