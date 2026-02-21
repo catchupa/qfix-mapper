@@ -1426,7 +1426,7 @@ CRITICAL: Only include actions that are PHYSICALLY POSSIBLE for this specific ga
 Available actions:
 {actions_list}
 
-Return ONLY a JSON array of the top 5 most relevant action names (as strings), ordered by likelihood. If fewer than 5 actions are physically applicable, return fewer. Example: ["Repair seam", "Replace button", "Repair tear"]"""
+Return ONLY a JSON array of the top 10 most relevant action names (as strings), ordered by likelihood. If fewer than 10 actions are physically applicable, return fewer. Example: ["Repair seam", "Replace button", "Repair tear"]"""
 
 # Keyword → action injection: Swedish/English keywords in product text → actions to boost
 # Each entry: list of keywords (any match triggers), action names to inject, which ranking category
@@ -1664,13 +1664,21 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
             injected[cat].extend(selected[:MAX_INJECTED_PER_RULE])
 
     if not injected and not excluded:
-        return top_actions
+        # Still trim to 5 (DB may store up to 10)
+        return {cat: actions[:5] for cat, actions in top_actions.items()}
 
     result = dict(top_actions)
 
-    # Score-based merge: combine AI-ranked and keyword actions, pick best 5
+    # Step 1: Apply exclusion rules first (on the full pool of up to 10 actions)
+    # This allows backfilling from positions 6-10 when earlier actions are excluded
+    if excluded:
+        for cat, names_to_remove in excluded.items():
+            if cat in result:
+                result[cat] = [a for a in result[cat] if a["name"] not in names_to_remove]
+
+    # Step 2: Score-based merge with keyword-injected actions, pick best 5
     if injected:
-        ai_scores = [10, 8, 6, 4, 2]
+        ai_scores = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
         kw_scores = [7, 5, 3, 1, 1]
 
         for cat, new_actions in injected.items():
@@ -1696,12 +1704,9 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
 
             scored.sort(key=lambda x: x[0], reverse=True)
             result[cat] = [a for _, a in scored[:5]]
-
-    # Apply exclusion rules: remove actions that don't make sense for this product
-    if excluded:
-        for cat, names_to_remove in excluded.items():
-            if cat in result:
-                result[cat] = [a for a in result[cat] if a["name"] not in names_to_remove]
+    else:
+        # No injection — just trim to 5 after exclusions
+        result = {cat: actions[:5] for cat, actions in result.items()}
 
     return result
 
@@ -1741,21 +1746,23 @@ def remap_rank_actions():
 
     ai_client = anthropic.Anthropic(api_key=api_key)
 
-    # Optional: force re-rank specific clothing type IDs
+    # Optional: force re-rank specific clothing type IDs or all
     force_ct_ids = None
     body = request.get_json(silent=True) or {}
+    force_all = body.get("force_all", False)
     if body.get("force_clothing_type_ids"):
         force_ct_ids = set(body["force_clothing_type_ids"])
 
     # Load already-ranked combos to skip them (unless forced)
     read_conn = get_db()
     existing = set()
-    with read_conn.cursor() as cur:
-        cur.execute("SELECT clothing_type_id, material_id FROM qfix_action_rankings")
-        for row in cur.fetchall():
-            if force_ct_ids and row[0] in force_ct_ids:
-                continue  # Don't skip — re-rank these
-            existing.add((row[0], row[1]))
+    if not force_all:
+        with read_conn.cursor() as cur:
+            cur.execute("SELECT clothing_type_id, material_id FROM qfix_action_rankings")
+            for row in cur.fetchall():
+                if force_ct_ids and row[0] in force_ct_ids:
+                    continue  # Don't skip — re-rank these
+                existing.add((row[0], row[1]))
     read_conn.close()
 
     total = len(_qfix_services)
@@ -1852,7 +1859,7 @@ def remap_rank_actions():
                             seen_names.add(name)
                             break
 
-                rankings[ranking_key] = top_actions[:5]
+                rankings[ranking_key] = top_actions[:10]
 
             except json.JSONDecodeError:
                 # Claude likely returned text like "None of these apply" — treat as empty
