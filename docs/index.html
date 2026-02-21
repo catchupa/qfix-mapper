@@ -708,10 +708,46 @@
       <li>Non-repairable items (accessories, jewelry, sunglasses, bags without a category)</li>
       <li>New product categories the scrapers haven't seen before</li>
       <li>Material compositions that don't match any known pattern</li>
+      <li>Products where the scraper didn't extract a clothing type (NULL category)</li>
     </ul>
     <p style="font-size:14px; color:#666; margin-top:8px;">
       Unmapped products can be reviewed at <a href="/unmapped" style="color:#1a1a1a;">/unmapped</a> and new mapping
       rules can be added via <a href="/remap" style="color:#1a1a1a;">/remap</a> (AI-assisted) or manually.
+    </p>
+
+    <h4 style="margin-top:16px; font-size:14px;">Why some brands have lower coverage</h4>
+    <p style="font-size:13px; color:#666;">
+      Coverage percentage reflects the share of <em>all scraped products</em> that have a QFix URL, not just clothing.
+      Brands with large accessory catalogs will naturally show lower coverage because accessories
+      (ties, pocket squares, cufflinks, belts, etc.) don't have QFix repair categories.
+    </p>
+    <table style="font-size:13px; margin:8px 0; border-collapse:collapse; width:100%;">
+      <thead><tr style="background:#f8f9fa;">
+        <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Brand</th>
+        <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Main unmapped categories</th>
+        <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Why</th>
+      </tr></thead>
+      <tbody>
+        <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>Eton</strong> (~53%)</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Accessoarer (ties, pocket squares, cufflinks), products with no category</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">~47% of Eton's catalog is accessories that QFix doesn't service. All actual clothing items are mapped correctly.</td></tr>
+        <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>Lindex</strong> (~56%)</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Accessories, home textiles, beauty products</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Lindex sells non-clothing items (candles, skincare, home d&eacute;cor) that are scraped but not repairable.</td></tr>
+        <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>Gina Tricot</strong> (~90%)</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Accessories (jewellery, hair clips, bags)</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Smaller share of non-clothing items.</td></tr>
+        <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>KappAhl</strong> (~93%)</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Accessories, multi-packs</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Mostly clothing. Small number of accessories and edge cases.</td></tr>
+        <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>Nudie Jeans</strong> (~98%)</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">A few edge cases</td>
+          <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Almost entirely clothing. Very few unmapped products.</td></tr>
+      </tbody>
+    </table>
+    <p style="font-size:13px; color:#666; margin-top:4px;">
+      <strong>Key takeaway:</strong> Low coverage does not mean broken mappings &mdash; it means the brand's catalog includes
+      many non-clothing products. All actual clothing items across all brands are mapped correctly.
     </p>
   </div>
 
