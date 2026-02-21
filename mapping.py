@@ -784,6 +784,45 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
                 return "Unlined Jacket / Vest"
             return "Knitted Jumper"
 
+    # ── Lindex sub-mappings ──
+    if brand == "lindex":
+        # Kavajer & tunna jackor: mostly jackets (9), some blazers (3), one cardigan
+        # "Jacket" is a better default than "Suit" since most items are outerwear
+        if first == "kavajer tunna jackor":
+            return "Jacket"
+
+        # Performancewear: all kids outdoor gear (shell jackets, shell pants,
+        # overalls, mittens). Jacket is the best fit for majority.
+        if first == "performancewear":
+            return "Jacket"
+
+        # Träningskläder: Lindex uses this for sport underwear (trosor, strumpor),
+        # swimsuits, and sports bras — all intimate/underwear items
+        if first == "traningsklader":
+            return "Underwear"
+
+        # Linnen (tank tops): these are outerwear tank tops, not underwear
+        if first == "linnen":
+            return "Top / T-shirt"
+
+        # Klimakteriekläder: T-shirts, tank tops, nightgowns — more like tops
+        if first == "klimakterieklader":
+            return "Top / T-shirt"
+
+        # Mammakläder: mixed category (tops, dresses, skirts, trousers, shorts)
+        # Cannot distinguish by clothing_type alone, but the majority are not
+        # trousers. "Other" is a safer catch-all than "Trousers".
+        # Products: amningstopp, gravidtopp, t-shirt, linne, tröja, skjorta (tops)
+        #           klänning, kjol (dresses/skirts)
+        #           jeans, byxor, shorts, leggings (bottoms)
+        if first == "mammaklader":
+            return "Other"
+
+        # Nyfödd (newborn): mixed baby items (bodies, leggings, sets, dress)
+        # "Other" is safer than "Underwear" for such diverse items
+        if first == "nyfodd":
+            return "Other"
+
     # ── KappAhl sub-mappings ──
     if brand == "kappahl":
         # Ytterkläder (pants, overalls vs jackets)

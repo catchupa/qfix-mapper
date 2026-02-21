@@ -1439,6 +1439,32 @@ def remap_mapping_pairs():
     return jsonify(rows)
 
 
+@app.route("/remap/products")
+def remap_products():
+    """List products filtered by brand and/or clothing_type."""
+    brand = request.args.get("brand", "")
+    clothing_type = request.args.get("clothing_type", "")
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        query = """
+            SELECT product_id, product_name, clothing_type, qfix_clothing_type, qfix_material
+            FROM products_unified
+            WHERE 1=1
+        """
+        params = []
+        if brand:
+            query += " AND LOWER(brand) = LOWER(%s)"
+            params.append(brand)
+        if clothing_type:
+            query += " AND clothing_type = %s"
+            params.append(clothing_type)
+        query += " ORDER BY product_name LIMIT 200"
+        cur.execute(query, params)
+        rows = cur.fetchall()
+    conn.close()
+    return jsonify(rows)
+
+
 @app.route("/remap/impact-report")
 def remap_impact_report():
     """Preview mapping changes: compare current DB mappings with what the mapper would produce now.
