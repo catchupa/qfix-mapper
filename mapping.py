@@ -466,9 +466,12 @@ ACCESSORY_SUB_MAP = {
     "vantar": "Gloves",
     "handskar": "Gloves",
     "mössor, hattar & kepsar": "Hat",
+    "kepsar & hattar": "Hat",
+    "mössor, kepsar & hattar": "Hat",
     "mössor": "Hat",
     "hattar": "Hat",
     "kepsar": "Cap",
+    "solhattar": "Hat",
     "halsdukar & sjalar": "Scarf / Shawl",
     "halsdukar": "Scarf / Shawl",
     "sjalar": "Scarf / Shawl",
@@ -695,79 +698,166 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
         if first in brand_map:
             return brand_map[first]
 
-    # Badklader sub-mapping (bikini vs swimsuit)
-    if first == "badklader" and len(parts) > 1:
-        sub = parts[1]
-        if "bikini" in sub:
-            return "Bikini"
-        if "baddrakt" in sub:
+    # ── Brand-specific sub-mappings ──────────────────────────────────────
+    # NOTE: Sub-mappings should always be brand-specific so each brand's
+    # rules can be tested and verified independently. Add new sub-mappings
+    # under the appropriate brand block below.
+
+    # ── Gina Tricot sub-mappings ──
+    if brand == "ginatricot":
+        # Badklader (bikini vs swimsuit)
+        if first == "badklader" and len(parts) > 1:
+            sub = parts[1]
+            if "bikini" in sub:
+                return "Bikini"
             return "Swimsuit"
-        return "Swimsuit"
 
-    # Skor sub-mapping
-    if first == "skor" and len(parts) > 1:
-        sub = parts[1]
-        if "boots" in sub:
-            return "Boots"
-        if "hogklackade" in sub or "klack" in sub:
-            return "High heels"
-        if "sandaler" in sub:
-            return "Sandals"
-        if "sneakers" in sub:
-            return "Sneakers"
-        return "Other shoes"
+        # Skor (boots, heels, sandals, sneakers, slippers)
+        if first == "skor" and len(parts) > 1:
+            sub = parts[1]
+            if "boots" in sub:
+                return "Boots"
+            if "hogklackade" in sub or "klack" in sub:
+                return "High heels"
+            if "sandaler" in sub:
+                return "Sandals"
+            if "sneakers" in sub:
+                return "Sneakers"
+            if "tofflor" in sub or "ballerina" in sub:
+                return "Other shoes"
+            return "Other shoes"
 
-    # Träningskläder sub-mapping (tights/cycling vs tops/hoodies)
-    if first in ("träningskläder", "traningsklader") and len(parts) > 1:
-        sub = parts[1]
-        if any(kw in sub for kw in ("tights", "cykelbyxor", "cykelbyxa", "leggings", "byxor")):
-            return "Trousers"
-        if any(kw in sub for kw in ("shorts", "cykelshorts")):
-            return "Trousers / Shorts"
-        if any(kw in sub for kw in ("linne", "topp", "sport-bh", "bh")):
-            return "Top / T-shirt"
-        return "Sweatshirt / Hoodie"  # default for hoodies, jackets, etc.
-
-    # Mammakläder sub-mapping (tops vs bottoms)
-    if first in ("mammakläder", "mammaklader") and len(parts) > 1:
-        sub = parts[1]
-        if any(kw in sub for kw in ("toppar", "trojor", "blusar", "linne", "amning")):
-            return "Top / T-shirt"
-        if any(kw in sub for kw in ("klänningar", "klanningar")):
+        # Festklader (party pants vs party dresses)
+        if first == "festklader" and len(parts) > 1:
+            sub = parts[1]
+            if "byxor" in sub:
+                return "Trousers"
             return "Skirt / Dress"
-        return "Trousers"  # default for maternity pants, leggings
 
-    # Basplagg sub-mapping (basics include shorts, tops, etc.)
-    if first == "basplagg" and len(parts) > 1:
-        sub = parts[1]
-        if any(kw in sub for kw in ("shorts", "biker", "cykel")):
-            return "Trousers / Shorts"
-        if any(kw in sub for kw in ("leggings", "tights", "byxor")):
+        # Mössor & vantar (caps vs hats)
+        if first == "mossorvantar" and len(parts) > 1:
+            sub = parts[1]
+            if "caps" in sub or "keps" in sub:
+                return "Cap"
+            return "Hat"
+
+        # Coats & jackets (vests, suits vs jackets)
+        if first == "coatsjackets" and len(parts) > 1:
+            sub = parts[1]
+            if "vastar" in sub:
+                return "Unlined Jacket / Vest"
+            if "kavajer" in sub:
+                return "Suit"
+            return "Jacket"
+
+        # Knitted (accessories vs jumpers vs vests)
+        if first == "knitted" and len(parts) > 1:
+            sub = parts[1]
+            if "accessories" in sub:
+                return "Scarf / Shawl"
+            if "vastar" in sub:
+                return "Unlined Jacket / Vest"
+            return "Knitted Jumper"
+
+        # Jeans (shorts vs trousers)
+        if first == "jeans" and len(parts) > 1:
+            sub = parts[1]
+            if "shorts" in sub:
+                return "Trousers / Shorts"
             return "Trousers"
-        return "Top / T-shirt"  # default for basic tops, bodys, etc.
 
-    # Trojor sub-mapping (sweaters vs hoodies)
-    if first == "trojor" and len(parts) > 1:
-        sub = parts[1]
-        if "hoodies" in sub or "hoodie" in sub:
+        # Basplagg (biker shorts vs tops)
+        if first == "basplagg" and len(parts) > 1:
+            sub = parts[1]
+            if any(kw in sub for kw in ("shorts", "biker", "cykel")):
+                return "Trousers / Shorts"
+            return "Top / T-shirt"
+
+        # Trojor (hoodies/sweatshirts vs knitted vs vests)
+        if first == "trojor" and len(parts) > 1:
+            sub = parts[1]
+            if "hoodies" in sub or "hoodie" in sub:
+                return "Sweatshirt / Hoodie"
+            if "collegetrojor" in sub:
+                return "Sweatshirt / Hoodie"
+            if "vastar" in sub:
+                return "Unlined Jacket / Vest"
+            return "Knitted Jumper"
+
+    # ── KappAhl sub-mappings ──
+    if brand == "kappahl":
+        # Ytterkläder (pants, overalls vs jackets)
+        if first in ("ytterkläder", "ytterklader") and len(parts) > 1:
+            sub = " > ".join(parts[1:])
+            if any(kw in sub for kw in ("regnbyxor", "skalbyxor", "skidbyxor", "överdragsbyxor", "overdragsbyxor")):
+                return "Trousers"
+            if any(kw in sub for kw in ("overaller", "vinteroveraller")):
+                return "Overall"
+            if "regnaccessoarer" in sub:
+                return None
+            return "Jacket"
+
+        # Loungewear (bottoms vs tops)
+        if first == "loungewear" and len(parts) > 1:
+            sub = parts[1]
+            if "underdelar" in sub:
+                return "Trousers"
+            if any(kw in sub for kw in ("underställ", "understall")):
+                return "Midlayer"
             return "Sweatshirt / Hoodie"
-        if "collegetrojor" in sub:
+
+        # Skor & tofflor (slippers vs shoes)
+        if first == "skor & tofflor" and len(parts) > 1:
+            sub = parts[1]
+            if any(kw in sub for kw in ("tofflor", "slippers")):
+                return "Other shoes"
+            return "Sneakers"
+
+        # Tröjor & koftor / tröjor & cardigans (sweatshirts vs knitted)
+        if first in ("tröjor & koftor", "tröjor & cardigans") and len(parts) > 1:
+            sub = parts[1]
+            if any(kw in sub for kw in ("hoodies", "hoodie", "sweatshirt")):
+                return "Sweatshirt / Hoodie"
+            return "Knitted Jumper"
+
+        # Träningskläder (tights/cycling vs tops/hoodies)
+        if first in ("träningskläder", "traningsklader") and len(parts) > 1:
+            sub = parts[1]
+            if any(kw in sub for kw in ("tights", "cykelbyxor", "cykelbyxa", "leggings", "byxor")):
+                return "Trousers"
+            if any(kw in sub for kw in ("shorts", "cykelshorts")):
+                return "Trousers / Shorts"
+            if any(kw in sub for kw in ("linne", "topp", "sport-bh", "bh")):
+                return "Top / T-shirt"
             return "Sweatshirt / Hoodie"
-        if "vastar" in sub:
-            return "Unlined Jacket / Vest"
-        return "Knitted Jumper"
 
-    # Accessories need sub-mapping
-    if first == "accessoarer" and len(parts) > 1:
-        for part in parts[1:]:
-            sub = ACCESSORY_SUB_MAP.get(part)
-            if sub:
-                return sub
-        return None
+        # Mammakläder (tops vs bottoms)
+        if first in ("mammakläder", "mammaklader") and len(parts) > 1:
+            sub = parts[1]
+            if any(kw in sub for kw in ("toppar", "trojor", "blusar", "linne", "amning")):
+                return "Top / T-shirt"
+            if any(kw in sub for kw in ("klänningar", "klanningar")):
+                return "Skirt / Dress"
+            return "Trousers"
 
-    # Hoodies nested under tröjor & cardigans
-    if len(parts) > 1 and "hoodies" in parts[1]:
-        return "Sweatshirt / Hoodie"
+        # Basplagg (shorts, tops, sweatshirts)
+        if first == "basplagg" and len(parts) > 1:
+            sub = parts[1]
+            if any(kw in sub for kw in ("shorts", "biker", "cykel")):
+                return "Trousers / Shorts"
+            if any(kw in sub for kw in ("leggings", "tights", "byxor")):
+                return "Trousers"
+            if "sweatshirt" in sub:
+                return "Sweatshirt / Hoodie"
+            return "Top / T-shirt"
+
+        # Accessories (most specific part first for kepsar vs mössor)
+        if first == "accessoarer" and len(parts) > 1:
+            for part in reversed(parts[1:]):
+                sub = ACCESSORY_SUB_MAP.get(part)
+                if sub:
+                    return sub
+            return None
 
     result = CLOTHING_TYPE_MAP.get(first)
     if result is not None:

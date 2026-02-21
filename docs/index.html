@@ -224,9 +224,13 @@
         <div class="flow-text">
           <h4>Select Top 5 Service Actions</h4>
           <p>Each clothing type + material combination in the QFix catalog has many available service actions
-             (often 20+ per category). AI has pre-ranked the 5 most relevant actions per service category
-             (repair, adjustment, care, other) for all 259 combinations. These are stored in the database
-             and passed as <code>variants_id</code> in the redirect URL to pre-select them on QFix.</p>
+             (often 20+ per category). AI has pre-ranked the <strong>top 10</strong> most relevant actions per service category
+             (repair, adjustment, care, other) for all 259 combinations. These are stored in the database.</p>
+          <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Backfill mechanism:</strong> The system stores 10 actions (not 5) so that when
+             exclusion rules (Step 7) remove irrelevant actions, the remaining slots are filled from positions 6&ndash;10
+             instead of leaving gaps. For example, a vest has 10 ranked adjustments &rarr; "Shorten sleeves" and "Lengthen sleeves"
+             are excluded &rarr; 8 remain &rarr; top 5 selected (positions 6&ndash;7 backfill the gaps left by the 2 excluded actions).
+             The final 5 are passed as <code>variants_id</code> in the redirect URL to pre-select them on QFix.</p>
         </div>
       </div>
       <div class="flow-arrow">&#8595;</div>
@@ -254,20 +258,36 @@
               <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0;">#3</th>
               <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0;">#4</th>
               <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0;">#5</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0; color:#999;">#6</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0; color:#999;">#7</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0; color:#999;">#8</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0; color:#999;">#9</th>
+              <th style="text-align:center; padding:4px 8px; border-bottom:2px solid #e0e0e0; color:#999;">#10</th>
             </tr></thead>
             <tbody>
-              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">AI-ranked (generic)</td>
+              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">AI-ranked (stored)</td>
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>10</strong></td>
-                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>8</strong></td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>9</strong></td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">8</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">7</td>
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">6</td>
-                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">4</td>
-                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">2</td></tr>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0; color:#999;">5</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0; color:#999;">4</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0; color:#999;">3</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0; color:#999;">2</td>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0; color:#999;">1</td></tr>
               <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Keyword-injected (max 2 per rule)</td>
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;"><strong>7</strong></td>
                 <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;">5</td>
-                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;" colspan="3"></td></tr>
+                <td style="text-align:center; padding:3px 8px; border-bottom:1px solid #f0f0f0;" colspan="9"></td></tr>
             </tbody>
           </table>
+          <p style="margin-top:4px; font-size:13px; color:#666;">Positions #6&ndash;#10 (greyed out) are stored for backfill but normally trimmed away.
+             They only surface when exclusion rules remove higher-ranked actions.</p>
+          <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Exclusion check:</strong> Keyword-injected actions are also checked against
+             the exclusion rules (Step 7). If a product triggers both a keyword injection and an exclusion for the same action,
+             the exclusion wins. For example, leggings with "dragkedja" in the description will NOT get "Replace zipper" injected
+             because the leggings exclusion rule blocks it.</p>
           <p style="margin-top:8px;"><strong>Example:</strong> "Stickad cardigan med dragkedja" (knitted cardigan with zipper) &mdash; the merged repair list:</p>
           <ol style="font-size:13px; margin:4px 0 0 20px; color:#444;">
             <li><strong>Repair hole</strong> <span style="color:#aaa;">(AI #1, score 10)</span></li>
@@ -350,9 +370,13 @@
           <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Note:</strong> Keywords are matched against product name, description, <em>and</em> the clothing type category
              field. This catches products where distinguishing keywords (e.g., "leggings", "strumpbyxor", "croptops")
              only appear in the category, not the product name.</p>
-          <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Example:</strong> "Väst i linnemix" (linen vest) is mapped to "Suit" which includes
-             "Shorten sleeves" and "Tapering legs". The exclusion rule removes these, leaving only relevant
-             adjustments like "Shorten length", "Take in waist", and "Take in sides".</p>
+          <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Processing order:</strong> Exclusions are applied <strong>before</strong> the final top 5 selection.
+             The system has up to 10 AI-ranked actions per category. Exclusions filter the full pool of 10, then the best 5 are selected.
+             This means excluded actions are replaced by lower-ranked ones (backfill) rather than leaving empty slots.</p>
+          <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Example:</strong> "Väst i linnemix" (linen vest) is mapped to "Suit" which has 10 ranked adjustments.
+             The exclusion rule removes "Shorten sleeves" (#3) and "Lengthen sleeves" (#6) &rarr; 8 remain &rarr;
+             top 5 selected: "Take in waist", "Shorten length", "Take in sides", "Narrow shoulder area", "Take in the back".
+             Positions #6&ndash;#7 ("Take in shoulders", "Expand waist") backfilled the gaps left by the excluded sleeve actions.</p>
         </div>
       </div>
     </div>

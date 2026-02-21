@@ -1415,6 +1415,76 @@ def remap_status():
     return jsonify(rows)
 
 
+@app.route("/remap/mapping-pairs")
+def remap_mapping_pairs():
+    """Get all distinct (clothing_type, qfix_clothing_type) pairs per brand with counts."""
+    brand = request.args.get("brand", "")
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        query = """
+            SELECT clothing_type, qfix_clothing_type, qfix_material, COUNT(*) as cnt,
+                   MIN(product_id) as sample_product_id,
+                   MIN(product_name) as sample_product_name
+            FROM products_unified
+            WHERE qfix_clothing_type IS NOT NULL
+        """
+        params = []
+        if brand:
+            query += " AND LOWER(brand) = LOWER(%s)"
+            params.append(brand)
+        query += " GROUP BY clothing_type, qfix_clothing_type, qfix_material ORDER BY clothing_type, cnt DESC"
+        cur.execute(query, params)
+        rows = cur.fetchall()
+    conn.close()
+    return jsonify(rows)
+
+
+@app.route("/remap/impact-report")
+def remap_impact_report():
+    """Preview mapping changes: compare current DB mappings with what the mapper would produce now.
+
+    Returns all products where the current persisted qfix_clothing_type differs from
+    what map_clothing_type() would return. Use ?brand=kappahl to filter by brand.
+    """
+    brand_filter = request.args.get("brand", "")
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        query = """
+            SELECT product_id, product_name, brand, clothing_type, category,
+                   qfix_clothing_type, qfix_material
+            FROM products_unified
+        """
+        params = []
+        if brand_filter:
+            query += " WHERE LOWER(brand) = LOWER(%s)"
+            params.append(brand_filter)
+        query += " ORDER BY brand, clothing_type, product_id"
+        cur.execute(query, params)
+        rows = cur.fetchall()
+    conn.close()
+
+    changes = []
+    for r in rows:
+        brand_slug = BRAND_SLUG.get(r["brand"]) if r["brand"] else None
+        new_type = map_clothing_type(r["clothing_type"], brand=brand_slug)
+        old_type = r["qfix_clothing_type"]
+        if new_type != old_type:
+            changes.append({
+                "product_id": r["product_id"],
+                "product_name": r["product_name"],
+                "brand": r["brand"],
+                "clothing_type": r["clothing_type"],
+                "before": old_type,
+                "after": new_type,
+            })
+
+    return jsonify({
+        "total_products": len(rows),
+        "changes": len(changes),
+        "details": changes,
+    })
+
+
 RANK_ACTIONS_PROMPT = """You are a clothing repair service expert. For a **{clothing_type}** made of **{material}**, rank the following {service_name} actions by how likely a typical customer would need them.
 
 CRITICAL: Only include actions that are PHYSICALLY POSSIBLE for this specific garment type.
