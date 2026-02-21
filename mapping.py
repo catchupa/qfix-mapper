@@ -674,8 +674,13 @@ _KEYWORD_CLOTHING_MAP = [
 ]
 
 
-def map_clothing_type(kappahl_clothing_type, brand=None):
-    """Map clothing_type string to QFix L3 clothing type name."""
+def map_clothing_type(kappahl_clothing_type, brand=None, product_name=None, description=None):
+    """Map clothing_type string to QFix L3 clothing type name.
+
+    product_name and description are optional and used for flat categories where
+    the clothing_type alone is ambiguous (e.g. Lindex "badklader" containing both
+    bikinis and swimsuits).
+    """
     if not kappahl_clothing_type:
         return None
 
@@ -688,6 +693,8 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
         return None
 
     first = parts[0]
+    # Combine product name + description for keyword matching in ambiguous categories
+    pn = " ".join(filter(None, [product_name, description])).lower()
 
     # Brand-specific exact override (checked before global map)
     if brand:
@@ -801,20 +808,42 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
 
     # ── Lindex sub-mappings ──
     if brand == "lindex":
+        # Badkläder / badkläder UV: use product name to distinguish bikini vs swimsuit
+        if first in ("badklader", "badklader uv"):
+            if pn and any(kw in pn for kw in ("bikini",)):
+                return "Bikini"
+            return "Swimsuit"
+
         # Kavajer & tunna jackor: mostly jackets (9), some blazers (3), one cardigan
-        # "Jacket" is a better default than "Suit" since most items are outerwear
         if first == "kavajer tunna jackor":
+            if pn and any(kw in pn for kw in ("kavaj", "blazer")):
+                return "Suit"
             return "Jacket"
 
-        # Performancewear: all kids outdoor gear (shell jackets, shell pants,
-        # overalls, mittens). Jacket is the best fit for majority.
+        # Performancewear: kids outdoor gear. Use product name to distinguish.
         if first == "performancewear":
+            if pn and any(kw in pn for kw in ("byxor", "byxa")):
+                return "Trousers"
+            if pn and any(kw in pn for kw in ("overall",)):
+                return "Overall"
+            if pn and any(kw in pn for kw in ("vantar", "tumvantar")):
+                return "Gloves"
+            if pn and any(kw in pn for kw in ("mössa", "mossa")):
+                return "Hat"
             return "Jacket"
 
         # Träningskläder: Lindex uses this for sport underwear (trosor, strumpor),
         # swimsuits, and sports bras — all intimate/underwear items
         if first == "traningsklader":
+            if pn and any(kw in pn for kw in ("baddräkt", "baddrakt")):
+                return "Swimsuit"
             return "Underwear"
+
+        # Tröjor & koftor: mixed knitted items and sweatshirts
+        if first in ("trojor koftor", "trojor cardigans"):
+            if pn and any(kw in pn for kw in ("sweatshirt", "hoodie", "college")):
+                return "Sweatshirt / Hoodie"
+            return "Knitted Jumper"
 
         # Linnen (tank tops): these are outerwear tank tops, not underwear
         if first == "linnen":
@@ -824,18 +853,29 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
         if first == "klimakterieklader":
             return "Top / T-shirt"
 
-        # Mammakläder: mixed category (tops, dresses, skirts, trousers, shorts)
-        # Cannot distinguish by clothing_type alone, but the majority are not
-        # trousers. "Other" is a safer catch-all than "Trousers".
-        # Products: amningstopp, gravidtopp, t-shirt, linne, tröja, skjorta (tops)
-        #           klänning, kjol (dresses/skirts)
-        #           jeans, byxor, shorts, leggings (bottoms)
+        # Mammakläder: use product name to distinguish tops/dresses/bottoms
+        # NOTE: check bottoms before tops because "linne" matches "linneblandning"
         if first == "mammaklader":
+            if pn and any(kw in pn for kw in ("shorts", "cykelbyxa")):
+                return "Trousers / Shorts"
+            if pn and any(kw in pn for kw in ("jeans", "byxor", "byxa", "leggings")):
+                return "Trousers"
+            if pn and any(kw in pn for kw in ("klänning", "klanning")):
+                return "Skirt / Dress"
+            if pn and any(kw in pn for kw in ("kjol",)):
+                return "Skirt / Dress"
+            if pn and any(kw in pn for kw in ("topp", "linne", "amningstopp", "t-shirt", "tröja", "skjorta")):
+                return "Top / T-shirt"
             return "Other"
 
-        # Nyfödd (newborn): mixed baby items (bodies, leggings, sets, dress)
-        # "Other" is safer than "Underwear" for such diverse items
+        # Nyfödd (newborn): use product name to distinguish
         if first == "nyfodd":
+            if pn and any(kw in pn for kw in ("body", "omlottbody")):
+                return "Underwear"
+            if pn and any(kw in pn for kw in ("klänning", "klanning")):
+                return "Skirt / Dress"
+            if pn and any(kw in pn for kw in ("byxor", "byxa", "leggings", "mjukisbyxor")):
+                return "Trousers"
             return "Other"
 
     # ── KappAhl sub-mappings ──
@@ -1081,7 +1121,11 @@ def map_product(product, brand=None):
 
     Returns dict with qfix names and numeric IDs.
     """
-    clothing_name = map_clothing_type(product.get("clothing_type"), brand=brand)
+    clothing_name = map_clothing_type(
+        product.get("clothing_type"), brand=brand,
+        product_name=product.get("product_name"),
+        description=product.get("description"),
+    )
     material_name = map_material(product.get("material_composition"), brand=brand)
     subcategory_name = map_category(product.get("category"))
 
@@ -1108,7 +1152,11 @@ def map_product_legacy(product, brand=None):
 
     Same interface as map_product() but uses _LEGACY dicts.
     """
-    clothing_name = map_clothing_type(product.get("clothing_type"), brand=brand)
+    clothing_name = map_clothing_type(
+        product.get("clothing_type"), brand=brand,
+        product_name=product.get("product_name"),
+        description=product.get("description"),
+    )
     material_name = map_material(product.get("material_composition"), brand=brand)
     subcategory_name = map_category(product.get("category"))
 

@@ -1275,7 +1275,7 @@ def remap_run():
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         base_query = (
-            "SELECT product_id, product_name, category, clothing_type, "
+            "SELECT product_id, product_name, description, category, clothing_type, "
             "material_composition, materials, brand, article_number "
             "FROM products_unified"
         )
@@ -1476,7 +1476,7 @@ def remap_impact_report():
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         query = """
-            SELECT product_id, product_name, brand, clothing_type, category,
+            SELECT product_id, product_name, description, brand, clothing_type, category,
                    qfix_clothing_type, qfix_material
             FROM products_unified
         """
@@ -1492,7 +1492,7 @@ def remap_impact_report():
     changes = []
     for r in rows:
         brand_slug = BRAND_SLUG.get(r["brand"]) if r["brand"] else None
-        new_type = map_clothing_type(r["clothing_type"], brand=brand_slug)
+        new_type = map_clothing_type(r["clothing_type"], brand=brand_slug, product_name=r.get("product_name"), description=r.get("description"))
         old_type = r["qfix_clothing_type"]
         if new_type != old_type:
             changes.append({
@@ -2371,7 +2371,7 @@ def docs_verify(product_id):
     mat_input = product.get("material_composition")
     cat_input = product.get("category")
 
-    ct_result = map_clothing_type(ct_input, brand=brand_slug)
+    ct_result = map_clothing_type(ct_input, brand=brand_slug, product_name=product.get("product_name"), description=product.get("description"))
     mat_result = map_material(mat_input, brand=brand_slug)
     subcat = map_category(cat_input)
 

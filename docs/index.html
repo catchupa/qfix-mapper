@@ -179,7 +179,11 @@
           <h4>Identify Clothing Type</h4>
           <p>The scraped Swedish category (e.g. "Jackor &amp; rockar &gt; Varjackor") is looked up in a mapping table
              of ~460 entries. Multi-level categories are split and matched segment by segment.
-             If no direct match is found, keyword matching is tried against the product name.</p>
+             Brand-specific sub-mappings are applied first for categories that need finer-grained classification
+             (e.g. KappAhl's "Badkl&auml;der &gt; Bikini" &rarr; Bikini, Lindex "trojor koftor" with sweatshirts &rarr; Sweatshirt/Hoodie).
+             For ambiguous flat categories, the <strong>product name</strong> and <strong>description</strong> are also
+             used as keyword signals (e.g. a Lindex "badklader" product named "Bikiniset" maps to Bikini instead of Swimsuit).
+             If no direct match is found, keyword matching is tried as a final fallback.</p>
         </div>
       </div>
       <div class="flow-arrow">&#8595;</div>
