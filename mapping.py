@@ -840,7 +840,14 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
 
     # ── KappAhl sub-mappings ──
     if brand == "kappahl":
-        # Ytterkläder (pants, overalls vs jackets)
+        # Badkläder > Bikini: bikini tops/bottoms should map to Bikini, not Swimsuit
+        if first in ("badkläder", "badklader") and len(parts) > 1:
+            sub = " > ".join(parts[1:])
+            if "bikini" in sub:
+                return "Bikini"
+            return "Swimsuit"
+
+        # Ytterkläder (pants, overalls, vests vs jackets)
         if first in ("ytterkläder", "ytterklader") and len(parts) > 1:
             sub = " > ".join(parts[1:])
             if any(kw in sub for kw in ("regnbyxor", "skalbyxor", "skidbyxor", "överdragsbyxor", "overdragsbyxor")):
@@ -849,16 +856,28 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
                 return "Overall"
             if "regnaccessoarer" in sub:
                 return None
+            if "västar" in sub or "vastar" in sub:
+                return "Unlined Jacket / Vest"
             return "Jacket"
 
-        # Loungewear (bottoms vs tops)
-        if first == "loungewear" and len(parts) > 1:
+        # Jackor & rockar (vests vs jackets)
+        if first in ("jackor & rockar", "jackor & kappor") and len(parts) > 1:
             sub = parts[1]
-            if "underdelar" in sub:
-                return "Trousers"
-            if any(kw in sub for kw in ("underställ", "understall")):
-                return "Midlayer"
-            return "Sweatshirt / Hoodie"
+            if "västar" in sub or "vastar" in sub:
+                return "Unlined Jacket / Vest"
+            return "Jacket"
+
+        # Loungewear (bottoms vs tops; generic = shorts)
+        if first == "loungewear":
+            if len(parts) > 1:
+                sub = parts[1]
+                if "underdelar" in sub:
+                    return "Trousers"
+                if any(kw in sub for kw in ("underställ", "understall")):
+                    return "Midlayer"
+                return "Sweatshirt / Hoodie"
+            # Generic loungewear without sub-path: currently 2x "Mjukisshorts"
+            return "Trousers / Shorts"
 
         # Skor & tofflor (slippers vs shoes)
         if first == "skor & tofflor" and len(parts) > 1:
@@ -867,11 +886,13 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
                 return "Other shoes"
             return "Sneakers"
 
-        # Tröjor & koftor / tröjor & cardigans (sweatshirts vs knitted)
+        # Tröjor & koftor / tröjor & cardigans (sweatshirts, vests vs knitted)
         if first in ("tröjor & koftor", "tröjor & cardigans") and len(parts) > 1:
             sub = parts[1]
             if any(kw in sub for kw in ("hoodies", "hoodie", "sweatshirt")):
                 return "Sweatshirt / Hoodie"
+            if any(kw in sub for kw in ("stickade västar", "västar", "vastar")):
+                return "Unlined Jacket / Vest"
             return "Knitted Jumper"
 
         # Träningskläder (tights/cycling vs tops/hoodies)
