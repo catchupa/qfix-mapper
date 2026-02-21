@@ -1497,11 +1497,50 @@ KEYWORD_ACTION_RULES = [
     },
 ]
 
+# Keyword → action exclusion: remove irrelevant actions based on product text
+# Each entry: keywords to match in product text, action names to exclude, category
+KEYWORD_EXCLUSION_RULES = [
+    {
+        "keywords": ["väst", "vest", "gilet", "bodywarmer"],
+        "exclude_actions": ["Shorten sleeves", "Lengthen sleeves"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["väst", "vest", "gilet", "bodywarmer"],
+        "exclude_actions": ["Tapering legs", "Shorten legs", "Lengthen legs"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["linne", "singlet", "tank top", "ärmlös", "sleeveless", "bandeau", "tubtopp"],
+        "exclude_actions": ["Shorten sleeves", "Lengthen sleeves"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["shorts"],
+        "exclude_actions": ["Tapering legs"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["kjol", "skirt"],
+        "exclude_actions": ["Shorten sleeves", "Lengthen sleeves", "Tapering legs"],
+        "category": "adjustment",
+    },
+]
+
 
 def _inject_keyword_actions(top_actions, product_text, qfix_services):
-    """Inject relevant actions into top_actions based on keywords found in product text."""
+    """Inject/exclude actions in top_actions based on keywords found in product text."""
     if not product_text:
         return top_actions
+
+    # Build set of action names to exclude per category
+    excluded = {}  # category_key -> set of action names
+    for rule in KEYWORD_EXCLUSION_RULES:
+        if any(kw in product_text for kw in rule["keywords"]):
+            cat = rule["category"]
+            if cat not in excluded:
+                excluded[cat] = set()
+            excluded[cat].update(rule["exclude_actions"])
 
     # Build a lookup: action name -> {id, name, price} from all services
     all_actions = {}  # name -> list of {id, name, price, category_key}
@@ -1561,42 +1600,45 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
                     selected.append(default_action)
             injected[cat].extend(selected[:MAX_INJECTED_PER_RULE])
 
-    if not injected:
+    if not injected and not excluded:
         return top_actions
 
-    # Score-based merge: combine AI-ranked and keyword actions, pick best 5
-    # AI positions get scores: #1=10, #2=8, #3=6, #4=4, #5=2
-    # Keyword matches get scores: #1=7, #2=5, #3=3, #4+=1
-    ai_scores = [10, 8, 6, 4, 2]
-    kw_scores = [7, 5, 3, 1, 1]
-
     result = dict(top_actions)
-    for cat, new_actions in injected.items():
-        existing = list(result.get(cat, []))
 
-        # Build scored candidates from AI-ranked actions
-        scored = []
-        seen_ids = set()
-        seen_names = set()
-        for i, a in enumerate(existing):
-            score = ai_scores[i] if i < len(ai_scores) else 1
-            scored.append((score, a))
-            seen_ids.add(a["id"])
-            seen_names.add(a["name"])
+    # Score-based merge: combine AI-ranked and keyword actions, pick best 5
+    if injected:
+        ai_scores = [10, 8, 6, 4, 2]
+        kw_scores = [7, 5, 3, 1, 1]
 
-        # Add keyword-injected actions (skip duplicates)
-        kw_idx = 0
-        for a in new_actions:
-            if a["id"] not in seen_ids and a["name"] not in seen_names:
-                score = kw_scores[kw_idx] if kw_idx < len(kw_scores) else 1
+        for cat, new_actions in injected.items():
+            existing = list(result.get(cat, []))
+
+            scored = []
+            seen_ids = set()
+            seen_names = set()
+            for i, a in enumerate(existing):
+                score = ai_scores[i] if i < len(ai_scores) else 1
                 scored.append((score, a))
                 seen_ids.add(a["id"])
                 seen_names.add(a["name"])
-                kw_idx += 1
 
-        # Sort by score descending, take top 5
-        scored.sort(key=lambda x: x[0], reverse=True)
-        result[cat] = [a for _, a in scored[:5]]
+            kw_idx = 0
+            for a in new_actions:
+                if a["id"] not in seen_ids and a["name"] not in seen_names:
+                    score = kw_scores[kw_idx] if kw_idx < len(kw_scores) else 1
+                    scored.append((score, a))
+                    seen_ids.add(a["id"])
+                    seen_names.add(a["name"])
+                    kw_idx += 1
+
+            scored.sort(key=lambda x: x[0], reverse=True)
+            result[cat] = [a for _, a in scored[:5]]
+
+    # Apply exclusion rules: remove actions that don't make sense for this product
+    if excluded:
+        for cat, names_to_remove in excluded.items():
+            if cat in result:
+                result[cat] = [a for a in result[cat] if a["name"] not in names_to_remove]
 
     return result
 

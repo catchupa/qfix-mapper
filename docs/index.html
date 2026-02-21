@@ -289,6 +289,39 @@
              while a regular shirt with buttons would only get the generic "Replace button". Max 2 button actions instead of the previous 5.</p>
         </div>
       </div>
+
+      <div class="flow-step">
+        <div class="flow-icon">7</div>
+        <div class="flow-text">
+          <h4>Action Exclusion Rules</h4>
+          <p>Some products are mapped to broad QFix categories (e.g., a vest mapped to "Suit") which include
+             actions that don't apply. The system scans the product text for keywords and <strong>removes</strong> irrelevant actions:</p>
+          <table style="font-size:13px; margin:8px 0; border-collapse:collapse; width:100%;">
+            <thead><tr style="background:#f8f9fa;">
+              <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Product keywords</th>
+              <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Excluded actions</th>
+              <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Category</th>
+            </tr></thead>
+            <tbody>
+              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">väst, vest, gilet, bodywarmer</td>
+                <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Shorten sleeves, Lengthen sleeves, Tapering legs, Shorten legs, Lengthen legs</td>
+                <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">adjustment</td></tr>
+              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">linne, singlet, tank top, ärmlös, sleeveless, bandeau, tubtopp</td>
+                <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Shorten sleeves, Lengthen sleeves</td>
+                <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">adjustment</td></tr>
+              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">shorts</td>
+                <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tapering legs</td>
+                <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">adjustment</td></tr>
+              <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">kjol, skirt</td>
+                <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Shorten sleeves, Lengthen sleeves, Tapering legs</td>
+                <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">adjustment</td></tr>
+            </tbody>
+          </table>
+          <p style="margin-top:4px; font-size:13px; color:#666;"><strong>Example:</strong> "Väst i linnemix" (linen vest) is mapped to "Suit" which includes
+             "Shorten sleeves" and "Tapering legs". The exclusion rule removes these, leaving only relevant
+             adjustments like "Shorten length", "Take in waist", and "Take in sides".</p>
+        </div>
+      </div>
     </div>
   </div>
 
