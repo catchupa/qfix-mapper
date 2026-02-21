@@ -1540,6 +1540,12 @@ KEYWORD_EXCLUSION_RULES = [
         "exclude_actions": ["Shorten sleeves", "Lengthen sleeves", "Tapering legs", "Shorten length"],
         "category": "adjustment",
     },
+    {
+        "keywords": ["strumpor", "socks", "sockor", "strumpa"],
+        "exclude_actions": ["Take in waist", "Expand waist", "Take in sides", "Shorten length", "Take in the back",
+                            "Narrow shoulder area", "Shorten sleeves", "Lengthen sleeves", "Tapering legs"],
+        "category": "adjustment",
+    },
 ]
 
 
