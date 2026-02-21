@@ -626,6 +626,7 @@ _KEYWORD_CLOTHING_MAP = [
     (" tee", "T-shirt"),
     ("tank top", "Top / T-shirt"),
     ("henley", "Top / T-shirt"),
+    ("skjorta", "Shirt / Blouse"),
     ("shirt", "Shirt / Blouse"),
     ("knit", "Knitted Jumper"),
     ("sweater", "Sweater"),
@@ -682,6 +683,12 @@ def map_clothing_type(kappahl_clothing_type, brand=None, product_name=None, desc
     bikinis and swimsuits).
     """
     if not kappahl_clothing_type:
+        # No category scraped — try to infer from product name/description
+        pn = " ".join(filter(None, [product_name, description])).lower()
+        if pn:
+            for keyword, qfix_type in _KEYWORD_CLOTHING_MAP:
+                if keyword in pn:
+                    return qfix_type
         return None
 
     parts = [p.strip().lower() for p in kappahl_clothing_type.split(">")]
@@ -877,6 +884,23 @@ def map_clothing_type(kappahl_clothing_type, brand=None, product_name=None, desc
             if pn and any(kw in pn for kw in ("byxor", "byxa", "leggings", "mjukisbyxor")):
                 return "Trousers"
             return "Other"
+
+    # ── Eton sub-mappings ──
+    if brand == "eton":
+        # Accessoarer: mixed bag — some are mappable (swim shorts, scarves, caps)
+        if first == "accessoarer":
+            if pn and any(kw in pn for kw in ("badshorts", "swim shorts", "badbyxor")):
+                return "Trousers / Shorts"
+            if pn and any(kw in pn for kw in ("scarf", "halsduk", "bandana")):
+                return "Scarf / Shawl"
+            if pn and any(kw in pn for kw in ("mössa", "mossa", "beanie")):
+                return "Hat"
+            if pn and any(kw in pn for kw in ("keps", "baseballkeps", "cap", "bucket hat")):
+                return "Cap"
+            if pn and any(kw in pn for kw in ("bälte", "belt")):
+                return "Belt"
+            # Ties, pocket squares, cufflinks, bow ties — no QFix category
+            return None
 
     # ── KappAhl sub-mappings ──
     if brand == "kappahl":
