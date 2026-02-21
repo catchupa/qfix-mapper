@@ -1,6 +1,7 @@
 import json
 import logging
 import os
+import threading
 import time
 
 import psycopg2
@@ -68,9 +69,11 @@ def create_table(conn):
                 care_text TEXT,
                 country_of_origin TEXT,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                last_seen_in_sitemap TIMESTAMP,
                 UNIQUE (brand, product_id)
             );
         """)
+        cur.execute("ALTER TABLE products_unified ADD COLUMN IF NOT EXISTS last_seen_in_sitemap TIMESTAMP;")
         # QFix mapping columns (persisted by /remap/run, not by scrapers)
         for col, col_type in [
             ("qfix_clothing_type", "TEXT"),
@@ -99,10 +102,12 @@ def upsert_product(conn, product):
         cur.execute("""
             INSERT INTO products_unified (product_id, brand, sub_brand, product_name, description, category,
                 clothing_type, material_composition, materials, color, size,
-                gtin, article_number, product_url, image_url, care_text, country_of_origin)
+                gtin, article_number, product_url, image_url, care_text, country_of_origin,
+                last_seen_in_sitemap)
             VALUES (%(product_id)s, %(brand)s, %(sub_brand)s, %(product_name)s, %(description)s, %(category)s,
                 %(clothing_type)s, %(material_composition)s, %(materials)s, %(color)s, %(size)s,
-                %(gtin)s, %(article_number)s, %(product_url)s, %(image_url)s, %(care_text)s, %(country_of_origin)s)
+                %(gtin)s, %(article_number)s, %(product_url)s, %(image_url)s, %(care_text)s, %(country_of_origin)s,
+                CURRENT_TIMESTAMP)
             ON CONFLICT (brand, product_id) DO UPDATE SET
                 sub_brand = EXCLUDED.sub_brand,
                 product_name = EXCLUDED.product_name,
@@ -119,6 +124,7 @@ def upsert_product(conn, product):
                 image_url = EXCLUDED.image_url,
                 care_text = EXCLUDED.care_text,
                 country_of_origin = EXCLUDED.country_of_origin,
+                last_seen_in_sitemap = CURRENT_TIMESTAMP,
                 updated_at = CURRENT_TIMESTAMP;
         """, values)
 
@@ -195,3 +201,96 @@ def get_action_ranking(conn, clothing_type_id, material_id):
             r = row["rankings"]
             return r if isinstance(r, dict) else json.loads(r)
         return None
+
+
+# ── Robust scraper runner ──────────────────────────────────────────────
+
+class _PersistentDB:
+    """A DB handle that automatically reconnects on failure."""
+
+    def __init__(self):
+        self._conn = None
+
+    def _ensure(self):
+        if self._conn is not None:
+            try:
+                self._conn.cursor().execute("SELECT 1")
+                return
+            except Exception:
+                try:
+                    self._conn.close()
+                except Exception:
+                    pass
+                self._conn = None
+        self._conn = _connect_with_retry(DATABASE_URL, retries=5, delay=2.0)
+
+    def upsert(self, product):
+        """Upsert a single product, reconnecting if needed. Returns True on success."""
+        for attempt in range(3):
+            try:
+                self._ensure()
+                upsert_product(self._conn, product)
+                return True
+            except Exception as e:
+                logger.warning("DB upsert failed (attempt %d/3) for %s/%s: %s",
+                               attempt + 1, product.get("brand"), product.get("product_id"), e)
+                self._conn = None  # force reconnect
+                if attempt < 2:
+                    time.sleep(2 ** attempt)
+        return False
+
+    def close(self):
+        if self._conn:
+            try:
+                self._conn.close()
+            except Exception:
+                pass
+            self._conn = None
+
+
+def run_scraper(scrape_fn, brand, batch_size=50, log_every=100):
+    """Shared robust scraper runner used by all brand main files.
+
+    scrape_fn: a callable that accepts a callback(product_dict).
+               The runner will call scrape_fn(on_product).
+    brand:     the brand name to stamp on each product.
+
+    Products are written to the DB one-at-a-time with auto-reconnect.
+    Failed products are collected and retried once at the end.
+    """
+    db = _PersistentDB()
+    lock = threading.Lock()
+    saved = [0]
+    failed = []
+
+    def on_product(product):
+        product["sub_brand"] = product.get("brand")
+        product["brand"] = brand
+        ok = db.upsert(product)
+        with lock:
+            if ok:
+                saved[0] += 1
+                if saved[0] % log_every == 0:
+                    logger.info("Progress: %d products saved so far", saved[0])
+            else:
+                failed.append(product)
+
+    scrape_fn(on_product)
+
+    # Retry failed products once
+    if failed:
+        logger.info("Retrying %d failed products...", len(failed))
+        retry_failed = []
+        for p in failed:
+            if db.upsert(p):
+                saved[0] += 1
+            else:
+                retry_failed.append(p)
+        if retry_failed:
+            logger.error("%d products could not be saved after retries: %s",
+                         len(retry_failed),
+                         [f"{p.get('brand')}/{p.get('product_id')}" for p in retry_failed[:10]])
+
+    db.close()
+    logger.info("Done! Saved %d products total.", saved[0])
+    return saved[0]

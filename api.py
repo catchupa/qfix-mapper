@@ -1495,6 +1495,50 @@ def remap_unmapped_categories():
     return jsonify(rows)
 
 
+@app.route("/remap/discontinued")
+def remap_discontinued():
+    """Get products in DB that are no longer in the brand's sitemap.
+
+    A product is considered discontinued if its last_seen_in_sitemap is older
+    than the most recent scrape for that brand.
+    ---
+    tags:
+      - Mapping
+    responses:
+      200:
+        description: Per-brand list of discontinued products
+    """
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            WITH brand_latest AS (
+                SELECT brand, MAX(last_seen_in_sitemap) as latest
+                FROM products_unified
+                WHERE last_seen_in_sitemap IS NOT NULL
+                GROUP BY brand
+            )
+            SELECT p.brand,
+                   COUNT(*) as discontinued_count,
+                   MAX(bl.latest) as latest_scrape,
+                   json_agg(json_build_object(
+                       'product_id', p.product_id,
+                       'product_name', p.product_name,
+                       'clothing_type', p.clothing_type,
+                       'last_seen', p.last_seen_in_sitemap,
+                       'product_url', p.product_url
+                   ) ORDER BY p.last_seen_in_sitemap DESC NULLS LAST) as products
+            FROM products_unified p
+            JOIN brand_latest bl ON bl.brand = p.brand
+            WHERE p.last_seen_in_sitemap IS NULL
+               OR p.last_seen_in_sitemap < bl.latest
+            GROUP BY p.brand
+            ORDER BY p.brand
+        """)
+        rows = cur.fetchall()
+    conn.close()
+    return jsonify(rows)
+
+
 @app.route("/remap/impact-report")
 def remap_impact_report():
     """Preview mapping changes: compare current DB mappings with what the mapper would produce now.
