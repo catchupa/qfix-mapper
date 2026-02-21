@@ -2461,6 +2461,7 @@ def docs_verify(product_id):
         "product": {
             "product_id": product["product_id"],
             "product_name": product.get("product_name"),
+            "description": product.get("description"),
             "brand": product.get("brand"),
             "category": cat_input,
             "clothing_type": ct_input,
