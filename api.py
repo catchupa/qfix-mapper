@@ -1525,6 +1525,21 @@ KEYWORD_EXCLUSION_RULES = [
         "exclude_actions": ["Shorten sleeves", "Lengthen sleeves", "Tapering legs"],
         "category": "adjustment",
     },
+    {
+        "keywords": ["badshorts", "swim shorts", "badbyxor"],
+        "exclude_actions": ["Replace zipper", "Replace main zipper", "Replace zipper slider"],
+        "category": "repair",
+    },
+    {
+        "keywords": ["badshorts", "swim shorts", "badbyxor"],
+        "exclude_actions": ["Narrow shoulder area", "Shorten sleeves", "Lengthen sleeves", "Shorten length"],
+        "category": "adjustment",
+    },
+    {
+        "keywords": ["bikini", "baddräkt", "swimsuit", "badedrakt"],
+        "exclude_actions": ["Shorten sleeves", "Lengthen sleeves", "Tapering legs", "Shorten length"],
+        "category": "adjustment",
+    },
 ]
 
 
