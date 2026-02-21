@@ -713,18 +713,21 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
             return "Swimsuit"
 
         # Skor (boots, heels, sandals, sneakers, slippers)
-        if first == "skor" and len(parts) > 1:
-            sub = parts[1]
-            if "boots" in sub:
-                return "Boots"
-            if "hogklackade" in sub or "klack" in sub:
-                return "High heels"
-            if "sandaler" in sub:
-                return "Sandals"
-            if "sneakers" in sub:
-                return "Sneakers"
-            if "tofflor" in sub or "ballerina" in sub:
-                return "Other shoes"
+        if first == "skor":
+            if len(parts) > 1:
+                sub = parts[1]
+                if "boots" in sub:
+                    return "Boots"
+                if "hogklackade" in sub or "klack" in sub:
+                    return "High heels"
+                if "sandaler" in sub:
+                    return "Sandals"
+                if "sneakers" in sub:
+                    return "Sneakers"
+                if "tofflor" in sub or "ballerina" in sub:
+                    return "Other shoes"
+            # Generic "skor" without sub-path: mixed (sandals 25, boots 24,
+            # sneakers 14, slippers 4, heels 2, etc.) — "Other shoes" is safer
             return "Other shoes"
 
         # Festklader (party pants vs party dresses)
@@ -783,6 +786,18 @@ def map_clothing_type(kappahl_clothing_type, brand=None):
             if "vastar" in sub:
                 return "Unlined Jacket / Vest"
             return "Knitted Jumper"
+
+        # Loungewear: mixed (robe, cardigan, singlet, trousers, top)
+        # Too diverse for a single type — "Other" is safer
+        if first == "loungewear":
+            return "Other"
+
+        # Träningskläder > pilates: yoga tops and yoga jackets
+        if first == "traningsklader" and len(parts) > 1:
+            sub = parts[1]
+            if "pilates" in sub or "yoga" in sub:
+                return "Top / T-shirt"
+            return "Sweatshirt / Hoodie"
 
     # ── Lindex sub-mappings ──
     if brand == "lindex":
