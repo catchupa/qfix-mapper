@@ -915,19 +915,31 @@ async function verify() {
     }
     html += '</div></div>';
 
-    // Persisted service URLs from DB
+    // Persisted service URLs from DB — append variants_id from top actions
     const pUrls = data.persisted_service_urls || {};
+    const topActions = data.top_actions || {};
     const hasPersistedUrls = pUrls.repair || pUrls.adjustment || pUrls.care || pUrls.other;
+
+    // Build full URLs with variants_id appended
+    function buildFullUrl(baseUrl, serviceKey) {
+      if (!baseUrl) return null;
+      const actions = topActions[serviceKey];
+      if (actions && actions.length > 0) {
+        const variantIds = actions.slice(0, 5).map(function(a) { return a.id; }).join(',');
+        return baseUrl + '&variants_id=' + variantIds;
+      }
+      return baseUrl;
+    }
 
     if (hasPersistedUrls || svcs.length > 0) {
       html += '<h3 style="margin:20px 0 8px;">Service URLs</h3>';
-      html += '<p style="font-size:13px; color:#666; margin-bottom:12px;">QFix booking URLs for each service type. These are persisted in the database and used by the redirect endpoints.</p>';
+      html += '<p style="font-size:13px; color:#666; margin-bottom:12px;">QFix booking URLs for each service type, including the top 5 pre-selected actions (<code>variants_id</code>).</p>';
 
       const serviceRows = [
-        {label: 'Repair', key: 'repair', dbUrl: pUrls.repair},
-        {label: 'Adjustment', key: 'adjustment', dbUrl: pUrls.adjustment},
-        {label: 'Care', key: 'care', dbUrl: pUrls.care},
-        {label: 'Other', key: 'other', dbUrl: pUrls.other},
+        {label: 'Repair', key: 'repair', dbUrl: buildFullUrl(pUrls.repair, 'repair')},
+        {label: 'Adjustment', key: 'adjustment', dbUrl: buildFullUrl(pUrls.adjustment, 'adjustment')},
+        {label: 'Care', key: 'care', dbUrl: buildFullUrl(pUrls.care, 'care')},
+        {label: 'Other', key: 'other', dbUrl: buildFullUrl(pUrls.other, 'other')},
       ];
 
       html += '<table style="width:100%; border-collapse:collapse; font-size:14px; margin-bottom:12px;">';
@@ -963,7 +975,6 @@ async function verify() {
     }
 
     // Top suggested actions (AI-ranked)
-    const topActions = data.top_actions || {};
     const hasActions = Object.values(topActions).some(function(a) { return a && a.length > 0; });
 
     if (hasActions) {
