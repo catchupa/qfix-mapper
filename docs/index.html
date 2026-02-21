@@ -207,6 +207,286 @@
               the category string are checked against known clothing keywords (e.g. "jacka" &rarr; Jacket,
               "byxor" &rarr; Trousers). This catches edge cases and new categories not yet in the mapping table.</li>
           </ol>
+
+          <h4 style="margin-top:16px; font-size:14px;">Brand-Specific Sub-Mapping Rules</h4>
+          <p style="font-size:13px; color:#666; margin-bottom:8px;">Click each brand to expand its rules. Categories use <code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">&gt;</code> for sub-paths.
+             Rules marked with <span style="color:#e67e22;">&#9733;</span> use product name/description keywords for disambiguation.</p>
+
+          <!-- KappAhl rules -->
+          <details style="margin-bottom:8px;">
+            <summary style="cursor:pointer; font-weight:bold; font-size:14px; padding:4px 0;">KappAhl</summary>
+            <table style="font-size:13px; margin:8px 0; border-collapse:collapse; width:100%;">
+              <thead><tr style="background:#f8f9fa;">
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Category</th>
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Sub-path / Condition</th>
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Maps to</th>
+              </tr></thead>
+              <tbody>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Badkl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Bikini</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Bikini</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Badkl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Swimsuit</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Ytterkl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Regnbyxor / Skalbyxor / Skidbyxor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Ytterkl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Overaller</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Overall</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Ytterkl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; V&auml;star</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Unlined Jacket / Vest</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Ytterkl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jacket</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jackor &amp; rockar</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; V&auml;star</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Unlined Jacket / Vest</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jackor &amp; rockar</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jacket</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Loungewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Underdelar</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Loungewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Underst&auml;ll</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Midlayer</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Loungewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other sub-path)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sweatshirt / Hoodie</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Loungewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(no sub-path)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers / Shorts</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skor &amp; tofflor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Tofflor / Slippers</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Other shoes</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skor &amp; tofflor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sneakers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&ouml;jor &amp; cardigans</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Hoodies / Sweatshirt</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sweatshirt / Hoodie</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&ouml;jor &amp; cardigans</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Stickade v&auml;star / V&auml;star</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Unlined Jacket / Vest</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&ouml;jor &amp; cardigans</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Knitted Jumper</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&auml;ningskl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Tights / Cykelbyxor / Leggings</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&auml;ningskl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Shorts / Cykelshorts</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers / Shorts</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&auml;ningskl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Linne / Topp / Sport-BH</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Top / T-shirt</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&auml;ningskl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sweatshirt / Hoodie</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Mammakl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Toppar / Tr&ouml;jor / Blusar</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Top / T-shirt</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Mammakl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Kl&auml;nningar</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skirt / Dress</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Mammakl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+              </tbody>
+            </table>
+          </details>
+
+          <!-- Gina Tricot rules -->
+          <details style="margin-bottom:8px;">
+            <summary style="cursor:pointer; font-weight:bold; font-size:14px; padding:4px 0;">Gina Tricot</summary>
+            <table style="font-size:13px; margin:8px 0; border-collapse:collapse; width:100%;">
+              <thead><tr style="background:#f8f9fa;">
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Category</th>
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Sub-path / Condition</th>
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Maps to</th>
+              </tr></thead>
+              <tbody>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Badklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Bikini</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Bikini</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Badklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Swimsuit</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Boots</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Boots</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; H&ouml;gklackade / Klack</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">High heels</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Sandaler</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sandals</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Sneakers</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sneakers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Tofflor / Ballerina</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Other shoes</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(no sub-path)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Other shoes</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Festklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Byxor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Festklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skirt / Dress</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">M&ouml;ssor &amp; vantar</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Caps / Keps</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Cap</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">M&ouml;ssor &amp; vantar</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Hat</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Coats &amp; Jackets</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; V&auml;star</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Unlined Jacket / Vest</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Coats &amp; Jackets</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Kavajer</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Suit</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Coats &amp; Jackets</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jacket</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Knitted</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Accessories</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Scarf / Shawl</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Knitted</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; V&auml;star</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Unlined Jacket / Vest</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Knitted</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Knitted Jumper</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jeans</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Shorts</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers / Shorts</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jeans</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Basplagg</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Shorts / Biker / Cykel</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers / Shorts</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Basplagg</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Top / T-shirt</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&ouml;jor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Hoodies / Collegetr&ouml;jor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sweatshirt / Hoodie</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&ouml;jor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; V&auml;star</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Unlined Jacket / Vest</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&ouml;jor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Knitted Jumper</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Loungewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(any)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Other</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&auml;ningskl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; Pilates / Yoga</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Top / T-shirt</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Tr&auml;ningskl&auml;der</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">&gt; (other)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sweatshirt / Hoodie</td></tr>
+              </tbody>
+            </table>
+          </details>
+
+          <!-- Lindex rules -->
+          <details style="margin-bottom:8px;">
+            <summary style="cursor:pointer; font-weight:bold; font-size:14px; padding:4px 0;">Lindex <span style="font-weight:normal; font-size:12px; color:#e67e22;">&#9733; uses product name/description</span></summary>
+            <table style="font-size:13px; margin:8px 0; border-collapse:collapse; width:100%;">
+              <thead><tr style="background:#f8f9fa;">
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Category</th>
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Product name/description keyword</th>
+                <th style="text-align:left; padding:4px 8px; border-bottom:2px solid #e0e0e0;">Maps to</th>
+              </tr></thead>
+              <tbody>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">badklader / badklader uv</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "bikini"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Bikini</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">badklader / badklader uv</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(default)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Swimsuit</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">kavajer tunna jackor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "kavaj" or "blazer"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Suit</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">kavajer tunna jackor</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(default)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jacket</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">performancewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "byxor" / "byxa"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">performancewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "overall"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Overall</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">performancewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "vantar" / "tumvantar"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Gloves</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">performancewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "m&ouml;ssa"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Hat</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">performancewear</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(default)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Jacket</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">traningsklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "baddr&auml;kt"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Swimsuit</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">traningsklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(default)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Underwear</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">trojor koftor / trojor cardigans</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "sweatshirt" / "hoodie" / "college"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Sweatshirt / Hoodie</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">trojor koftor / trojor cardigans</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(default)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Knitted Jumper</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">linnen</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(always)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Top / T-shirt</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">klimakterieklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(always)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Top / T-shirt</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">mammaklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "shorts" / "cykelbyxa"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers / Shorts</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">mammaklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "jeans" / "byxor" / "leggings"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">mammaklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "kl&auml;nning"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skirt / Dress</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">mammaklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "topp" / "linne" / "t-shirt" / "tr&ouml;ja"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Top / T-shirt</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">mammaklader</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(default)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Other</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">nyfodd</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "body" / "omlottbody"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Underwear</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">nyfodd</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "kl&auml;nning"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Skirt / Dress</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">nyfodd</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">contains "byxor" / "leggings" / "mjukisbyxor"</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Trousers</td></tr>
+                <tr><td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">nyfodd</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">(default)</td>
+                  <td style="padding:3px 8px; border-bottom:1px solid #f0f0f0;">Other</td></tr>
+              </tbody>
+            </table>
+          </details>
+
+          <!-- Eton & Nudie -->
+          <details style="margin-bottom:8px;">
+            <summary style="cursor:pointer; font-weight:bold; font-size:14px; padding:4px 0;">Eton &amp; Nudie Jeans</summary>
+            <p style="font-size:13px; color:#666; margin:8px 0;">No brand-specific sub-mappings needed. All categories map correctly via the generic mapping table.</p>
+          </details>
         </div>
       </div>
       <div class="flow-arrow">&#8595;</div>
