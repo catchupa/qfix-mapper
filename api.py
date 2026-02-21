@@ -1465,6 +1465,36 @@ def remap_products():
     return jsonify(rows)
 
 
+@app.route("/remap/unmapped-categories")
+def remap_unmapped_categories():
+    """Get categories that can't be mapped to QFix types, grouped by brand.
+
+    Returns each brand's unmapped clothing_type values with product counts
+    and sample product names.
+    ---
+    tags:
+      - Mapping
+    responses:
+      200:
+        description: Per-brand list of unmapped categories
+    """
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT brand,
+                   COALESCE(clothing_type, '(no category)') as clothing_type,
+                   COUNT(*) as cnt,
+                   MIN(product_name) as sample_product_name
+            FROM products_unified
+            WHERE qfix_url IS NULL
+            GROUP BY brand, COALESCE(clothing_type, '(no category)')
+            ORDER BY brand, cnt DESC
+        """)
+        rows = cur.fetchall()
+    conn.close()
+    return jsonify(rows)
+
+
 @app.route("/remap/impact-report")
 def remap_impact_report():
     """Preview mapping changes: compare current DB mappings with what the mapper would produce now.

@@ -794,6 +794,12 @@
     </details>
 
     <details>
+      <summary>Unmapped Categories per Brand</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Product categories that can't be mapped to a QFix clothing type (accessories, non-clothing items, missing categories). These products won't get a QFix repair URL.</p>
+      <div id="unmappedCategoriesContainer" style="font-size:13px; color:#aaa;">Loading...</div>
+    </details>
+
+    <details>
       <summary>QFix Types Missing Services</summary>
       <p style="font-size:13px; color:#666; margin:4px 0 8px;">Clothing types in the QFix catalog that have zero service actions defined (repair, adjustment, care, other).</p>
       <div id="missingServicesContainer" style="font-size:13px; color:#aaa;">Loading...</div>
@@ -1149,6 +1155,46 @@ async function loadRankings() {
   }
 }
 loadRankings();
+
+// Load unmapped categories per brand
+async function loadUnmappedCategories() {
+  try {
+    const res = await fetch('/remap/unmapped-categories');
+    const data = await res.json();
+    const container = document.getElementById('unmappedCategoriesContainer');
+
+    // Group by brand
+    const brands = {};
+    let grandTotal = 0;
+    for (const row of data) {
+      if (!brands[row.brand]) brands[row.brand] = [];
+      brands[row.brand].push(row);
+      grandTotal += row.cnt;
+    }
+
+    let html = '<p style="color:#1a1a1a; margin-bottom:12px;"><strong>' + grandTotal + '</strong> products across ' + Object.keys(brands).length + ' brands have no QFix mapping.</p>';
+
+    for (const brand of Object.keys(brands).sort()) {
+      const rows = brands[brand];
+      const brandTotal = rows.reduce(function(s, r) { return s + r.cnt; }, 0);
+      html += '<h4 style="margin:12px 0 4px; font-size:13px;">' + esc(brand) + ' <span style="color:#999;">(' + brandTotal + ' products)</span></h4>';
+      html += '<table class="map-table"><thead><tr><th>Category</th><th>Count</th><th>Sample product</th></tr></thead><tbody>';
+      for (const r of rows) {
+        html += '<tr>';
+        html += '<td>' + esc(r.clothing_type) + '</td>';
+        html += '<td style="text-align:center;">' + r.cnt + '</td>';
+        html += '<td style="color:#666;">' + esc(r.sample_product_name || '') + '</td>';
+        html += '</tr>';
+      }
+      html += '</tbody></table>';
+    }
+
+    container.innerHTML = html;
+  } catch (e) {
+    document.getElementById('unmappedCategoriesContainer').innerHTML = '<p class="error-msg">Failed to load unmapped categories</p>';
+  }
+}
+loadUnmappedCategories();
 
 // Load missing services
 async function loadMissingServices() {
