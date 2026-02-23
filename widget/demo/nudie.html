@@ -250,14 +250,17 @@
 
   <script>
     (function () {
+      var BRAND_SLUGS = {'KappAhl':'kappahl','Gina Tricot':'ginatricot','Eton':'eton','Nudie Jeans':'nudie','Lindex':'lindex'};
       var params = new URLSearchParams(location.search);
       var pid = params.get("productId") || "111946";
       var brandSlug = "nudie";
 
-      // Set service button URLs
-      document.getElementById("btnRepair").href = "/" + brandSlug + "/repair/?productId=" + pid;
-      document.getElementById("btnAdjustment").href = "/" + brandSlug + "/adjustment/?productId=" + pid;
-      document.getElementById("btnCare").href = "/" + brandSlug + "/care/?productId=" + pid;
+      function updateLinks(slug, id) {
+        document.getElementById("btnRepair").href = "/" + slug + "/repair/?productId=" + id;
+        document.getElementById("btnAdjustment").href = "/" + slug + "/adjustment/?productId=" + id;
+        document.getElementById("btnCare").href = "/" + slug + "/care/?productId=" + id;
+      }
+      updateLinks(brandSlug, pid);
 
       // Image upload handling
       var btnUpload = document.getElementById("btnUpload");
@@ -307,6 +310,11 @@
         .then(function (r) { return r.json(); })
         .then(function (data) {
           var p = data.product || {};
+
+          // Update brand slug from product data
+          var brand = p.brand || "Nudie Jeans";
+          var slug = BRAND_SLUGS[brand] || brandSlug;
+          updateLinks(slug, pid);
 
           // Product name
           var name = p.product_name || "Produkt " + pid;

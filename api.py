@@ -1110,7 +1110,6 @@ def identify_redirect():
         return jsonify({"error": "Could not identify garment type", "classification": result.get("classification")}), 422
 
     # Find matching service category and build redirect URL
-    from mapping import enrich_qfix
     enriched = enrich_qfix(qfix)
     service_key_map = {"repair": "repair", "adjustment": "adjustment", "care": "washing", "washing": "washing"}
     target_slug = service_key_map.get(service, "repair")

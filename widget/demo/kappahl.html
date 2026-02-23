@@ -216,45 +216,50 @@
 
   <script>
     (function() {
-      const BRAND_SLUG = 'kappahl';
-      const DEFAULT_PRODUCT = '131367';
+      var BRAND_SLUG = 'kappahl';
+      var DEFAULT_PRODUCT = '131367';
+      var BRAND_SLUGS = {'KappAhl':'kappahl','Gina Tricot':'ginatricot','Eton':'eton','Nudie Jeans':'nudie','Lindex':'lindex'};
 
-      const params = new URLSearchParams(window.location.search);
-      const productId = params.get('productId') || DEFAULT_PRODUCT;
+      var params = new URLSearchParams(window.location.search);
+      var productId = params.get('productId') || DEFAULT_PRODUCT;
 
-      // Update service button links
-      document.getElementById('btn-repair').href = '/' + BRAND_SLUG + '/repair/?productId=' + productId;
-      document.getElementById('btn-adjust').href = '/' + BRAND_SLUG + '/adjust/?productId=' + productId;
-      document.getElementById('btn-care').href = '/' + BRAND_SLUG + '/care/?productId=' + productId;
+      function updateLinks(slug, pid) {
+        document.getElementById('btn-repair').href = '/' + slug + '/repair/?productId=' + pid;
+        document.getElementById('btn-adjust').href = '/' + slug + '/adjustment/?productId=' + pid;
+        document.getElementById('btn-care').href = '/' + slug + '/care/?productId=' + pid;
+      }
+      updateLinks(BRAND_SLUG, productId);
 
       // Fetch product data
       fetch('/docs/verify/' + productId)
         .then(function(res) { return res.json(); })
         .then(function(data) {
           var product = data.product || {};
-          var name = product.name || 'Produkt';
+          var name = product.product_name || 'Produkt';
+          var brand = product.brand || 'KappAhl';
 
-          document.title = name + ' — KappAhl';
+          // Update brand slug from product data
+          var slug = BRAND_SLUGS[brand] || BRAND_SLUG;
+          updateLinks(slug, productId);
+
+          document.title = name + ' — ' + brand;
           document.getElementById('product-name').textContent = name;
           document.getElementById('breadcrumb-name').textContent = name;
 
           // Meta info
           var meta = [];
-          if (product.material) meta.push('Material: ' + product.material);
-          if (product.color) meta.push('Farg: ' + product.color);
+          if (product.material_composition) meta.push('Material: ' + product.material_composition);
+          if (product.clothing_type) meta.push('Typ: ' + product.clothing_type);
           document.getElementById('product-meta').innerHTML = meta.join('<br>');
 
           // Product image
           var imgContainer = document.getElementById('product-image');
           if (product.image_url) {
             imgContainer.innerHTML = '<img src="' + product.image_url + '" alt="' + name + '">';
-          } else {
-            imgContainer.innerHTML = '<span class="placeholder">Ingen bild tillganglig</span>';
           }
         })
         .catch(function() {
           document.getElementById('product-name').textContent = 'Kunde inte ladda produkt';
-          document.getElementById('product-image').innerHTML = '<span class="placeholder">Ingen bild tillganglig</span>';
         });
 
       // Image upload

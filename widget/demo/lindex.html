@@ -260,26 +260,38 @@
     (function() {
       const BRAND_SLUG = 'lindex';
       const DEFAULT_PRODUCT = '3008959';
+      const BRAND_SLUGS = {'KappAhl':'kappahl','Gina Tricot':'ginatricot','Eton':'eton','Nudie Jeans':'nudie','Lindex':'lindex'};
 
       const params = new URLSearchParams(window.location.search);
       const productId = params.get('productId') || DEFAULT_PRODUCT;
+
+      function updateLinks(slug, pid) {
+        document.getElementById('btn-repair').href = '/' + slug + '/repair/?productId=' + encodeURIComponent(pid);
+        document.getElementById('btn-adjust').href = '/' + slug + '/adjustment/?productId=' + encodeURIComponent(pid);
+        document.getElementById('btn-care').href = '/' + slug + '/care/?productId=' + encodeURIComponent(pid);
+      }
+      updateLinks(BRAND_SLUG, productId);
 
       // Fetch product data
       fetch('/docs/verify/' + encodeURIComponent(productId))
         .then(r => r.json())
         .then(data => {
           const p = data.product || data;
-          const name = p.name || p.product_name || 'Produkt';
-          const material = p.material || p.composition || '';
-          const color = p.color || p.colour || '';
+          const name = p.product_name || 'Produkt';
+          const brand = p.brand || 'Lindex';
+          const material = p.material_composition || '';
           const imageUrl = p.image_url || '';
+
+          // Update brand slug from product data
+          const slug = BRAND_SLUGS[brand] || BRAND_SLUG;
+          updateLinks(slug, productId);
 
           document.title = name + ' — Lindex';
           document.getElementById('product-name').textContent = name;
           document.getElementById('breadcrumb-product').textContent = name;
 
           let metaHtml = '';
-          if (color) metaHtml += '<strong>Färg:</strong> ' + color + '<br>';
+          if (p.clothing_type) metaHtml += '<strong>Typ:</strong> ' + p.clothing_type + '<br>';
           if (material) metaHtml += '<strong>Material:</strong> ' + material + '<br>';
           document.getElementById('product-meta').innerHTML = metaHtml;
 
@@ -294,11 +306,6 @@
           document.getElementById('product-name').textContent = 'Kunde inte ladda produkt';
           document.getElementById('product-image').innerHTML = '<span class="lx-placeholder">Ingen bild tillgänglig</span>';
         });
-
-      // Service button links
-      document.getElementById('btn-repair').href = '/' + BRAND_SLUG + '/repair/?productId=' + encodeURIComponent(productId);
-      document.getElementById('btn-adjust').href = '/' + BRAND_SLUG + '/adjustment/?productId=' + encodeURIComponent(productId);
-      document.getElementById('btn-care').href = '/' + BRAND_SLUG + '/care/?productId=' + encodeURIComponent(productId);
 
       // Image upload
       const uploadBtn = document.getElementById('btn-upload');
