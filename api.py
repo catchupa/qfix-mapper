@@ -2503,7 +2503,7 @@ def docs_verify(product_id):
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute(
             """SELECT product_id, product_name, description, brand, category, clothing_type,
-                      material_composition, materials, article_number,
+                      material_composition, materials, article_number, image_url,
                       qfix_clothing_type, qfix_clothing_type_id, qfix_material,
                       qfix_material_id, qfix_url,
                       qfix_url_repair, qfix_url_adjustment, qfix_url_care, qfix_url_other
@@ -2619,6 +2619,7 @@ def docs_verify(product_id):
             "category": cat_input,
             "clothing_type": ct_input,
             "material_composition": mat_input,
+            "image_url": product.get("image_url"),
         },
         "mapping": {
             "clothing_type_input": ct_input,
