@@ -271,6 +271,8 @@
       }
       updateLinks(BRAND_SLUG, productId);
 
+      function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
       // Fetch product data
       fetch('/docs/verify/' + productId)
         .then(function(res) { return res.json(); })
@@ -289,14 +291,18 @@
 
           // Meta info
           var meta = [];
-          if (product.material_composition) meta.push('Material: ' + product.material_composition);
-          if (product.clothing_type) meta.push('Typ: ' + product.clothing_type);
+          if (product.material_composition) meta.push('Material: ' + esc(product.material_composition));
+          if (product.clothing_type) meta.push('Typ: ' + esc(product.clothing_type));
           document.getElementById('product-meta').innerHTML = meta.join('<br>');
 
           // Product image
           var imgContainer = document.getElementById('product-image');
           if (product.image_url) {
-            imgContainer.innerHTML = '<img src="' + product.image_url + '" alt="' + name + '">';
+            var img = document.createElement('img');
+            img.src = product.image_url;
+            img.alt = name;
+            imgContainer.innerHTML = '';
+            imgContainer.appendChild(img);
           }
         })
         .catch(function() {
@@ -318,13 +324,14 @@
       function showModal(imgUrl, classification, redirectUrls) {
         document.getElementById('qfix-modal-img').src = imgUrl;
         document.getElementById('qfix-modal-text').innerHTML =
-          'Det ser ut som en <strong>' + (classification.clothing_type || 'okänd') +
-          '</strong> av <strong>' + (classification.material || 'okänt material') + '</strong>';
+          'Det ser ut som en <strong>' + esc(classification.clothing_type || 'okänd') +
+          '</strong> av <strong>' + esc(classification.material || 'okänt material') + '</strong>';
         var actionsEl = document.getElementById('qfix-modal-actions');
         actionsEl.innerHTML = '';
         ['repair', 'adjustment', 'care'].forEach(function(key) {
-          if (redirectUrls[key]) {
-            actionsEl.innerHTML += '<a class="qfix-modal-action" href="' + redirectUrls[key] +
+          var url = redirectUrls[key];
+          if (url && url.indexOf('https://') === 0) {
+            actionsEl.innerHTML += '<a class="qfix-modal-action" href="' + esc(url) +
               '" target="_blank" rel="noopener">' + (SVC_ICONS[key] || '') + ' ' + SVC_LABELS[key] + '</a>';
           }
         });

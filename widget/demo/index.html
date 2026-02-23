@@ -271,6 +271,7 @@
   <!-- Override product ID via ?productId= query param + load suggested actions -->
   <script>
     (function () {
+      function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
       var params = new URLSearchParams(location.search);
       var pid = params.get("productId") || "530956";
 
@@ -310,9 +311,9 @@
           var category = p.category || p.clothing_type || "";
           var qfixType = m.clothing_type_result || "";
           var bc = '<a href="#">Hem</a>';
-          if (brand) bc += ' / <a href="#">' + brand + '</a>';
-          if (category) bc += ' / <a href="#">' + category + '</a>';
-          bc += ' / ' + name;
+          if (brand) bc += ' / <a href="#">' + esc(brand) + '</a>';
+          if (category) bc += ' / <a href="#">' + esc(category) + '</a>';
+          bc += ' / ' + esc(name);
           document.getElementById("breadcrumb").innerHTML = bc;
 
           // Update redirect link brand slugs
@@ -346,7 +347,7 @@
             for (var i = 0; i < actions.length; i++) {
               var a = actions[i];
               var price = a.price ? " — from " + a.price + " kr" : "";
-              html += '<span class="kh-action-chip">' + a.name + ' <span class="kh-action-price">#' + a.id + price + '</span></span>';
+              html += '<span class="kh-action-chip">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + '</span></span>';
             }
             html += '</div></div>';
           }

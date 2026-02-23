@@ -306,6 +306,8 @@
       const params = new URLSearchParams(window.location.search);
       const productId = params.get('productId') || DEFAULT_PRODUCT;
 
+      function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
       function updateLinks(slug, pid) {
         document.getElementById('btn-repair').href = '/' + slug + '/repair/?productId=' + encodeURIComponent(pid);
         document.getElementById('btn-adjust').href = '/' + slug + '/adjustment/?productId=' + encodeURIComponent(pid);
@@ -332,13 +334,13 @@
           document.getElementById('breadcrumb-product').textContent = name;
 
           let metaHtml = '';
-          if (p.clothing_type) metaHtml += '<strong>Typ:</strong> ' + p.clothing_type + '<br>';
-          if (material) metaHtml += '<strong>Material:</strong> ' + material + '<br>';
+          if (p.clothing_type) metaHtml += '<strong>Typ:</strong> ' + esc(p.clothing_type) + '<br>';
+          if (material) metaHtml += '<strong>Material:</strong> ' + esc(material) + '<br>';
           document.getElementById('product-meta').innerHTML = metaHtml;
 
           const imgContainer = document.getElementById('product-image');
           if (imageUrl) {
-            imgContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + name + '">';
+            var img = document.createElement('img'); img.src = imageUrl; img.alt = name; imgContainer.innerHTML = ''; imgContainer.appendChild(img);
           } else {
             imgContainer.innerHTML = '<span class="lx-placeholder">Ingen bild tillgänglig</span>';
           }
@@ -362,13 +364,13 @@
       function showModal(imgUrl, classification, redirectUrls) {
         document.getElementById('qfix-modal-img').src = imgUrl;
         document.getElementById('qfix-modal-text').innerHTML =
-          'Det ser ut som en <strong>' + (classification.clothing_type || 'okänd') +
-          '</strong> av <strong>' + (classification.material || 'okänt material') + '</strong>';
+          'Det ser ut som en <strong>' + esc(classification.clothing_type || 'okänd') +
+          '</strong> av <strong>' + esc(classification.material || 'okänt material') + '</strong>';
         const actionsEl = document.getElementById('qfix-modal-actions');
         actionsEl.innerHTML = '';
         ['repair', 'adjustment', 'care'].forEach(function(key) {
-          if (redirectUrls[key]) {
-            actionsEl.innerHTML += '<a class="qfix-modal-action" href="' + redirectUrls[key] +
+          var url = redirectUrls[key]; if (url && url.indexOf('https://') === 0) {
+            actionsEl.innerHTML += '<a class="qfix-modal-action" href="' + esc(url) +
               '" target="_blank" rel="noopener">' + (SVC_ICONS[key] || '') + ' ' + SVC_LABELS[key] + '</a>';
           }
         });

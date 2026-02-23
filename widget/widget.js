@@ -76,12 +76,16 @@
   }
 
   function renderButton(el, qfixUrl, theme, label, icon) {
+    if (!qfixUrl || qfixUrl.indexOf("https://") !== 0) return;
     var btnClass = theme === "dark" ? "qfix-btn" : "qfix-btn qfix-btn--light";
-    el.innerHTML =
-      '<a class="' + btnClass + '" href="' + qfixUrl + '" target="_blank" rel="noopener">' +
-      (ICONS[icon] || ICONS[DEFAULT_ICON]) +
-      label +
-      "</a>";
+    var a = document.createElement("a");
+    a.className = btnClass;
+    a.href = qfixUrl;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.innerHTML = (ICONS[icon] || ICONS[DEFAULT_ICON]) + label;
+    el.innerHTML = "";
+    el.appendChild(a);
   }
 
   function renderPlaceholder(el, theme, label, icon) {

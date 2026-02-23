@@ -291,6 +291,7 @@
 
   <script>
     (function () {
+      function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
       var BRAND_SLUGS = {'KappAhl':'kappahl','Gina Tricot':'ginatricot','Eton':'eton','Nudie Jeans':'nudie','Lindex':'lindex'};
       var params = new URLSearchParams(location.search);
       var pid = params.get("productId") || "111946";
@@ -318,13 +319,13 @@
       function showModal(imgUrl, classification, redirectUrls) {
         document.getElementById("qfix-modal-img").src = imgUrl;
         document.getElementById("qfix-modal-text").innerHTML =
-          "Det ser ut som en <strong>" + (classification.clothing_type || "okänd") +
-          "</strong> av <strong>" + (classification.material || "okänt material") + "</strong>";
+          "Det ser ut som en <strong>" + esc(classification.clothing_type || "okänd") +
+          "</strong> av <strong>" + esc(classification.material || "okänt material") + "</strong>";
         var actionsEl = document.getElementById("qfix-modal-actions");
         actionsEl.innerHTML = "";
         ["repair", "adjustment", "care"].forEach(function (key) {
-          if (redirectUrls[key]) {
-            actionsEl.innerHTML += '<a class="qfix-modal-action" href="' + redirectUrls[key] +
+          var url = redirectUrls[key]; if (url && url.indexOf('https://') === 0) {
+            actionsEl.innerHTML += '<a class="qfix-modal-action" href="' + esc(url) +
               '" target="_blank" rel="noopener">' + (SVC_ICONS[key] || "") + " " + SVC_LABELS[key] + "</a>";
           }
         });
@@ -385,21 +386,21 @@
           // Breadcrumb
           var category = p.category || p.clothing_type || "";
           var bc = '<a href="#">Hem</a> / <a href="#">Nudie Jeans</a>';
-          if (category) bc += ' / <a href="#">' + category + '</a>';
-          bc += " / " + name;
+          if (category) bc += ' / <a href="#">' + esc(category) + '</a>';
+          bc += " / " + esc(name);
           document.getElementById("breadcrumb").innerHTML = bc;
 
           // Meta info
           var color = p.color || p.colour || "";
           var material = p.material_composition || p.material || "";
-          if (color) document.getElementById("metaColor").innerHTML = "<strong>F\u00e4rg:</strong> " + color;
-          if (material) document.getElementById("metaMaterial").innerHTML = "<strong>Material:</strong> " + material;
+          if (color) document.getElementById("metaColor").innerHTML = "<strong>F\u00e4rg:</strong> " + esc(color);
+          if (material) document.getElementById("metaMaterial").innerHTML = "<strong>Material:</strong> " + esc(material);
 
           // Product image
           var imageUrl = p.image_url;
           if (imageUrl) {
             var imgContainer = document.getElementById("productImage");
-            imgContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + name + '" onerror="this.parentElement.innerHTML=\'<span class=nj-image-placeholder>Produktbild</span>\'">';
+            var img = document.createElement('img'); img.src = imageUrl; img.alt = name; img.onerror = function() { this.parentElement.innerHTML = '<span class="nj-image-placeholder">Produktbild</span>'; }; imgContainer.innerHTML = ''; imgContainer.appendChild(img);
           }
         })
         .catch(function (err) {

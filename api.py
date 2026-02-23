@@ -31,6 +31,7 @@ from vision import classify_and_map
 
 app = Flask(__name__)
 CORS(app)
+app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
 
 
 # ── Rate limiting ─────────────────────────────────────────────────────────
@@ -73,6 +74,41 @@ def _check_api_key(brand_slug):
     if provided != expected:
         return jsonify({"error": "Invalid or missing API key"}), 401
     return None
+
+# ── Admin token authentication ────────────────────────────────────────────
+# Protects write/admin endpoints. If unset, all requests pass (dev mode).
+_admin_token = os.environ.get("ADMIN_TOKEN", "")
+
+
+def _require_admin():
+    """Return an error response if admin token is configured and not provided.
+    Returns None when authorized."""
+    if not _admin_token:
+        return None  # dev mode — no auth required
+    provided = request.headers.get("Authorization", "")
+    if provided == f"Bearer {_admin_token}":
+        return None
+    return jsonify({"error": "Unauthorized"}), 401
+
+
+def _is_allowed_redirect(url):
+    """Check that a redirect URL points to an allowed QFix domain."""
+    from urllib.parse import urlparse
+    try:
+        host = urlparse(url).hostname or ""
+        return host.endswith("qfixr.me")
+    except Exception:
+        return False
+
+
+# ── Security headers ─────────────────────────────────────────────────────
+@app.after_request
+def _add_security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Strict-Transport-Security", "max-age=31536000")
+    return response
+
 
 swagger_config = {
     "headers": [],
@@ -442,6 +478,9 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                     ids = ",".join(str(a["id"]) for a in actions)
                     qfix_url += ("&" if "?" in qfix_url else "?") + f"service_id={ids}"
 
+    # Validate redirect URL to prevent open redirect
+    if not qfix_url.startswith("https://") or not _is_allowed_redirect(qfix_url):
+        return jsonify({"error": "Invalid redirect URL"}), 400
     return redirect(qfix_url, code=302)
 
 
@@ -630,6 +669,9 @@ def v2_upload():
       400:
         description: Invalid file or parse error
     """
+    auth_err = _require_admin()
+    if auth_err:
+        return auth_err
     if "file" not in request.files:
         return jsonify({"error": "No file provided. Use multipart form with key 'file'."}), 400
 
@@ -1261,6 +1303,9 @@ def add_mapping():
       400:
         description: Invalid input or unknown target category
     """
+    auth_err = _require_admin()
+    if auth_err:
+        return auth_err
     from mapping import CLOTHING_TYPE_MAP, MATERIAL_MAP
 
     data = request.get_json()
@@ -1344,6 +1389,9 @@ def remap_run():
       400:
         description: Unknown brand slug
     """
+    auth_err = _require_admin()
+    if auth_err:
+        return auth_err
     brand_filter = request.args.get("brand")
     if brand_filter and brand_filter not in BRAND_ROUTES:
         return jsonify({"error": f"Unknown brand: {brand_filter}"}), 400
@@ -1990,6 +2038,9 @@ def remap_rank_actions():
             errors:
               type: integer
     """
+    auth_err = _require_admin()
+    if auth_err:
+        return auth_err
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return jsonify({"error": "ANTHROPIC_API_KEY not configured"}), 500
@@ -2363,6 +2414,9 @@ def remap_apply():
       400:
         description: Invalid input
     """
+    auth_err = _require_admin()
+    if auth_err:
+        return auth_err
     data = request.get_json()
     if not data or "suggestions" not in data:
         return jsonify({"error": "JSON body with 'suggestions' array required"}), 400
@@ -2819,6 +2873,9 @@ def validate_keyword_scores():
     keyword-injected actions, and asks Claude to rank them for that specific product.
     Compares AI ranking vs our score-based ranking.
     """
+    auth_err = _require_admin()
+    if auth_err:
+        return auth_err
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return jsonify({"error": "ANTHROPIC_API_KEY not configured"}), 500
