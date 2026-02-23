@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produkt — KappAhl</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1a1a1a;
+      background: #fff;
+    }
+
+    /* Header */
+    .kh-header {
+      border-bottom: 1px solid #e5e5e5;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .kh-logo {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .kh-nav { display: flex; gap: 24px; font-size: 14px; color: #555; }
+    .kh-nav span { cursor: pointer; }
+    .kh-nav span:hover { color: #1a1a1a; }
+
+    /* Breadcrumb */
+    .kh-breadcrumb {
+      padding: 12px 32px;
+      font-size: 12px;
+      color: #888;
+    }
+    .kh-breadcrumb a { color: #888; text-decoration: none; }
+    .kh-breadcrumb a:hover { text-decoration: underline; }
+
+    /* Product layout */
+    .kh-product {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 32px;
+      gap: 48px;
+    }
+    .kh-product-image {
+      background: #f5f5f5;
+      border-radius: 8px;
+      aspect-ratio: 3/4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .kh-product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 8px;
+    }
+    .kh-product-image .placeholder {
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    /* Product info */
+    .kh-info { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }
+    .kh-info h1 { font-size: 24px; font-weight: 600; }
+    .kh-price { font-size: 20px; font-weight: 600; }
+    .kh-meta { font-size: 13px; color: #666; line-height: 1.6; }
+
+    /* Add to cart */
+    .kh-add-to-cart {
+      background: #D44333;
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 32px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 8px;
+    }
+    .kh-add-to-cart:hover { opacity: 0.9; }
+
+    /* Divider */
+    .kh-divider {
+      border: none;
+      border-top: 1px solid #e5e5e5;
+      margin: 8px 0;
+    }
+
+    /* QFix section */
+    .kh-qfix-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #999;
+      margin-bottom: 4px;
+    }
+    .kh-qfix-buttons { display: flex; flex-direction: column; gap: 10px; }
+    .kh-qfix-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1a1a1a;
+      color: #fff;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 32px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .kh-qfix-btn:hover { background: #333; }
+    .kh-qfix-btn svg { flex-shrink: 0; }
+
+    /* Upload button - outlined style */
+    .kh-upload-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      color: #1a1a1a;
+      border: 2px solid #1a1a1a;
+      padding: 11px 20px;
+      border-radius: 32px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+    .kh-upload-btn:hover { background: #1a1a1a; color: #fff; }
+    .kh-upload-btn:hover svg { stroke: #fff; }
+
+    /* Footer */
+    .kh-footer {
+      border-top: 1px solid #e5e5e5;
+      padding: 24px 32px;
+      text-align: center;
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 64px;
+    }
+
+    @media (max-width: 768px) {
+      .kh-product { grid-template-columns: 1fr; gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="kh-header">
+    <div class="kh-logo">KAPPAHL</div>
+    <nav class="kh-nav">
+      <span>Dam</span>
+      <span>Herr</span>
+      <span>Barn</span>
+      <span>Hem</span>
+    </nav>
+  </header>
+
+  <!-- Breadcrumb -->
+  <div class="kh-breadcrumb">
+    <a href="#">KappAhl</a> / <a href="#">Dam</a> / <span id="breadcrumb-name">Produkt</span>
+  </div>
+
+  <!-- Product -->
+  <section class="kh-product">
+    <div class="kh-product-image" id="product-image">
+      <span class="placeholder">Laddar bild...</span>
+    </div>
+    <div class="kh-info">
+      <h1 id="product-name">Laddar...</h1>
+      <div class="kh-price">499 kr</div>
+      <div class="kh-meta" id="product-meta"></div>
+
+      <button class="kh-add-to-cart">Lagg i varukorg</button>
+
+      <hr class="kh-divider">
+
+      <div class="kh-qfix-label">QFix tjanster</div>
+      <div class="kh-qfix-buttons">
+        <a class="kh-qfix-btn" id="btn-repair" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Reparera
+        </a>
+        <a class="kh-qfix-btn" id="btn-adjust" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
+          Mattanpassa
+        </a>
+        <a class="kh-qfix-btn" id="btn-care" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
+          Skotsel
+        </a>
+        <button class="kh-upload-btn" id="btn-upload">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          Ladda upp bild
+        </button>
+        <input type="file" id="file-input" accept="image/*" style="display:none">
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="kh-footer">&copy; 2026 KappAhl. Demo page for QFix integration.</footer>
+
+  <script>
+    (function() {
+      const BRAND_SLUG = 'kappahl';
+      const DEFAULT_PRODUCT = '131367';
+
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get('productId') || DEFAULT_PRODUCT;
+
+      // Update service button links
+      document.getElementById('btn-repair').href = '/' + BRAND_SLUG + '/repair/?productId=' + productId;
+      document.getElementById('btn-adjust').href = '/' + BRAND_SLUG + '/adjust/?productId=' + productId;
+      document.getElementById('btn-care').href = '/' + BRAND_SLUG + '/care/?productId=' + productId;
+
+      // Fetch product data
+      fetch('/docs/verify/' + productId)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var product = data.product || {};
+          var name = product.name || 'Produkt';
+
+          document.title = name + ' — KappAhl';
+          document.getElementById('product-name').textContent = name;
+          document.getElementById('breadcrumb-name').textContent = name;
+
+          // Meta info
+          var meta = [];
+          if (product.material) meta.push('Material: ' + product.material);
+          if (product.color) meta.push('Farg: ' + product.color);
+          document.getElementById('product-meta').innerHTML = meta.join('<br>');
+
+          // Product image
+          var imgContainer = document.getElementById('product-image');
+          if (product.image_url) {
+            imgContainer.innerHTML = '<img src="' + product.image_url + '" alt="' + name + '">';
+          } else {
+            imgContainer.innerHTML = '<span class="placeholder">Ingen bild tillganglig</span>';
+          }
+        })
+        .catch(function() {
+          document.getElementById('product-name').textContent = 'Kunde inte ladda produkt';
+          document.getElementById('product-image').innerHTML = '<span class="placeholder">Ingen bild tillganglig</span>';
+        });
+
+      // Image upload
+      var uploadBtn = document.getElementById('btn-upload');
+      var fileInput = document.getElementById('file-input');
+
+      uploadBtn.addEventListener('click', function() {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener('change', function() {
+        var file = fileInput.files[0];
+        if (!file) return;
+
+        var formData = new FormData();
+        formData.append('image', file);
+        formData.append('service', 'repair');
+
+        uploadBtn.textContent = 'Laddar upp...';
+        uploadBtn.disabled = true;
+
+        fetch('/identify/redirect', {
+          method: 'POST',
+          body: formData
+        })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (data.redirect_url) {
+              window.open(data.redirect_url, '_blank');
+            }
+          })
+          .catch(function(err) {
+            console.error('Upload failed:', err);
+          })
+          .finally(function() {
+            uploadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg> Ladda upp bild';
+            uploadBtn.disabled = false;
+            fileInput.value = '';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

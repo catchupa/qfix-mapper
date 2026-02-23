@@ -1072,6 +1072,76 @@ def identify():
     return jsonify(result)
 
 
+@app.route("/identify/redirect", methods=["POST"])
+@limiter.limit("20 per minute")
+def identify_redirect():
+    """Upload a garment image, identify it via vision, and redirect to QFix.
+
+    Returns JSON with QFix URL and classification, or redirects if Accept header is not JSON.
+    ---
+    tags:
+      - Vision
+    """
+    if "image" not in request.files:
+        return jsonify({"error": "No image provided. Use multipart form with key 'image'."}), 400
+
+    file = request.files["image"]
+    if not file.filename:
+        return jsonify({"error": "Empty filename"}), 400
+
+    media_type = ALLOWED_IMAGE_TYPES.get(file.content_type)
+    if not media_type:
+        return jsonify({"error": f"Unsupported image type: {file.content_type}"}), 400
+
+    image_bytes = file.read()
+    if len(image_bytes) > 20 * 1024 * 1024:
+        return jsonify({"error": "Image too large (max 20MB)"}), 400
+
+    service = request.form.get("service", "repair")
+
+    try:
+        result = classify_and_map(image_bytes, media_type)
+    except Exception as e:
+        return jsonify({"error": f"Vision API error: {e}"}), 500
+
+    qfix = result.get("qfix", {})
+    base_url = qfix.get("qfix_url")
+    if not base_url:
+        return jsonify({"error": "Could not identify garment type", "classification": result.get("classification")}), 422
+
+    # Find matching service category and build redirect URL
+    from mapping import enrich_qfix
+    enriched = enrich_qfix(qfix)
+    service_key_map = {"repair": "repair", "adjustment": "adjustment", "care": "washing", "washing": "washing"}
+    target_slug = service_key_map.get(service, "repair")
+
+    final_url = base_url
+    for svc in enriched.get("qfix_services", []):
+        if svc.get("slug") and target_slug in svc["slug"]:
+            final_url += ("&" if "?" in final_url else "?") + f"service_category_id={svc['id']}"
+            break
+
+    # Add top-ranked actions
+    ct_id = qfix.get("qfix_clothing_type_id")
+    mat_id = qfix.get("qfix_material_id")
+    if ct_id and mat_id:
+        ranking_key_map = {"repair": "repair", "adjustment": "adjustment", "care": "care", "washing": "care"}
+        ranking_key = ranking_key_map.get(service, "repair")
+        ranking_conn = get_db()
+        top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
+        ranking_conn.close()
+        actions = top_actions.get(ranking_key, [])
+        if actions:
+            ids = ",".join(str(a["id"]) for a in actions[:5])
+            final_url += ("&" if "?" in final_url else "?") + f"services_id={ids}"
+
+    return jsonify({
+        "redirect_url": final_url,
+        "classification": result.get("classification"),
+        "qfix": qfix,
+    })
+
+
 # ── Unmapped categories endpoint ──────────────────────────────────────────
 
 @app.route("/unmapped")
@@ -2389,6 +2459,16 @@ def widget_js():
 @app.route("/demo/")
 def widget_demo():
     return send_from_directory(os.path.join(WIDGET_DIR, "demo"), "index.html")
+
+
+@app.route("/demo/<brand_slug>")
+@app.route("/demo/<brand_slug>/")
+def brand_demo(brand_slug):
+    """Serve brand-specific demo page."""
+    allowed = {"kappahl", "ginatricot", "lindex", "eton", "nudie"}
+    if brand_slug not in allowed:
+        return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
+    return send_from_directory(os.path.join(WIDGET_DIR, "demo"), f"{brand_slug}.html")
 
 
 # --- Mapping Documentation & Verification ---

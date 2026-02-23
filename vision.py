@@ -125,9 +125,9 @@ def classify_and_map(image_bytes, media_type="image/jpeg"):
 
     qfix_url = None
     if clothing_type_id and material_id:
-        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={clothing_type_id}&material_id={material_id}"
+        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?subitem_id={clothing_type_id}&material_id={material_id}"
     elif clothing_type_id:
-        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={clothing_type_id}"
+        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?subitem_id={clothing_type_id}"
 
     return {
         "classification": classification,

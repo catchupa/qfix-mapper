@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>produkt — gina tricot</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1a1a1a;
+      background: #fff;
+    }
+
+    /* Header */
+    .gt-header {
+      background: #FAF4E8;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .gt-logo {
+      font-size: 22px;
+      font-weight: 600;
+      text-transform: lowercase;
+    }
+    .gt-nav { display: flex; gap: 24px; font-size: 14px; color: #666; text-transform: lowercase; }
+    .gt-nav span { cursor: pointer; }
+    .gt-nav span:hover { color: #1a1a1a; }
+
+    /* Breadcrumb */
+    .gt-breadcrumb {
+      padding: 12px 32px;
+      font-size: 12px;
+      color: #999;
+      text-transform: lowercase;
+    }
+    .gt-breadcrumb a { color: #999; text-decoration: none; }
+    .gt-breadcrumb a:hover { text-decoration: underline; }
+
+    /* Product layout */
+    .gt-product {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 32px;
+      gap: 48px;
+    }
+    .gt-product-image {
+      background: #f5f5f5;
+      aspect-ratio: 3/4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .gt-product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .gt-product-image .placeholder {
+      color: #ccc;
+      font-size: 14px;
+      text-transform: lowercase;
+    }
+
+    /* Product info */
+    .gt-info { display: flex; flex-direction: column; gap: 14px; padding-top: 8px; }
+    .gt-info h1 { font-size: 22px; font-weight: 500; text-transform: lowercase; }
+    .gt-price { font-size: 18px; font-weight: 600; }
+    .gt-meta { font-size: 13px; color: #777; line-height: 1.6; text-transform: lowercase; }
+
+    /* Add to cart */
+    .gt-add-to-cart {
+      background: #000;
+      color: #fff;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 2px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      text-transform: lowercase;
+      letter-spacing: 0.5px;
+      margin-top: 4px;
+    }
+    .gt-add-to-cart:hover { background: #222; }
+
+    /* Divider */
+    .gt-divider {
+      border: none;
+      border-top: 1px solid #e5e5e5;
+      margin: 6px 0;
+    }
+
+    /* QFix section */
+    .gt-qfix-label {
+      font-size: 11px;
+      text-transform: lowercase;
+      letter-spacing: 1px;
+      color: #aaa;
+      margin-bottom: 2px;
+    }
+    .gt-qfix-buttons { display: flex; flex-direction: column; gap: 8px; }
+    .gt-qfix-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #fff;
+      color: #1a1a1a;
+      border: 1px solid #1a1a1a;
+      padding: 11px 18px;
+      border-radius: 2px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      text-transform: lowercase;
+      transition: background 0.15s, color 0.15s;
+    }
+    .gt-qfix-btn:hover { background: #1a1a1a; color: #fff; }
+    .gt-qfix-btn:hover svg { stroke: #fff; }
+    .gt-qfix-btn svg { flex-shrink: 0; }
+
+    /* Upload button - accent style */
+    .gt-upload-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #FAF4E8;
+      color: #1a1a1a;
+      border: 1px solid #d5cfc3;
+      padding: 11px 18px;
+      border-radius: 2px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      text-transform: lowercase;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .gt-upload-btn:hover { background: #f0e8d5; border-color: #1a1a1a; }
+
+    /* Footer */
+    .gt-footer {
+      border-top: 1px solid #e5e5e5;
+      padding: 24px 32px;
+      text-align: center;
+      font-size: 12px;
+      color: #bbb;
+      text-transform: lowercase;
+      margin-top: 64px;
+    }
+
+    @media (max-width: 768px) {
+      .gt-product { grid-template-columns: 1fr; gap: 24px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="gt-header">
+    <div class="gt-logo">gina tricot</div>
+    <nav class="gt-nav">
+      <span>nyheter</span>
+      <span>klader</span>
+      <span>jeans</span>
+      <span>accessoarer</span>
+    </nav>
+  </header>
+
+  <!-- Breadcrumb -->
+  <div class="gt-breadcrumb">
+    <a href="#">gina tricot</a> / <a href="#">klader</a> / <span id="breadcrumb-name">produkt</span>
+  </div>
+
+  <!-- Product -->
+  <section class="gt-product">
+    <div class="gt-product-image" id="product-image">
+      <span class="placeholder">laddar bild...</span>
+    </div>
+    <div class="gt-info">
+      <h1 id="product-name">laddar...</h1>
+      <div class="gt-price">499 kr</div>
+      <div class="gt-meta" id="product-meta"></div>
+
+      <button class="gt-add-to-cart">lagg i varukorg</button>
+
+      <hr class="gt-divider">
+
+      <div class="gt-qfix-label">qfix tjanster</div>
+      <div class="gt-qfix-buttons">
+        <a class="gt-qfix-btn" id="btn-repair" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          reparera
+        </a>
+        <a class="gt-qfix-btn" id="btn-adjust" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
+          mattanpassa
+        </a>
+        <a class="gt-qfix-btn" id="btn-care" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
+          skotsel
+        </a>
+        <button class="gt-upload-btn" id="btn-upload">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          ladda upp bild
+        </button>
+        <input type="file" id="file-input" accept="image/*" style="display:none">
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="gt-footer">&copy; 2026 gina tricot. demo page for qfix integration.</footer>
+
+  <script>
+    (function() {
+      var BRAND_SLUG = 'ginatricot';
+      var DEFAULT_PRODUCT = '867157024';
+
+      var params = new URLSearchParams(window.location.search);
+      var productId = params.get('productId') || DEFAULT_PRODUCT;
+
+      // Update service button links
+      document.getElementById('btn-repair').href = '/' + BRAND_SLUG + '/repair/?productId=' + productId;
+      document.getElementById('btn-adjust').href = '/' + BRAND_SLUG + '/adjust/?productId=' + productId;
+      document.getElementById('btn-care').href = '/' + BRAND_SLUG + '/care/?productId=' + productId;
+
+      // Fetch product data
+      fetch('/docs/verify/' + productId)
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var product = data.product || {};
+          var name = product.name || 'produkt';
+
+          document.title = name.toLowerCase() + ' — gina tricot';
+          document.getElementById('product-name').textContent = name.toLowerCase();
+          document.getElementById('breadcrumb-name').textContent = name.toLowerCase();
+
+          // Meta info
+          var meta = [];
+          if (product.material) meta.push('material: ' + product.material.toLowerCase());
+          if (product.color) meta.push('farg: ' + product.color.toLowerCase());
+          document.getElementById('product-meta').innerHTML = meta.join('<br>');
+
+          // Product image
+          var imgContainer = document.getElementById('product-image');
+          if (product.image_url) {
+            imgContainer.innerHTML = '<img src="' + product.image_url + '" alt="' + name + '">';
+          } else {
+            imgContainer.innerHTML = '<span class="placeholder">ingen bild tillganglig</span>';
+          }
+        })
+        .catch(function() {
+          document.getElementById('product-name').textContent = 'kunde inte ladda produkt';
+          document.getElementById('product-image').innerHTML = '<span class="placeholder">ingen bild tillganglig</span>';
+        });
+
+      // Image upload
+      var uploadBtn = document.getElementById('btn-upload');
+      var fileInput = document.getElementById('file-input');
+
+      uploadBtn.addEventListener('click', function() {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener('change', function() {
+        var file = fileInput.files[0];
+        if (!file) return;
+
+        var formData = new FormData();
+        formData.append('image', file);
+        formData.append('service', 'repair');
+
+        uploadBtn.textContent = 'laddar upp...';
+        uploadBtn.disabled = true;
+
+        fetch('/identify/redirect', {
+          method: 'POST',
+          body: formData
+        })
+          .then(function(res) { return res.json(); })
+          .then(function(data) {
+            if (data.redirect_url) {
+              window.open(data.redirect_url, '_blank');
+            }
+          })
+          .catch(function(err) {
+            console.error('Upload failed:', err);
+          })
+          .finally(function() {
+            uploadBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg> ladda upp bild';
+            uploadBtn.disabled = false;
+            fileInput.value = '';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>

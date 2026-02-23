@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Product — Nudie Jeans</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #000;
+      background: #fff;
+    }
+
+    /* Header */
+    .nj-header {
+      border-bottom: 2px solid #000;
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .nj-logo {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+    }
+    .nj-nav { display: flex; gap: 28px; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; }
+    .nj-nav a { color: #000; text-decoration: none; }
+    .nj-nav a:hover { text-decoration: underline; }
+
+    /* Breadcrumb */
+    .nj-breadcrumb {
+      padding: 14px 32px;
+      font-size: 12px;
+      color: #666;
+      border-bottom: 1px solid #eee;
+    }
+    .nj-breadcrumb a { color: #666; text-decoration: none; }
+    .nj-breadcrumb a:hover { color: #000; }
+
+    /* Product layout */
+    .nj-product {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 32px;
+      gap: 48px;
+    }
+    @media (max-width: 768px) {
+      .nj-product { grid-template-columns: 1fr; }
+    }
+
+    /* Image */
+    .nj-image {
+      background: #f0f0f0;
+      aspect-ratio: 3/4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .nj-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .nj-image-placeholder {
+      color: #999;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+
+    /* Info panel */
+    .nj-info { display: flex; flex-direction: column; gap: 16px; padding-top: 4px; }
+    .nj-product-name {
+      font-size: 28px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .nj-meta {
+      font-size: 13px;
+      color: #555;
+      line-height: 1.7;
+    }
+    .nj-meta span { display: block; }
+    .nj-meta strong { color: #000; font-weight: 600; }
+
+    /* Divider */
+    .nj-divider { border: none; border-top: 1px solid #e0e0e0; margin: 4px 0; }
+
+    /* Service buttons section */
+    .nj-services { display: flex; flex-direction: column; gap: 0; margin-top: 4px; }
+    .nj-services-tagline {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #888;
+      margin-bottom: 12px;
+    }
+    .nj-service-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 16px 20px;
+      background: #000;
+      color: #fff;
+      border: none;
+      border-radius: 0;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.15s;
+      margin-bottom: 2px;
+      font-family: inherit;
+    }
+    .nj-service-btn:hover { background: #222; }
+    .nj-service-btn svg { flex-shrink: 0; }
+
+    /* Upload button (outlined) */
+    .nj-upload-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      width: 100%;
+      padding: 15px 20px;
+      background: transparent;
+      color: #000;
+      border: 2px solid #000;
+      border-radius: 0;
+      font-size: 13px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      margin-top: 10px;
+      font-family: inherit;
+    }
+    .nj-upload-btn:hover { background: #000; color: #fff; }
+    .nj-upload-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .nj-upload-btn:disabled:hover {
+      background: transparent;
+      color: #000;
+    }
+    .nj-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-right-color: transparent;
+      border-radius: 50%;
+      animation: nj-spin 0.6s linear infinite;
+    }
+    @keyframes nj-spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Footer */
+    .nj-footer {
+      margin-top: 80px;
+      padding: 24px 32px;
+      border-top: 2px solid #000;
+      text-align: center;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header class="nj-header">
+    <div class="nj-logo">Nudie Jeans</div>
+    <nav class="nj-nav">
+      <a href="#">Jeans</a>
+      <a href="#">Jackor</a>
+      <a href="#">Tr&ouml;jor</a>
+      <a href="#">Repair</a>
+    </nav>
+  </header>
+
+  <!-- Breadcrumb -->
+  <div class="nj-breadcrumb" id="breadcrumb">
+    <a href="#">Hem</a> / <a href="#">Nudie Jeans</a> / Produkt
+  </div>
+
+  <!-- Product -->
+  <main class="nj-product">
+    <div class="nj-image" id="productImage">
+      <span class="nj-image-placeholder">Produktbild</span>
+    </div>
+
+    <div class="nj-info">
+      <h1 class="nj-product-name" id="productName">Laddar...</h1>
+
+      <div class="nj-meta" id="productMeta">
+        <span id="metaColor"></span>
+        <span id="metaMaterial"></span>
+      </div>
+
+      <hr class="nj-divider">
+
+      <!-- Service buttons -->
+      <div class="nj-services">
+        <div class="nj-services-tagline">Free Repairs Forever</div>
+
+        <a class="nj-service-btn" id="btnRepair" href="#" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Reparera
+        </a>
+
+        <a class="nj-service-btn" id="btnAdjustment" href="#" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
+          M&aring;ttanpassa
+        </a>
+
+        <a class="nj-service-btn" id="btnCare" href="#" target="_blank" rel="noopener">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
+          Sk&ouml;tsel
+        </a>
+
+        <!-- Upload image button -->
+        <input type="file" id="imageInput" accept="image/*" style="display:none">
+        <button class="nj-upload-btn" id="btnUpload" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+          Ladda upp bild
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <footer class="nj-footer">
+    Demo &mdash; QFix Widget Integration
+  </footer>
+
+  <script>
+    (function () {
+      var params = new URLSearchParams(location.search);
+      var pid = params.get("productId") || "111946";
+      var brandSlug = "nudie";
+
+      // Set service button URLs
+      document.getElementById("btnRepair").href = "/" + brandSlug + "/repair/?productId=" + pid;
+      document.getElementById("btnAdjustment").href = "/" + brandSlug + "/adjustment/?productId=" + pid;
+      document.getElementById("btnCare").href = "/" + brandSlug + "/care/?productId=" + pid;
+
+      // Image upload handling
+      var btnUpload = document.getElementById("btnUpload");
+      var imageInput = document.getElementById("imageInput");
+
+      btnUpload.addEventListener("click", function () {
+        if (!btnUpload.disabled) {
+          imageInput.click();
+        }
+      });
+
+      imageInput.addEventListener("change", function () {
+        var file = imageInput.files[0];
+        if (!file) return;
+
+        // Show loading state
+        btnUpload.disabled = true;
+        btnUpload.innerHTML = '<span class="nj-spinner"></span> Bearbetar...';
+
+        var formData = new FormData();
+        formData.append("image", file);
+        formData.append("service", "repair");
+
+        fetch("/identify/redirect", {
+          method: "POST",
+          body: formData
+        })
+          .then(function (r) { return r.json(); })
+          .then(function (data) {
+            if (data.redirect_url) {
+              window.open(data.redirect_url, "_blank");
+            }
+          })
+          .catch(function (err) {
+            console.error("Upload failed:", err);
+          })
+          .finally(function () {
+            // Reset button
+            btnUpload.disabled = false;
+            btnUpload.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg> Ladda upp bild';
+            imageInput.value = "";
+          });
+      });
+
+      // Load product data
+      fetch("/docs/verify/" + encodeURIComponent(pid))
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          var p = data.product || {};
+
+          // Product name
+          var name = p.product_name || "Produkt " + pid;
+          document.getElementById("productName").textContent = name;
+          document.title = name + " \u2014 Nudie Jeans";
+
+          // Breadcrumb
+          var category = p.category || p.clothing_type || "";
+          var bc = '<a href="#">Hem</a> / <a href="#">Nudie Jeans</a>';
+          if (category) bc += ' / <a href="#">' + category + '</a>';
+          bc += " / " + name;
+          document.getElementById("breadcrumb").innerHTML = bc;
+
+          // Meta info
+          var color = p.color || p.colour || "";
+          var material = p.material_composition || p.material || "";
+          if (color) document.getElementById("metaColor").innerHTML = "<strong>F\u00e4rg:</strong> " + color;
+          if (material) document.getElementById("metaMaterial").innerHTML = "<strong>Material:</strong> " + material;
+
+          // Product image
+          var imageUrl = p.image_url;
+          if (imageUrl) {
+            var imgContainer = document.getElementById("productImage");
+            imgContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + name + '" onerror="this.parentElement.innerHTML=\'<span class=nj-image-placeholder>Produktbild</span>\'">';
+          }
+        })
+        .catch(function (err) {
+          console.error("Failed to load product data:", err);
+          document.getElementById("productName").textContent = "Produkt " + pid;
+        });
+    })();
+  </script>
+
+</body>
+</html>

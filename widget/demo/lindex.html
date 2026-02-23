@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Produkt — Lindex</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      color: #1a1a1a;
+      background: #fff;
+    }
+
+    /* Header */
+    .lx-header {
+      border-bottom: 1px solid #e5e5e5;
+      padding: 20px 40px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .lx-logo {
+      font-size: 28px;
+      font-weight: 300;
+      letter-spacing: 3px;
+      color: #1a1a1a;
+    }
+    .lx-nav { display: flex; gap: 28px; font-size: 13px; color: #666; text-transform: uppercase; letter-spacing: 1px; }
+    .lx-nav span { cursor: pointer; transition: color 0.2s; }
+    .lx-nav span:hover { color: #1a1a1a; }
+
+    /* Breadcrumb */
+    .lx-breadcrumb {
+      padding: 14px 40px;
+      font-size: 12px;
+      color: #999;
+    }
+    .lx-breadcrumb a { color: #999; text-decoration: none; }
+    .lx-breadcrumb a:hover { text-decoration: underline; }
+
+    /* Product layout */
+    .lx-product {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 24px 40px 60px;
+      gap: 60px;
+    }
+    .lx-product-image {
+      background: #f5f5f5;
+      aspect-ratio: 3/4;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .lx-product-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .lx-placeholder {
+      color: #ccc;
+      font-size: 14px;
+    }
+
+    /* Product info */
+    .lx-product-info {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      padding-top: 12px;
+    }
+    .lx-product-name {
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 0.5px;
+    }
+    .lx-product-price {
+      font-size: 16px;
+      font-weight: 400;
+      color: #1a1a1a;
+    }
+    .lx-product-meta {
+      font-size: 13px;
+      color: #777;
+      line-height: 1.7;
+    }
+    .lx-product-meta strong {
+      color: #555;
+      font-weight: 500;
+    }
+
+    /* Divider */
+    .lx-divider {
+      border: none;
+      border-top: 1px solid #e5e5e5;
+      margin: 8px 0;
+    }
+
+    /* Service buttons */
+    .lx-services {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      margin-top: 8px;
+    }
+    .lx-services-title {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: #999;
+      margin-bottom: 12px;
+    }
+    .lx-service-btn {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px 20px;
+      background: #1a1a1a;
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      border: none;
+      border-radius: 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-bottom: 2px;
+      font-family: inherit;
+      width: 100%;
+      text-align: left;
+    }
+    .lx-service-btn:hover {
+      background: #333;
+    }
+    .lx-service-btn svg {
+      flex-shrink: 0;
+    }
+
+    /* Upload button - outlined style */
+    .lx-upload-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: #fff;
+      color: #1a1a1a;
+      border: 1.5px solid #1a1a1a;
+      border-radius: 0;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 10px;
+      font-family: inherit;
+      width: 100%;
+    }
+    .lx-upload-btn:hover {
+      background: #1a1a1a;
+      color: #fff;
+    }
+    .lx-upload-btn.loading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+    .lx-spinner {
+      display: none;
+      width: 14px;
+      height: 14px;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: lx-spin 0.6s linear infinite;
+    }
+    .lx-upload-btn.loading .lx-spinner { display: inline-block; }
+    .lx-upload-btn.loading .lx-upload-icon { display: none; }
+    @keyframes lx-spin { to { transform: rotate(360deg); } }
+
+    /* Footer */
+    .lx-footer {
+      border-top: 1px solid #e5e5e5;
+      padding: 32px 40px;
+      text-align: center;
+      font-size: 11px;
+      color: #bbb;
+      margin-top: 40px;
+      letter-spacing: 0.5px;
+    }
+
+    @media (max-width: 768px) {
+      .lx-product { grid-template-columns: 1fr; gap: 32px; padding: 20px; }
+      .lx-header { padding: 16px 20px; }
+      .lx-breadcrumb { padding: 12px 20px; }
+      .lx-nav { gap: 16px; font-size: 12px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="lx-header">
+    <div class="lx-logo">Lindex</div>
+    <nav class="lx-nav">
+      <span>Dam</span>
+      <span>Barn</span>
+      <span>Baby</span>
+      <span>Underkläder</span>
+    </nav>
+  </header>
+
+  <div class="lx-breadcrumb">
+    <a href="#">Lindex</a> / <a href="#">Dam</a> / <span id="breadcrumb-product">Produkt</span>
+  </div>
+
+  <main class="lx-product">
+    <div class="lx-product-image" id="product-image">
+      <span class="lx-placeholder">Laddar...</span>
+    </div>
+    <div class="lx-product-info">
+      <h1 class="lx-product-name" id="product-name">Laddar produkt...</h1>
+      <div class="lx-product-meta" id="product-meta"></div>
+
+      <hr class="lx-divider">
+
+      <div class="lx-services">
+        <div class="lx-services-title">Qfix Tjänster</div>
+        <a class="lx-service-btn" id="btn-repair" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Reparera
+        </a>
+        <a class="lx-service-btn" id="btn-adjust" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
+          Måttanpassa
+        </a>
+        <a class="lx-service-btn" id="btn-care" href="#">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
+          Skötsel
+        </a>
+      </div>
+
+      <button class="lx-upload-btn" id="btn-upload" type="button">
+        <span class="lx-upload-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></span>
+        <span class="lx-spinner"></span>
+        <span class="lx-upload-label">Ladda upp bild</span>
+      </button>
+      <input type="file" id="file-input" accept="image/*" style="display:none">
+    </div>
+  </main>
+
+  <footer class="lx-footer">
+    &copy; 2026 Lindex &mdash; QFix Demo
+  </footer>
+
+  <script>
+    (function() {
+      const BRAND_SLUG = 'lindex';
+      const DEFAULT_PRODUCT = '3008959';
+
+      const params = new URLSearchParams(window.location.search);
+      const productId = params.get('productId') || DEFAULT_PRODUCT;
+
+      // Fetch product data
+      fetch('/docs/verify/' + encodeURIComponent(productId))
+        .then(r => r.json())
+        .then(data => {
+          const p = data.product || data;
+          const name = p.name || p.product_name || 'Produkt';
+          const material = p.material || p.composition || '';
+          const color = p.color || p.colour || '';
+          const imageUrl = p.image_url || '';
+
+          document.title = name + ' — Lindex';
+          document.getElementById('product-name').textContent = name;
+          document.getElementById('breadcrumb-product').textContent = name;
+
+          let metaHtml = '';
+          if (color) metaHtml += '<strong>Färg:</strong> ' + color + '<br>';
+          if (material) metaHtml += '<strong>Material:</strong> ' + material + '<br>';
+          document.getElementById('product-meta').innerHTML = metaHtml;
+
+          const imgContainer = document.getElementById('product-image');
+          if (imageUrl) {
+            imgContainer.innerHTML = '<img src="' + imageUrl + '" alt="' + name + '">';
+          } else {
+            imgContainer.innerHTML = '<span class="lx-placeholder">Ingen bild tillgänglig</span>';
+          }
+        })
+        .catch(() => {
+          document.getElementById('product-name').textContent = 'Kunde inte ladda produkt';
+          document.getElementById('product-image').innerHTML = '<span class="lx-placeholder">Ingen bild tillgänglig</span>';
+        });
+
+      // Service button links
+      document.getElementById('btn-repair').href = '/' + BRAND_SLUG + '/repair/?productId=' + encodeURIComponent(productId);
+      document.getElementById('btn-adjust').href = '/' + BRAND_SLUG + '/adjustment/?productId=' + encodeURIComponent(productId);
+      document.getElementById('btn-care').href = '/' + BRAND_SLUG + '/care/?productId=' + encodeURIComponent(productId);
+
+      // Image upload
+      const uploadBtn = document.getElementById('btn-upload');
+      const fileInput = document.getElementById('file-input');
+
+      uploadBtn.addEventListener('click', function() {
+        fileInput.click();
+      });
+
+      fileInput.addEventListener('change', function() {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        uploadBtn.classList.add('loading');
+        document.querySelector('.lx-upload-label').textContent = 'Analyserar...';
+
+        const formData = new FormData();
+        formData.append('image', file);
+        formData.append('service', 'repair');
+
+        fetch('/identify/redirect', { method: 'POST', body: formData })
+          .then(r => r.json())
+          .then(data => {
+            if (data.redirect_url) {
+              window.open(data.redirect_url, '_blank');
+            }
+          })
+          .catch(() => {
+            alert('Något gick fel. Försök igen.');
+          })
+          .finally(() => {
+            uploadBtn.classList.remove('loading');
+            document.querySelector('.lx-upload-label').textContent = 'Ladda upp bild';
+            fileInput.value = '';
+          });
+      });
+    })();
+  </script>
+</body>
+</html>
