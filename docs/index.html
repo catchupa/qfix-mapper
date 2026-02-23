@@ -163,6 +163,86 @@
     <div id="verifyResult" class="verify-result"></div>
   </div>
 
+  <!-- Coverage -->
+  <div class="card">
+    <h2>Mapping Coverage</h2>
+    <p style="font-size:14px; color:#666; margin-bottom:12px;">How many products per brand have a working QFix mapping.</p>
+    <table class="coverage-table">
+      <thead><tr><th>Brand</th><th>Total</th><th>Mapped</th><th>Unmapped</th><th>Coverage</th></tr></thead>
+      <tbody id="coverageBody"><tr><td colspan="5" style="color:#aaa;">Loading...</td></tr></tbody>
+    </table>
+  </div>
+
+  <!-- Mapping tables -->
+  <div class="card">
+    <h2>Mapping Rules Reference</h2>
+    <p style="font-size:14px; color:#666; margin-bottom:12px;">These are the actual mapping tables used by the system.</p>
+
+    <details>
+      <summary>Valid QFix Clothing Types (88 types)</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">These are the target clothing types in the QFix system. Each product is mapped to one of these.</p>
+      <table class="map-table">
+        <thead><tr><th>QFix Clothing Type</th><th>ID</th></tr></thead>
+        <tbody id="clothingTypesBody"></tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Material Categories</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Products are classified into one of these material categories based on their composition.</p>
+      <table class="map-table">
+        <thead><tr><th>QFix Material</th><th>Description</th></tr></thead>
+        <tbody>
+          <tr><td>Standard textile</td><td>Cotton, polyester, nylon, viscose, elastane, and most common fabrics</td></tr>
+          <tr><td>Linen/Wool</td><td>Linen, wool, merino, alpaca, and blends where these dominate</td></tr>
+          <tr><td>Cashmere</td><td>Cashmere and cashmere-dominant blends</td></tr>
+          <tr><td>Silk</td><td>Silk and silk-dominant blends</td></tr>
+          <tr><td>Leather/Suede</td><td>Leather, suede, and similar animal hides</td></tr>
+          <tr><td>Down</td><td>Down-filled garments</td></tr>
+          <tr><td>Fur</td><td>Fur garments</td></tr>
+          <tr><td>Other/Unsure</td><td>Fallback when material can't be determined</td></tr>
+        </tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Swedish Clothing Type Mappings (~460 rules)</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">How Swedish scraped categories map to QFix types. Showing mapped entries only.</p>
+      <table class="map-table">
+        <thead><tr><th>Swedish Category</th><th>QFix Type</th></tr></thead>
+        <tbody id="clothingMapBody"></tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Material Composition Mappings (~110 rules)</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">How individual material names map to QFix material categories.</p>
+      <table class="map-table">
+        <thead><tr><th>Material Name</th><th>QFix Material</th></tr></thead>
+        <tbody id="materialMapBody"></tbody>
+      </table>
+    </details>
+
+    <details>
+      <summary>Unmapped Categories per Brand</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Product categories that can't be mapped to a QFix clothing type (accessories, non-clothing items, missing categories). These products won't get a QFix repair URL.</p>
+      <div id="unmappedCategoriesContainer" style="font-size:13px; color:#aaa;">Loading...</div>
+    </details>
+
+    <details>
+      <summary>QFix Types Missing Services</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Clothing types in the QFix catalog that have zero service actions defined (repair, adjustment, care, other).</p>
+      <div id="missingServicesContainer" style="font-size:13px; color:#aaa;">Loading...</div>
+    </details>
+
+    <details>
+      <summary>AI-Ranked Top 5 Actions per Category</summary>
+      <p style="font-size:13px; color:#666; margin:4px 0 8px;">For each clothing type + material combination, AI has ranked the 5 most relevant service actions per service category.</p>
+      <input type="text" id="rankingsFilter" placeholder="Filter by clothing type or material..." style="width:100%; padding:8px 12px; border:2px solid #e0e0e0; border-radius:6px; font-size:13px; margin-bottom:12px; outline:none;" />
+      <div id="rankingsContainer" style="font-size:13px; color:#aaa;">Loading...</div>
+    </details>
+  </div>
+
   <!-- How it works -->
   <div class="card">
     <h2>How the Mapping Works</h2>
@@ -751,86 +831,6 @@
     </p>
   </div>
 
-  <!-- Coverage -->
-  <div class="card">
-    <h2>Mapping Coverage</h2>
-    <p style="font-size:14px; color:#666; margin-bottom:12px;">How many products per brand have a working QFix mapping.</p>
-    <table class="coverage-table">
-      <thead><tr><th>Brand</th><th>Total</th><th>Mapped</th><th>Unmapped</th><th>Coverage</th></tr></thead>
-      <tbody id="coverageBody"><tr><td colspan="5" style="color:#aaa;">Loading...</td></tr></tbody>
-    </table>
-  </div>
-
-  <!-- Mapping tables -->
-  <div class="card">
-    <h2>Mapping Rules Reference</h2>
-    <p style="font-size:14px; color:#666; margin-bottom:12px;">These are the actual mapping tables used by the system.</p>
-
-    <details>
-      <summary>Valid QFix Clothing Types (88 types)</summary>
-      <p style="font-size:13px; color:#666; margin:4px 0 8px;">These are the target clothing types in the QFix system. Each product is mapped to one of these.</p>
-      <table class="map-table">
-        <thead><tr><th>QFix Clothing Type</th><th>ID</th></tr></thead>
-        <tbody id="clothingTypesBody"></tbody>
-      </table>
-    </details>
-
-    <details>
-      <summary>Material Categories</summary>
-      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Products are classified into one of these material categories based on their composition.</p>
-      <table class="map-table">
-        <thead><tr><th>QFix Material</th><th>Description</th></tr></thead>
-        <tbody>
-          <tr><td>Standard textile</td><td>Cotton, polyester, nylon, viscose, elastane, and most common fabrics</td></tr>
-          <tr><td>Linen/Wool</td><td>Linen, wool, merino, alpaca, and blends where these dominate</td></tr>
-          <tr><td>Cashmere</td><td>Cashmere and cashmere-dominant blends</td></tr>
-          <tr><td>Silk</td><td>Silk and silk-dominant blends</td></tr>
-          <tr><td>Leather/Suede</td><td>Leather, suede, and similar animal hides</td></tr>
-          <tr><td>Down</td><td>Down-filled garments</td></tr>
-          <tr><td>Fur</td><td>Fur garments</td></tr>
-          <tr><td>Other/Unsure</td><td>Fallback when material can't be determined</td></tr>
-        </tbody>
-      </table>
-    </details>
-
-    <details>
-      <summary>Unmapped Categories per Brand</summary>
-      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Product categories that can't be mapped to a QFix clothing type (accessories, non-clothing items, missing categories). These products won't get a QFix repair URL.</p>
-      <div id="unmappedCategoriesContainer" style="font-size:13px; color:#aaa;">Loading...</div>
-    </details>
-
-    <details>
-      <summary>QFix Types Missing Services</summary>
-      <p style="font-size:13px; color:#666; margin:4px 0 8px;">Clothing types in the QFix catalog that have zero service actions defined (repair, adjustment, care, other).</p>
-      <div id="missingServicesContainer" style="font-size:13px; color:#aaa;">Loading...</div>
-    </details>
-
-    <details>
-      <summary>AI-Ranked Top 5 Actions per Category</summary>
-      <p style="font-size:13px; color:#666; margin:4px 0 8px;">For each clothing type + material combination, AI has ranked the 5 most relevant service actions per service category.</p>
-      <input type="text" id="rankingsFilter" placeholder="Filter by clothing type or material..." style="width:100%; padding:8px 12px; border:2px solid #e0e0e0; border-radius:6px; font-size:13px; margin-bottom:12px; outline:none;" />
-      <div id="rankingsContainer" style="font-size:13px; color:#aaa;">Loading...</div>
-    </details>
-
-    <details>
-      <summary>Swedish Clothing Type Mappings (~460 rules)</summary>
-      <p style="font-size:13px; color:#666; margin:4px 0 8px;">How Swedish scraped categories map to QFix types. Showing mapped entries only.</p>
-      <table class="map-table">
-        <thead><tr><th>Swedish Category</th><th>QFix Type</th></tr></thead>
-        <tbody id="clothingMapBody"></tbody>
-      </table>
-    </details>
-
-    <details>
-      <summary>Material Composition Mappings (~110 rules)</summary>
-      <p style="font-size:13px; color:#666; margin:4px 0 8px;">How individual material names map to QFix material categories.</p>
-      <table class="map-table">
-        <thead><tr><th>Material Name</th><th>QFix Material</th></tr></thead>
-        <tbody id="materialMapBody"></tbody>
-      </table>
-    </details>
-  </div>
-
 </div>
 
 <script>
@@ -856,15 +856,33 @@ async function verify() {
     const m = data.mapping;
     const svcs = data.services || [];
 
-    let html = '<h3 style="margin-bottom:12px;">Product</h3>';
-    html += '<dl class="product-info">';
-    html += '<dt>Product ID</dt><dd>' + esc(p.product_id) + '</dd>';
-    html += '<dt>Name</dt><dd>' + esc(p.product_name || '—') + '</dd>';
-    html += '<dt>Brand</dt><dd>' + esc(p.brand || '—') + '</dd>';
-    html += '<dt>Category</dt><dd>' + esc(p.category || '—') + '</dd>';
-    html += '<dt>Clothing Type</dt><dd>' + esc(p.clothing_type || '—') + '</dd>';
-    html += '<dt>Material</dt><dd>' + esc(p.material_composition || '—') + '</dd>';
-    html += '</dl>';
+    let html = '';
+
+    // Product header with image
+    if (p.image_url) {
+      html += '<div style="display:flex; gap:20px; align-items:flex-start; margin-bottom:16px;">';
+      html += '<img src="' + esc(p.image_url) + '" alt="' + esc(p.product_name || '') + '" style="width:120px; height:160px; object-fit:cover; border-radius:8px; border:1px solid #e0e0e0; flex-shrink:0;" />';
+      html += '<div style="flex:1;">';
+      html += '<h3 style="margin-bottom:8px;">' + esc(p.product_name || 'Unknown Product') + '</h3>';
+      html += '<dl class="product-info">';
+      html += '<dt>Product ID</dt><dd>' + esc(p.product_id) + '</dd>';
+      html += '<dt>Brand</dt><dd>' + esc(p.brand || '—') + '</dd>';
+      html += '<dt>Category</dt><dd>' + esc(p.category || '—') + '</dd>';
+      html += '<dt>Clothing Type</dt><dd>' + esc(p.clothing_type || '—') + '</dd>';
+      html += '<dt>Material</dt><dd>' + esc(p.material_composition || '—') + '</dd>';
+      html += '</dl>';
+      html += '</div></div>';
+    } else {
+      html += '<h3 style="margin-bottom:12px;">Product</h3>';
+      html += '<dl class="product-info">';
+      html += '<dt>Product ID</dt><dd>' + esc(p.product_id) + '</dd>';
+      html += '<dt>Name</dt><dd>' + esc(p.product_name || '—') + '</dd>';
+      html += '<dt>Brand</dt><dd>' + esc(p.brand || '—') + '</dd>';
+      html += '<dt>Category</dt><dd>' + esc(p.category || '—') + '</dd>';
+      html += '<dt>Clothing Type</dt><dd>' + esc(p.clothing_type || '—') + '</dd>';
+      html += '<dt>Material</dt><dd>' + esc(p.material_composition || '—') + '</dd>';
+      html += '</dl>';
+    }
 
     html += '<h3 style="margin:20px 0 12px;">Mapping Steps</h3>';
 
