@@ -604,7 +604,7 @@
              exclusion rules (Step 6) remove irrelevant actions, the remaining slots are filled from positions 6&ndash;10
              instead of leaving gaps. For example, a vest has 10 ranked adjustments &rarr; "Shorten sleeves" and "Lengthen sleeves"
              are excluded &rarr; 8 remain &rarr; top 5 selected (positions 6&ndash;7 backfill the gaps left by the 2 excluded actions).
-             The final 5 are passed as <code>services_id</code> in the redirect URL to pre-select them on QFix.</p>
+             The final 5 are passed as <code>service_id</code> in the redirect URL to pre-select them on QFix.</p>
         </div>
       </div>
       <div class="flow-arrow">&#8595;</div>
@@ -764,11 +764,11 @@
             <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">subitem_id</code> &mdash; the gender-specific clothing type ID (Step 3)</li>
             <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">material_id</code> &mdash; the material ID (Step 3)</li>
             <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">service_category_id</code> &mdash; which service type (repair, adjustment, care)</li>
-            <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">services_id</code> &mdash; the final top 5 action IDs after keyword injection and exclusion filtering (Steps 4&ndash;6)</li>
+            <li><code style="background:#f0f0f0; padding:1px 4px; border-radius:3px; font-size:12px;">service_id</code> &mdash; the final top 5 action IDs after keyword injection and exclusion filtering (Steps 4&ndash;6)</li>
           </ul>
           <p>Example URL:<br>
              <code style="background:#f0f0f0; padding:2px 6px; border-radius:4px; font-size:13px;">
-               https://kappahl.dev.qfixr.me/sv/?subitem_id=85&amp;material_id=69&amp;service_category_id=3&amp;services_id=101,102,103,104,105
+               https://kappahl.dev.qfixr.me/sv/?subitem_id=85&amp;material_id=69&amp;service_category_id=3&amp;service_id=101,102,103,104,105
              </code></p>
           <p style="margin-top:4px; font-size:13px; color:#666;">This URL pre-selects the clothing type, material, service, and
              the most relevant actions for the specific product, so the customer lands directly on the right booking page.</p>
@@ -933,25 +933,25 @@ async function verify() {
     }
     html += '</div></div>';
 
-    // Persisted service URLs from DB — append services_id from top actions
+    // Persisted service URLs from DB — append service_id from top actions
     const pUrls = data.persisted_service_urls || {};
     const topActions = data.top_actions || {};
     const hasPersistedUrls = pUrls.repair || pUrls.adjustment || pUrls.care || pUrls.other;
 
-    // Build full URLs with services_id appended
+    // Build full URLs with service_id appended
     function buildFullUrl(baseUrl, serviceKey) {
       if (!baseUrl) return null;
       const actions = topActions[serviceKey];
       if (actions && actions.length > 0) {
         const variantIds = actions.slice(0, 5).map(function(a) { return a.id; }).join(',');
-        return baseUrl + '&services_id=' + variantIds;
+        return baseUrl + '&service_id=' + variantIds;
       }
       return baseUrl;
     }
 
     if (hasPersistedUrls || svcs.length > 0) {
       html += '<h3 style="margin:20px 0 8px;">Service URLs</h3>';
-      html += '<p style="font-size:13px; color:#666; margin-bottom:12px;">QFix booking URLs for each service type, including the top 5 pre-selected actions (<code>services_id</code>).</p>';
+      html += '<p style="font-size:13px; color:#666; margin-bottom:12px;">QFix booking URLs for each service type, including the top 5 pre-selected actions (<code>service_id</code>).</p>';
 
       const serviceRows = [
         {label: 'Repair', key: 'repair', dbUrl: buildFullUrl(pUrls.repair, 'repair')},
