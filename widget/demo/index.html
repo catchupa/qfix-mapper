@@ -346,7 +346,7 @@
             for (var i = 0; i < actions.length; i++) {
               var a = actions[i];
               var price = a.price ? " — from " + a.price + " kr" : "";
-              html += '<span class="kh-action-chip">' + a.name + '<span class="kh-action-price">' + price + '</span></span>';
+              html += '<span class="kh-action-chip">' + a.name + ' <span class="kh-action-price">#' + a.id + price + '</span></span>';
             }
             html += '</div></div>';
           }
