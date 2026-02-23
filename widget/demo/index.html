@@ -297,6 +297,15 @@
           document.querySelector(".kh-logo").textContent = brand;
           document.title = name + " — " + brand;
 
+          // Update product image
+          if (p.image_url) {
+            var img = document.querySelector(".kh-image img");
+            if (img) {
+              img.src = p.image_url;
+              img.alt = name;
+            }
+          }
+
           // Update breadcrumb
           var category = p.category || p.clothing_type || "";
           var qfixType = m.clothing_type_result || "";
