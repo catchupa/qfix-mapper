@@ -1171,7 +1171,7 @@ def map_product(product, brand=None):
 
     qfix_url = None
     if clothing_type_id and material_id:
-        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={clothing_type_id}&material_id={material_id}"
+        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?subitem_id={clothing_type_id}&material_id={material_id}"
 
     return {
         "qfix_clothing_type": clothing_name,
@@ -1215,7 +1215,7 @@ def map_product_legacy(product, brand=None):
 
     qfix_url = None
     if clothing_type_id and material_id:
-        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={clothing_type_id}&material_id={material_id}"
+        qfix_url = f"https://kappahl.dev.qfixr.me/sv/?subitem_id={clothing_type_id}&material_id={material_id}"
 
     return {
         "qfix_clothing_type": clothing_name,

@@ -413,10 +413,10 @@ def _redirect_to_qfix(brand_slug, service_key=None):
         services = qfix.get("qfix_services", [])
         for svc in services:
             if svc.get("slug") and service_key in svc["slug"]:
-                qfix_url += ("&" if "?" in qfix_url else "?") + f"service_id={svc['id']}"
+                qfix_url += ("&" if "?" in qfix_url else "?") + f"service_category_id={svc['id']}"
                 break
 
-        # Add top-ranked action IDs as variants_id
+        # Add top-ranked action IDs as services_id
         ct_id = qfix.get("qfix_clothing_type_id")
         mat_id = qfix.get("qfix_material_id")
         if ct_id and mat_id:
@@ -440,7 +440,7 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                 actions = top_actions.get(ranking_key, [])
                 if actions:
                     ids = ",".join(str(a["id"]) for a in actions)
-                    qfix_url += ("&" if "?" in qfix_url else "?") + f"variants_id={ids}"
+                    qfix_url += ("&" if "?" in qfix_url else "?") + f"services_id={ids}"
 
     return redirect(qfix_url, code=302)
 
@@ -1337,7 +1337,7 @@ def remap_run():
                     svc_id = svc_cat.get("id")
                     if svc_id:
                         sep = "&" if "?" in base_url else "?"
-                        svc_url = f"{base_url}{sep}service_id={svc_id}"
+                        svc_url = f"{base_url}{sep}service_category_id={svc_id}"
                         for key, col in _SERVICE_SLUG_MAP.items():
                             if key in svc_slug:
                                 qfix[col] = svc_url
@@ -2454,7 +2454,7 @@ def docs_verify(product_id):
 
     live_url = None
     if ct_id and mat_id:
-        live_url = f"https://kappahl.dev.qfixr.me/sv/?category_id={ct_id}&material_id={mat_id}"
+        live_url = f"https://kappahl.dev.qfixr.me/sv/?subitem_id={ct_id}&material_id={mat_id}"
 
     # Check persisted vs live
     persisted_url = product.get("qfix_url")
@@ -2477,11 +2477,11 @@ def docs_verify(product_id):
         svc_url = None
         if final_url and svc_cat.get("id"):
             sep = "&" if "?" in final_url else "?"
-            svc_url = f"{final_url}{sep}service_id={svc_cat['id']}"
+            svc_url = f"{final_url}{sep}service_category_id={svc_cat['id']}"
         services.append({
             "name": svc_cat.get("name"),
             "slug": slug,
-            "service_id": svc_cat.get("id"),
+            "service_category_id": svc_cat.get("id"),
             "url": svc_url,
         })
 
