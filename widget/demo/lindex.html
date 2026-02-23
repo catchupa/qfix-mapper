@@ -193,6 +193,37 @@
       letter-spacing: 0.5px;
     }
 
+    /* Modal */
+    .qfix-modal-overlay {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+      z-index: 1000; align-items: center; justify-content: center;
+    }
+    .qfix-modal-overlay.active { display: flex; }
+    .qfix-modal {
+      background: #fff; max-width: 420px; width: 90%;
+      padding: 28px; position: relative; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .qfix-modal-close {
+      position: absolute; top: 12px; right: 16px; background: none; border: none;
+      font-size: 22px; cursor: pointer; color: #999; line-height: 1;
+    }
+    .qfix-modal-close:hover { color: #1a1a1a; }
+    .qfix-modal-img {
+      width: 100%; max-height: 260px; object-fit: contain;
+      background: #f5f5f5; margin-bottom: 16px;
+    }
+    .qfix-modal-text { font-size: 15px; color: #555; margin-bottom: 20px; line-height: 1.5; }
+    .qfix-modal-text strong { color: #1a1a1a; }
+    .qfix-modal-actions { display: flex; flex-direction: column; gap: 2px; }
+    .qfix-modal-action {
+      display: flex; align-items: center; gap: 12px; padding: 16px 20px;
+      background: #1a1a1a; color: #fff; border: none;
+      font-size: 13px; font-weight: 400; letter-spacing: 0.5px; cursor: pointer;
+      text-decoration: none; transition: background 0.2s;
+    }
+    .qfix-modal-action:hover { background: #333; }
+    .qfix-modal-action svg { flex-shrink: 0; }
+
     @media (max-width: 768px) {
       .lx-product { grid-template-columns: 1fr; gap: 32px; padding: 20px; }
       .lx-header { padding: 16px 20px; }
@@ -252,6 +283,16 @@
     </div>
   </main>
 
+  <!-- Modal -->
+  <div class="qfix-modal-overlay" id="qfix-modal">
+    <div class="qfix-modal">
+      <button class="qfix-modal-close" id="qfix-modal-close">&times;</button>
+      <img class="qfix-modal-img" id="qfix-modal-img" src="" alt="">
+      <div class="qfix-modal-text" id="qfix-modal-text"></div>
+      <div class="qfix-modal-actions" id="qfix-modal-actions"></div>
+    </div>
+  </div>
+
   <footer class="lx-footer">
     &copy; 2026 Lindex &mdash; QFix Demo
   </footer>
@@ -307,35 +348,59 @@
           document.getElementById('product-image').innerHTML = '<span class="lx-placeholder">Ingen bild tillgänglig</span>';
         });
 
-      // Image upload
+      // Image upload with modal feedback
       const uploadBtn = document.getElementById('btn-upload');
       const fileInput = document.getElementById('file-input');
+      const modal = document.getElementById('qfix-modal');
+      const SVC_ICONS = {
+        repair: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>',
+        adjustment: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>',
+        care: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>'
+      };
+      const SVC_LABELS = { repair: 'Reparera', adjustment: 'Måttanpassa', care: 'Skötsel' };
 
-      uploadBtn.addEventListener('click', function() {
-        fileInput.click();
-      });
+      function showModal(imgUrl, classification, redirectUrls) {
+        document.getElementById('qfix-modal-img').src = imgUrl;
+        document.getElementById('qfix-modal-text').innerHTML =
+          'Det ser ut som en <strong>' + (classification.clothing_type || 'okänd') +
+          '</strong> av <strong>' + (classification.material || 'okänt material') + '</strong>';
+        const actionsEl = document.getElementById('qfix-modal-actions');
+        actionsEl.innerHTML = '';
+        ['repair', 'adjustment', 'care'].forEach(function(key) {
+          if (redirectUrls[key]) {
+            actionsEl.innerHTML += '<a class="qfix-modal-action" href="' + redirectUrls[key] +
+              '" target="_blank" rel="noopener">' + (SVC_ICONS[key] || '') + ' ' + SVC_LABELS[key] + '</a>';
+          }
+        });
+        modal.classList.add('active');
+      }
+
+      document.getElementById('qfix-modal-close').addEventListener('click', () => modal.classList.remove('active'));
+      modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); });
+
+      uploadBtn.addEventListener('click', () => fileInput.click());
 
       fileInput.addEventListener('change', function() {
         const file = fileInput.files[0];
         if (!file) return;
+        const imgPreview = URL.createObjectURL(file);
 
         uploadBtn.classList.add('loading');
         document.querySelector('.lx-upload-label').textContent = 'Analyserar...';
 
         const formData = new FormData();
         formData.append('image', file);
-        formData.append('service', 'repair');
 
         fetch('/identify/redirect', { method: 'POST', body: formData })
           .then(r => r.json())
           .then(data => {
-            if (data.redirect_url) {
-              window.open(data.redirect_url, '_blank');
+            if (data.redirect_urls) {
+              showModal(imgPreview, data.classification || {}, data.redirect_urls);
+            } else if (data.error) {
+              alert(data.error);
             }
           })
-          .catch(() => {
-            alert('Något gick fel. Försök igen.');
-          })
+          .catch(() => { alert('Något gick fel. Försök igen.'); })
           .finally(() => {
             uploadBtn.classList.remove('loading');
             document.querySelector('.lx-upload-label').textContent = 'Ladda upp bild';

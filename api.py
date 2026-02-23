@@ -1109,33 +1109,44 @@ def identify_redirect():
     if not base_url:
         return jsonify({"error": "Could not identify garment type", "classification": result.get("classification")}), 422
 
-    # Find matching service category and build redirect URL
+    # Find matching service categories and build redirect URLs for all services
     enriched = enrich_qfix(qfix)
-    service_key_map = {"repair": "repair", "adjustment": "adjustment", "care": "washing", "washing": "washing"}
-    target_slug = service_key_map.get(service, "repair")
-
-    final_url = base_url
-    for svc in enriched.get("qfix_services", []):
-        if svc.get("slug") and target_slug in svc["slug"]:
-            final_url += ("&" if "?" in final_url else "?") + f"service_category_id={svc['id']}"
-            break
-
-    # Add top-ranked actions
     ct_id = qfix.get("qfix_clothing_type_id")
     mat_id = qfix.get("qfix_material_id")
+
+    # Get top-ranked actions for all service types
+    all_top_actions = {}
     if ct_id and mat_id:
-        ranking_key_map = {"repair": "repair", "adjustment": "adjustment", "care": "care", "washing": "care"}
-        ranking_key = ranking_key_map.get(service, "repair")
         ranking_conn = get_db()
-        top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
+        all_top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
         ranking_conn.close()
-        actions = top_actions.get(ranking_key, [])
-        if actions:
-            ids = ",".join(str(a["id"]) for a in actions[:5])
-            final_url += ("&" if "?" in final_url else "?") + f"services_id={ids}"
+
+    # Build URLs for each service type
+    slug_to_key = {"repair": "repair", "adjustment": "adjustment", "washing": "care"}
+    ranking_keys = {"repair": "repair", "adjustment": "adjustment", "care": "care"}
+    redirect_urls = {}
+
+    for svc in enriched.get("qfix_services", []):
+        svc_slug = svc.get("slug", "")
+        for slug_part, key in slug_to_key.items():
+            if slug_part in svc_slug:
+                url = base_url + ("&" if "?" in base_url else "?") + f"service_category_id={svc['id']}"
+                # Append top-ranked actions
+                ranking_key = ranking_keys.get(key, key)
+                actions = all_top_actions.get(ranking_key, [])
+                if actions:
+                    ids = ",".join(str(a["id"]) for a in actions[:5])
+                    url += f"&services_id={ids}"
+                redirect_urls[key] = url
+                break
+
+    # Keep backwards-compatible single redirect_url
+    service_key_map = {"repair": "repair", "adjustment": "adjustment", "care": "care", "washing": "care"}
+    final_url = redirect_urls.get(service_key_map.get(service, "repair"), base_url)
 
     return jsonify({
         "redirect_url": final_url,
+        "redirect_urls": redirect_urls,
         "classification": result.get("classification"),
         "qfix": qfix,
     })
