@@ -12,13 +12,13 @@ The simplest way to add QFix repair links to your product pages. No JavaScript w
 
 ## Endpoints
 
-There are three endpoints, one per service type. Each automatically includes the correct `service_id` in the redirect.
+There are three endpoints, one per service type. Each automatically includes the correct `services_id` in the redirect.
 
 | Endpoint | Service | Redirect example |
 |----------|---------|------------------|
-| `/<brand>/repair/?productId=<id>` | Repair | `…?category_id=96&material_id=69&service_id=39` |
-| `/<brand>/adjustment/?productId=<id>` | Adjust measurements | `…?category_id=96&material_id=69&service_id=40` |
-| `/<brand>/care/?productId=<id>` | Washing & care | `…?category_id=96&material_id=69&service_id=42` |
+| `/<brand>/repair/?productId=<id>` | Repair | `…?category_id=96&material_id=69&services_id=39` |
+| `/<brand>/adjustment/?productId=<id>` | Adjust measurements | `…?category_id=96&material_id=69&services_id=40` |
+| `/<brand>/care/?productId=<id>` | Washing & care | `…?category_id=96&material_id=69&services_id=42` |
 
 Base URL: `https://kappahl-qfix.fly.dev`
 

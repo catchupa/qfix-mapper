@@ -124,7 +124,7 @@
           return;
         }
         if (serviceId) {
-          qfixUrl += (qfixUrl.indexOf("?") === -1 ? "?" : "&") + "service_id=" + serviceId;
+          qfixUrl += (qfixUrl.indexOf("?") === -1 ? "?" : "&") + "services_id=" + serviceId;
         }
 
         renderButton(el, qfixUrl, theme, label, icon);

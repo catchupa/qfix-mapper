@@ -406,7 +406,7 @@ def get_brand_product(brand_slug, product_id):
 
 
 def _redirect_to_qfix(brand_slug, service_key=None):
-    """Shared helper: look up product, map to QFix, redirect with optional service_id."""
+    """Shared helper: look up product, map to QFix, redirect with optional services_id."""
     brand_name = BRAND_ROUTES.get(brand_slug)
     if not brand_name:
         return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
@@ -452,7 +452,7 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                 qfix_url += ("&" if "?" in qfix_url else "?") + f"service_category_id={svc['id']}"
                 break
 
-        # Add top-ranked action IDs as service_id
+        # Add top-ranked action IDs as services_id
         ct_id = qfix.get("qfix_clothing_type_id")
         mat_id = qfix.get("qfix_material_id")
         if ct_id and mat_id:
@@ -476,7 +476,7 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                 actions = top_actions.get(ranking_key, [])
                 if actions:
                     ids = ",".join(str(a["id"]) for a in actions)
-                    qfix_url += ("&" if "?" in qfix_url else "?") + f"service_id={ids}"
+                    qfix_url += ("&" if "?" in qfix_url else "?") + f"services_id={ids}"
 
     # Validate redirect URL to prevent open redirect
     if not qfix_url.startswith("https://") or not _is_allowed_redirect(qfix_url):
@@ -503,7 +503,7 @@ def redirect_to_repair(brand_slug):
         required: true
     responses:
       302:
-        description: Redirect to QFix booking page with service_id for repair
+        description: Redirect to QFix booking page with services_id for repair
       404:
         description: Product not found or no repair available
     """
@@ -529,7 +529,7 @@ def redirect_to_adjustment(brand_slug):
         required: true
     responses:
       302:
-        description: Redirect to QFix booking page with service_id for adjustment
+        description: Redirect to QFix booking page with services_id for adjustment
       404:
         description: Product not found or no adjustment available
     """
@@ -555,7 +555,7 @@ def redirect_to_care(brand_slug):
         required: true
     responses:
       302:
-        description: Redirect to QFix booking page with service_id for washing/care
+        description: Redirect to QFix booking page with services_id for washing/care
       404:
         description: Product not found or no care service available
     """
@@ -1178,7 +1178,7 @@ def identify_redirect():
                 actions = all_top_actions.get(ranking_key, [])
                 if actions:
                     ids = ",".join(str(a["id"]) for a in actions[:5])
-                    url += f"&service_id={ids}"
+                    url += f"&services_id={ids}"
                 redirect_urls[key] = url
                 break
 
