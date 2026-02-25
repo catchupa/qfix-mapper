@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>QFix Mapping — Brand</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; color: #1a1a1a; background: #f8f9fa; line-height: 1.6; }
+
+    .header { background: #1a1a1a; color: #fff; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; }
+    .header h1 { font-size: 22px; font-weight: 600; }
+    .header a { color: #aaa; font-size: 13px; text-decoration: none; }
+    .header a:hover { color: #fff; }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+
+    .card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .card h2 { font-size: 18px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #f0f0f0; }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat { background: #fff; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+    .stat-value { font-size: 28px; font-weight: 700; }
+    .stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+    .stat-green .stat-value { color: #22c55e; }
+
+    /* Coverage bar */
+    .coverage-bar-lg { height: 12px; border-radius: 6px; background: #e0e0e0; overflow: hidden; margin-top: 8px; }
+    .coverage-fill-lg { height: 100%; border-radius: 6px; background: #22c55e; transition: width 0.5s; }
+
+    /* Distribution */
+    .dist-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+    .dist-row:last-child { border-bottom: none; }
+    .dist-name { flex: 1; }
+    .dist-count { font-weight: 600; color: #555; min-width: 50px; text-align: right; }
+    .dist-bar { width: 100px; height: 6px; border-radius: 3px; background: #e0e0e0; overflow: hidden; flex-shrink: 0; }
+    .dist-fill { height: 100%; border-radius: 3px; background: #1a1a1a; }
+
+    /* Product grid */
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .product-card { border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; transition: box-shadow 0.15s; cursor: pointer; text-decoration: none; color: inherit; }
+    .product-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .product-img { width: 100%; aspect-ratio: 3/4; object-fit: cover; background: #f5f5f5; display: block; }
+    .product-img-placeholder { width: 100%; aspect-ratio: 3/4; background: #f0f0f0; display: flex; align-items: center; justify-content: center; color: #ccc; font-size: 13px; }
+    .product-body { padding: 10px 12px; }
+    .product-name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .product-id { font-size: 11px; color: #aaa; }
+    .product-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+    .tag-green { background: #dcfce7; color: #166534; }
+    .tag-red { background: #fee2e2; color: #991b1b; }
+    .tag-gray { background: #f3f4f6; color: #4b5563; }
+
+    /* Unmapped */
+    .unmapped-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+    .unmapped-row:last-child { border-bottom: none; }
+
+    /* Pagination */
+    .pagination { display: flex; gap: 8px; margin-top: 16px; justify-content: center; }
+    .pagination button { padding: 8px 16px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fff; font-size: 13px; cursor: pointer; }
+    .pagination button:hover { border-color: #1a1a1a; }
+    .pagination button:disabled { color: #ccc; cursor: default; border-color: #e0e0e0; }
+
+    /* Search */
+    .search-input { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; margin-bottom: 16px; }
+    .search-input:focus { border-color: #1a1a1a; }
+
+    /* Tabs */
+    .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+    .tab { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: #f0f0f0; color: #555; }
+    .tab:hover { background: #e0e0e0; }
+    .tab.active { background: #1a1a1a; color: #fff; }
+
+    .loading { color: #aaa; padding: 20px; text-align: center; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <h1 id="pageTitle">QFix Mapping</h1>
+  <a href="/docs/">&larr; All brands</a>
+</div>
+
+<div class="container">
+  <!-- Stats -->
+  <div class="stats" id="stats">
+    <div class="stat"><div class="stat-value" id="statTotal">—</div><div class="stat-label">Total Products</div></div>
+    <div class="stat"><div class="stat-value" id="statMapped">—</div><div class="stat-label">Mapped</div></div>
+    <div class="stat"><div class="stat-value" id="statUnmapped">—</div><div class="stat-label">Unmapped</div></div>
+    <div class="stat stat-green"><div class="stat-value" id="statCoverage">—</div><div class="stat-label">Coverage</div></div>
+  </div>
+
+  <!-- Distribution -->
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+    <div class="card">
+      <h2>Clothing Types</h2>
+      <div id="typeDist" class="loading">Loading...</div>
+    </div>
+    <div class="card">
+      <h2>Materials</h2>
+      <div id="materialDist" class="loading">Loading...</div>
+    </div>
+  </div>
+
+  <!-- Unmapped categories -->
+  <div class="card" id="unmappedCard" style="display:none;">
+    <h2>Unmapped Categories</h2>
+    <p style="font-size:13px; color:#666; margin-bottom:12px;">Product categories that don't have a QFix mapping.</p>
+    <div id="unmappedList"></div>
+  </div>
+
+  <!-- Products -->
+  <div class="card">
+    <h2>Products</h2>
+    <div class="tabs" id="filterTabs">
+      <button class="tab active" data-filter="all">All</button>
+      <button class="tab" data-filter="mapped">Mapped</button>
+      <button class="tab" data-filter="unmapped">Unmapped</button>
+    </div>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search by name or product ID..." />
+    <div class="product-grid" id="productGrid"></div>
+    <div class="pagination">
+      <button id="prevBtn" disabled>&larr; Previous</button>
+      <span id="pageInfo" style="padding:8px; font-size:13px; color:#888;"></span>
+      <button id="nextBtn">Next &rarr;</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
+
+  var path = location.pathname.replace(/\/$/, '');
+  var brandSlug = path.split('/').pop();
+  var PAGE_SIZE = 50;
+  var currentOffset = 0;
+  var currentFilter = 'all';
+  var searchTerm = '';
+  var allProducts = [];
+  var brandData = null;
+
+  document.title = 'QFix Mapping — ' + brandSlug;
+
+  // Load brand data
+  fetch('/docs/brand/' + brandSlug + '/products?limit=200')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.error) { document.getElementById('productGrid').innerHTML = '<p style="color:red;">' + esc(data.error) + '</p>'; return; }
+      brandData = data;
+      allProducts = data.products;
+
+      document.getElementById('pageTitle').textContent = data.brand + ' — QFix Mapping';
+      document.title = data.brand + ' — QFix Mapping';
+
+      // Stats
+      document.getElementById('statTotal').textContent = data.total.toLocaleString();
+      document.getElementById('statMapped').textContent = data.mapped.toLocaleString();
+      document.getElementById('statUnmapped').textContent = data.unmapped.toLocaleString();
+      document.getElementById('statCoverage').textContent = data.coverage_pct + '%';
+
+      // Type distribution
+      renderDist('typeDist', data.type_distribution, data.mapped);
+
+      // Material distribution
+      renderDist('materialDist', data.material_distribution, data.mapped);
+
+      // Unmapped categories
+      if (data.unmapped_categories.length > 0) {
+        document.getElementById('unmappedCard').style.display = 'block';
+        var html = '';
+        data.unmapped_categories.forEach(function(c) {
+          html += '<div class="unmapped-row"><span class="dist-name">' + esc(c.clothing_type) + '</span><span class="dist-count">' + c.cnt + '</span></div>';
+        });
+        document.getElementById('unmappedList').innerHTML = html;
+      }
+
+      // Render products
+      renderProducts();
+    })
+    .catch(function(err) {
+      document.getElementById('productGrid').innerHTML = '<p style="color:red;">Failed to load: ' + esc(err.message) + '</p>';
+    });
+
+  function renderDist(elId, items, total) {
+    var el = document.getElementById(elId);
+    if (!items || items.length === 0) { el.innerHTML = '<p style="color:#aaa;">No data</p>'; return; }
+    var max = items[0].cnt;
+    var html = '';
+    items.forEach(function(item) {
+      var pct = total > 0 ? Math.round(100 * item.cnt / total) : 0;
+      var name = item.qfix_clothing_type || item.qfix_material || '(unknown)';
+      html += '<div class="dist-row">';
+      html += '<span class="dist-name">' + esc(name) + '</span>';
+      html += '<div class="dist-bar"><div class="dist-fill" style="width:' + Math.round(100 * item.cnt / max) + '%"></div></div>';
+      html += '<span class="dist-count">' + item.cnt + ' <span style="color:#aaa; font-size:11px;">(' + pct + '%)</span></span>';
+      html += '</div>';
+    });
+    el.innerHTML = html;
+  }
+
+  function getFilteredProducts() {
+    return allProducts.filter(function(p) {
+      if (currentFilter === 'mapped' && !p.qfix_url) return false;
+      if (currentFilter === 'unmapped' && p.qfix_url) return false;
+      if (searchTerm) {
+        var s = searchTerm.toLowerCase();
+        var name = (p.product_name || '').toLowerCase();
+        var pid = (p.product_id || '').toLowerCase();
+        var ct = (p.clothing_type || '').toLowerCase();
+        if (name.indexOf(s) === -1 && pid.indexOf(s) === -1 && ct.indexOf(s) === -1) return false;
+      }
+      return true;
+    });
+  }
+
+  function renderProducts() {
+    var filtered = getFilteredProducts();
+    var page = filtered.slice(currentOffset, currentOffset + PAGE_SIZE);
+    var grid = document.getElementById('productGrid');
+
+    if (page.length === 0) {
+      grid.innerHTML = '<p style="color:#aaa; grid-column:1/-1;">No products found.</p>';
+    } else {
+      var html = '';
+      page.forEach(function(p) {
+        var verifyUrl = '/docs/?productId=' + encodeURIComponent(p.product_id);
+        html += '<a class="product-card" href="' + verifyUrl + '" target="_blank">';
+        if (p.image_url) {
+          html += '<img class="product-img" src="' + esc(p.image_url) + '" alt="' + esc(p.product_name || '') + '" loading="lazy" />';
+        } else {
+          html += '<div class="product-img-placeholder">No image</div>';
+        }
+        html += '<div class="product-body">';
+        html += '<div class="product-name">' + esc(p.product_name || '—') + '</div>';
+        html += '<div class="product-id">' + esc(p.product_id) + '</div>';
+        html += '<div class="product-tags">';
+        if (p.qfix_clothing_type) {
+          html += '<span class="tag tag-green">' + esc(p.qfix_clothing_type) + '</span>';
+        }
+        if (p.qfix_material) {
+          html += '<span class="tag tag-gray">' + esc(p.qfix_material) + '</span>';
+        }
+        if (!p.qfix_url) {
+          html += '<span class="tag tag-red">Unmapped</span>';
+        }
+        html += '</div></div></a>';
+      });
+      grid.innerHTML = html;
+    }
+
+    // Pagination
+    document.getElementById('prevBtn').disabled = currentOffset === 0;
+    document.getElementById('nextBtn').disabled = currentOffset + PAGE_SIZE >= filtered.length;
+    var pageNum = Math.floor(currentOffset / PAGE_SIZE) + 1;
+    var totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
+    document.getElementById('pageInfo').textContent = 'Page ' + pageNum + ' of ' + totalPages + ' (' + filtered.length + ' products)';
+  }
+
+  // Tab clicks
+  document.getElementById('filterTabs').addEventListener('click', function(e) {
+    if (e.target.classList.contains('tab')) {
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      e.target.classList.add('active');
+      currentFilter = e.target.dataset.filter;
+      currentOffset = 0;
+      renderProducts();
+    }
+  });
+
+  // Search
+  var searchTimeout;
+  document.getElementById('searchInput').addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(function() {
+      searchTerm = document.getElementById('searchInput').value.trim();
+      currentOffset = 0;
+      renderProducts();
+    }, 250);
+  });
+
+  // Pagination
+  document.getElementById('prevBtn').addEventListener('click', function() {
+    currentOffset = Math.max(0, currentOffset - PAGE_SIZE);
+    renderProducts();
+    window.scrollTo(0, document.getElementById('productGrid').offsetTop - 100);
+  });
+  document.getElementById('nextBtn').addEventListener('click', function() {
+    currentOffset += PAGE_SIZE;
+    renderProducts();
+    window.scrollTo(0, document.getElementById('productGrid').offsetTop - 100);
+  });
+})();
+</script>
+
+</body>
+</html>

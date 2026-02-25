@@ -1051,10 +1051,12 @@ async function loadCoverage() {
     const tbody = document.getElementById('coverageBody');
     if (!data.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:#aaa;">No data</td></tr>'; return; }
     data.sort((a, b) => b.total - a.total);
+    var slugMap = {'KappAhl':'kappahl','Gina Tricot':'ginatricot','Lindex':'lindex','Eton':'eton','Nudie Jeans':'nudie'};
     tbody.innerHTML = data.map(function(r) {
       const pct = r.total > 0 ? Math.round(100 * r.mapped / r.total) : 0;
       const color = pct >= 80 ? '#22c55e' : pct >= 50 ? '#eab308' : '#ef4444';
-      return '<tr><td><strong>' + esc(r.brand) + '</strong></td><td>' + r.total + '</td><td>' + r.mapped + '</td><td>' + r.unmapped + '</td>'
+      const slug = slugMap[r.brand] || r.brand.toLowerCase().replace(/\s+/g,'');
+      return '<tr><td><a href="/docs/brand/' + slug + '/" style="color:#1a1a1a;font-weight:700;text-decoration:none;">' + esc(r.brand) + '</a></td><td>' + r.total + '</td><td>' + r.mapped + '</td><td>' + r.unmapped + '</td>'
         + '<td><div style="display:flex;align-items:center;gap:8px;"><div class="coverage-bar"><div class="coverage-fill" style="width:' + pct + '%;background:' + color + '"></div></div><span style="font-size:13px;font-weight:600;">' + pct + '%</span></div></td></tr>';
     }).join('');
   } catch (e) {

@@ -1,4 +1,4 @@
-app = 'kappahl-qfix'
+app = 'qfix'
 primary_region = 'arn'
 
 [build]

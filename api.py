@@ -2546,6 +2546,93 @@ def docs_page():
     return send_from_directory(DOCS_DIR, "index.html")
 
 
+@app.route("/docs/brand/<brand_slug>")
+@app.route("/docs/brand/<brand_slug>/")
+def docs_brand_page(brand_slug):
+    allowed = {"kappahl", "ginatricot", "lindex", "eton", "nudie"}
+    if brand_slug not in allowed:
+        return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
+    return send_from_directory(DOCS_DIR, "brand.html")
+
+
+@app.route("/docs/brand/<brand_slug>/products")
+def docs_brand_products(brand_slug):
+    """Return sample products for a brand with their mappings."""
+    brand_name = BRAND_ROUTES.get(brand_slug)
+    if not brand_name:
+        return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
+
+    limit = min(int(request.args.get("limit", 50)), 200)
+    offset = int(request.args.get("offset", 0))
+
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        # Total counts
+        cur.execute("""
+            SELECT COUNT(*) AS total,
+                   COUNT(qfix_url) AS mapped
+            FROM products_unified WHERE brand = %s
+        """, (brand_name,))
+        counts = dict(cur.fetchone())
+
+        # Products with mapping info
+        cur.execute("""
+            SELECT product_id, product_name, category, clothing_type,
+                   material_composition, image_url, qfix_clothing_type,
+                   qfix_material, qfix_url
+            FROM products_unified
+            WHERE brand = %s
+            ORDER BY qfix_url IS NULL, product_name
+            LIMIT %s OFFSET %s
+        """, (brand_name, limit, offset))
+        products = [dict(r) for r in cur.fetchall()]
+
+        # Clothing type distribution
+        cur.execute("""
+            SELECT qfix_clothing_type, COUNT(*) AS cnt
+            FROM products_unified
+            WHERE brand = %s AND qfix_clothing_type IS NOT NULL
+            GROUP BY qfix_clothing_type
+            ORDER BY cnt DESC
+        """, (brand_name,))
+        type_dist = [dict(r) for r in cur.fetchall()]
+
+        # Material distribution
+        cur.execute("""
+            SELECT qfix_material, COUNT(*) AS cnt
+            FROM products_unified
+            WHERE brand = %s AND qfix_material IS NOT NULL
+            GROUP BY qfix_material
+            ORDER BY cnt DESC
+        """, (brand_name,))
+        material_dist = [dict(r) for r in cur.fetchall()]
+
+        # Unmapped categories
+        cur.execute("""
+            SELECT clothing_type, COUNT(*) AS cnt
+            FROM products_unified
+            WHERE brand = %s AND qfix_url IS NULL AND clothing_type IS NOT NULL
+            GROUP BY clothing_type
+            ORDER BY cnt DESC
+        """, (brand_name,))
+        unmapped = [dict(r) for r in cur.fetchall()]
+
+    conn.close()
+
+    return jsonify({
+        "brand": brand_name,
+        "brand_slug": brand_slug,
+        "total": counts["total"],
+        "mapped": counts["mapped"],
+        "unmapped": counts["total"] - counts["mapped"],
+        "coverage_pct": round(100 * counts["mapped"] / counts["total"], 1) if counts["total"] > 0 else 0,
+        "products": products,
+        "type_distribution": type_dist,
+        "material_distribution": material_dist,
+        "unmapped_categories": unmapped,
+    })
+
+
 @app.route("/docs/verify/<product_id>")
 def docs_verify(product_id):
     """Verify the QFix mapping for a product, showing each step.
