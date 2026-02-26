@@ -1886,6 +1886,11 @@ KEYWORD_EXCLUSION_RULES = [
         "exclude_actions": ["Replace main zipper", "Replace zipper", "Replace zipper slider"],
         "category": "repair",
     },
+    {
+        "keywords": ["väst", "vest", "gilet", "bodywarmer"],
+        "exclude_actions": ["Replace main zipper", "Replace zipper", "Replace zipper slider"],
+        "category": "repair",
+    },
 ]
 
 
@@ -1992,9 +1997,8 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
                 seen_names.add(a["name"])
 
             kw_idx = 0
-            excluded_names = excluded.get(cat, set())
             for a in new_actions:
-                if a["id"] not in seen_ids and a["name"] not in seen_names and a["name"] not in excluded_names:
+                if a["id"] not in seen_ids and a["name"] not in seen_names:
                     score = kw_scores[kw_idx] if kw_idx < len(kw_scores) else 1
                     scored.append((score, a))
                     seen_ids.add(a["id"])
@@ -2557,17 +2561,30 @@ def docs_brand_page(brand_slug):
 
 @app.route("/docs/brand/<brand_slug>/products")
 def docs_brand_products(brand_slug):
-    """Return sample products for a brand with their mappings."""
+    """Return products for a brand with their mappings.
+
+    Query params:
+      limit     – max rows (default 50, max 500)
+      offset    – pagination offset
+      type      – filter by qfix_clothing_type (exact match)
+      material  – filter by qfix_material (exact match)
+      status    – 'mapped' | 'unmapped' (filter by mapping status)
+      q         – search term (matches product_name or product_id)
+    """
     brand_name = BRAND_ROUTES.get(brand_slug)
     if not brand_name:
         return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
 
-    limit = min(int(request.args.get("limit", 50)), 200)
+    limit = min(int(request.args.get("limit", 50)), 500)
     offset = int(request.args.get("offset", 0))
+    type_filter = request.args.get("type")
+    material_filter = request.args.get("material")
+    status_filter = request.args.get("status")
+    search_q = request.args.get("q", "").strip()
 
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
-        # Total counts
+        # Total counts (unfiltered)
         cur.execute("""
             SELECT COUNT(*) AS total,
                    COUNT(qfix_url) AS mapped
@@ -2575,19 +2592,43 @@ def docs_brand_products(brand_slug):
         """, (brand_name,))
         counts = dict(cur.fetchone())
 
+        # Build WHERE clause for product query
+        where = ["brand = %s"]
+        params = [brand_name]
+
+        if type_filter:
+            where.append("qfix_clothing_type = %s")
+            params.append(type_filter)
+        if material_filter:
+            where.append("qfix_material = %s")
+            params.append(material_filter)
+        if status_filter == "mapped":
+            where.append("qfix_url IS NOT NULL")
+        elif status_filter == "unmapped":
+            where.append("qfix_url IS NULL")
+        if search_q:
+            where.append("(product_name ILIKE %s OR product_id ILIKE %s)")
+            params.extend([f"%{search_q}%", f"%{search_q}%"])
+
+        where_sql = " AND ".join(where)
+
+        # Filtered count
+        cur.execute(f"SELECT COUNT(*) AS cnt FROM products_unified WHERE {where_sql}", params)
+        filtered_total = cur.fetchone()["cnt"]
+
         # Products with mapping info
-        cur.execute("""
+        cur.execute(f"""
             SELECT product_id, product_name, category, clothing_type,
                    material_composition, image_url, qfix_clothing_type,
                    qfix_material, qfix_url
             FROM products_unified
-            WHERE brand = %s
+            WHERE {where_sql}
             ORDER BY qfix_url IS NULL, product_name
             LIMIT %s OFFSET %s
-        """, (brand_name, limit, offset))
+        """, params + [limit, offset])
         products = [dict(r) for r in cur.fetchall()]
 
-        # Clothing type distribution
+        # Clothing type distribution (always unfiltered)
         cur.execute("""
             SELECT qfix_clothing_type, COUNT(*) AS cnt
             FROM products_unified
@@ -2597,7 +2638,7 @@ def docs_brand_products(brand_slug):
         """, (brand_name,))
         type_dist = [dict(r) for r in cur.fetchall()]
 
-        # Material distribution
+        # Material distribution (always unfiltered)
         cur.execute("""
             SELECT qfix_material, COUNT(*) AS cnt
             FROM products_unified
@@ -2626,6 +2667,7 @@ def docs_brand_products(brand_slug):
         "mapped": counts["mapped"],
         "unmapped": counts["total"] - counts["mapped"],
         "coverage_pct": round(100 * counts["mapped"] / counts["total"], 1) if counts["total"] > 0 else 0,
+        "filtered_total": filtered_total,
         "products": products,
         "type_distribution": type_dist,
         "material_distribution": material_dist,

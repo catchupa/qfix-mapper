@@ -13,7 +13,7 @@
     .header a { color: #aaa; font-size: 13px; text-decoration: none; }
     .header a:hover { color: #fff; }
 
-    .container { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+    .container { max-width: 1300px; margin: 0 auto; padding: 24px 16px; }
 
     .card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
     .card h2 { font-size: 18px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid #f0f0f0; }
@@ -25,20 +25,37 @@
     .stat-label { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
     .stat-green .stat-value { color: #22c55e; }
 
-    /* Coverage bar */
-    .coverage-bar-lg { height: 12px; border-radius: 6px; background: #e0e0e0; overflow: hidden; margin-top: 8px; }
-    .coverage-fill-lg { height: 100%; border-radius: 6px; background: #22c55e; transition: width 0.5s; }
-
     /* Distribution */
-    .dist-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; }
+    .dist-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; border-bottom: 1px solid #f5f5f5; font-size: 14px; cursor: pointer; border-radius: 4px; }
     .dist-row:last-child { border-bottom: none; }
+    .dist-row:hover { background: #f8f9fa; }
+    .dist-row.active { background: #1a1a1a; color: #fff; padding: 6px 8px; margin: 0 -8px; }
+    .dist-row.active .dist-count { color: #ccc; }
+    .dist-row.active .dist-count span { color: #999; }
+    .dist-row.active .dist-fill { background: #fff; }
     .dist-name { flex: 1; }
     .dist-count { font-weight: 600; color: #555; min-width: 50px; text-align: right; }
     .dist-bar { width: 100px; height: 6px; border-radius: 3px; background: #e0e0e0; overflow: hidden; flex-shrink: 0; }
     .dist-fill { height: 100%; border-radius: 3px; background: #1a1a1a; }
 
+    /* Main layout */
+    .main-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+    @media (max-width: 800px) { .main-layout { grid-template-columns: 1fr; } }
+
+    /* Sidebar */
+    .sidebar .card { position: sticky; top: 16px; }
+    .sidebar .card h2 { font-size: 15px; margin-bottom: 12px; padding-bottom: 6px; }
+    .type-list { max-height: 70vh; overflow-y: auto; }
+    .type-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: background 0.1s; }
+    .type-item:hover { background: #f0f0f0; }
+    .type-item.active { background: #1a1a1a; color: #fff; font-weight: 600; }
+    .type-item-name { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .type-item-count { font-size: 11px; color: #999; font-weight: 600; min-width: 24px; text-align: right; }
+    .type-item.active .type-item-count { color: #aaa; }
+    .type-all { border-bottom: 1px solid #f0f0f0; margin-bottom: 4px; padding-bottom: 8px; font-weight: 600; }
+
     /* Product grid */
-    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; }
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
     .product-card { border: 1px solid #e5e5e5; border-radius: 8px; overflow: hidden; transition: box-shadow 0.15s; cursor: pointer; text-decoration: none; color: inherit; }
     .product-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
     .product-img { width: 100%; aspect-ratio: 3/4; object-fit: cover; background: #f5f5f5; display: block; }
@@ -57,22 +74,28 @@
     .unmapped-row:last-child { border-bottom: none; }
 
     /* Pagination */
-    .pagination { display: flex; gap: 8px; margin-top: 16px; justify-content: center; }
+    .pagination { display: flex; gap: 8px; margin-top: 16px; justify-content: center; align-items: center; }
     .pagination button { padding: 8px 16px; border: 1px solid #e0e0e0; border-radius: 6px; background: #fff; font-size: 13px; cursor: pointer; }
     .pagination button:hover { border-color: #1a1a1a; }
     .pagination button:disabled { color: #ccc; cursor: default; border-color: #e0e0e0; }
 
-    /* Search */
-    .search-input { width: 100%; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; margin-bottom: 16px; }
+    /* Search & toolbar */
+    .toolbar { display: flex; gap: 8px; margin-bottom: 16px; align-items: center; }
+    .search-input { flex: 1; padding: 10px 14px; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 14px; outline: none; }
     .search-input:focus { border-color: #1a1a1a; }
 
-    /* Tabs */
+    /* Filter tabs */
     .tabs { display: flex; gap: 4px; margin-bottom: 16px; }
     .tab { padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: #f0f0f0; color: #555; }
     .tab:hover { background: #e0e0e0; }
     .tab.active { background: #1a1a1a; color: #fff; }
 
+    .active-filter { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; background: #1a1a1a; color: #fff; border-radius: 6px; font-size: 13px; font-weight: 600; margin-bottom: 12px; }
+    .active-filter button { background: none; border: none; color: #aaa; cursor: pointer; font-size: 16px; line-height: 1; padding: 0 0 0 4px; }
+    .active-filter button:hover { color: #fff; }
+
     .loading { color: #aaa; padding: 20px; text-align: center; }
+    .page-info { padding: 8px; font-size: 13px; color: #888; }
   </style>
 </head>
 <body>
@@ -110,20 +133,35 @@
     <div id="unmappedList"></div>
   </div>
 
-  <!-- Products -->
-  <div class="card">
-    <h2>Products</h2>
-    <div class="tabs" id="filterTabs">
-      <button class="tab active" data-filter="all">All</button>
-      <button class="tab" data-filter="mapped">Mapped</button>
-      <button class="tab" data-filter="unmapped">Unmapped</button>
+  <!-- Main content: sidebar + products -->
+  <div class="main-layout">
+    <div class="sidebar">
+      <div class="card">
+        <h2>Clothing Types</h2>
+        <div class="type-list" id="typeList">
+          <div class="loading">Loading...</div>
+        </div>
+      </div>
     </div>
-    <input type="text" class="search-input" id="searchInput" placeholder="Search by name or product ID..." />
-    <div class="product-grid" id="productGrid"></div>
-    <div class="pagination">
-      <button id="prevBtn" disabled>&larr; Previous</button>
-      <span id="pageInfo" style="padding:8px; font-size:13px; color:#888;"></span>
-      <button id="nextBtn">Next &rarr;</button>
+
+    <div>
+      <div class="card" style="padding-bottom: 16px;">
+        <div id="activeFilterBar"></div>
+        <div class="tabs" id="filterTabs">
+          <button class="tab active" data-filter="all">All</button>
+          <button class="tab" data-filter="mapped">Mapped</button>
+          <button class="tab" data-filter="unmapped">Unmapped</button>
+        </div>
+        <div class="toolbar">
+          <input type="text" class="search-input" id="searchInput" placeholder="Search by name or product ID..." />
+        </div>
+        <div class="product-grid" id="productGrid"></div>
+        <div class="pagination">
+          <button id="prevBtn" disabled>&larr; Previous</button>
+          <span class="page-info" id="pageInfo"></span>
+          <button id="nextBtn">Next &rarr;</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -134,54 +172,73 @@
 
   var path = location.pathname.replace(/\/$/, '');
   var brandSlug = path.split('/').pop();
-  var PAGE_SIZE = 50;
+  var PAGE_SIZE = 48;
   var currentOffset = 0;
   var currentFilter = 'all';
+  var currentType = null;
   var searchTerm = '';
-  var allProducts = [];
-  var brandData = null;
+  var typeDist = [];
+  var materialDist = [];
+  var loading = false;
 
   document.title = 'QFix Mapping — ' + brandSlug;
 
-  // Load brand data
-  fetch('/docs/brand/' + brandSlug + '/products?limit=200')
-    .then(function(r) { return r.json(); })
-    .then(function(data) {
-      if (data.error) { document.getElementById('productGrid').innerHTML = '<p style="color:red;">' + esc(data.error) + '</p>'; return; }
-      brandData = data;
-      allProducts = data.products;
+  function buildQuery() {
+    var params = ['limit=' + PAGE_SIZE, 'offset=' + currentOffset];
+    if (currentType) params.push('type=' + encodeURIComponent(currentType));
+    if (currentFilter === 'mapped') params.push('status=mapped');
+    if (currentFilter === 'unmapped') params.push('status=unmapped');
+    if (searchTerm) params.push('q=' + encodeURIComponent(searchTerm));
+    return params.join('&');
+  }
 
-      document.getElementById('pageTitle').textContent = data.brand + ' — QFix Mapping';
-      document.title = data.brand + ' — QFix Mapping';
+  function loadProducts() {
+    if (loading) return;
+    loading = true;
+    var grid = document.getElementById('productGrid');
+    grid.style.opacity = '0.5';
 
-      // Stats
-      document.getElementById('statTotal').textContent = data.total.toLocaleString();
-      document.getElementById('statMapped').textContent = data.mapped.toLocaleString();
-      document.getElementById('statUnmapped').textContent = data.unmapped.toLocaleString();
-      document.getElementById('statCoverage').textContent = data.coverage_pct + '%';
+    fetch('/docs/brand/' + brandSlug + '/products?' + buildQuery())
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.error) { grid.innerHTML = '<p style="color:red;">' + esc(data.error) + '</p>'; return; }
 
-      // Type distribution
-      renderDist('typeDist', data.type_distribution, data.mapped);
+        // Update stats on first load
+        if (typeDist.length === 0) {
+          document.getElementById('pageTitle').textContent = data.brand + ' — QFix Mapping';
+          document.title = data.brand + ' — QFix Mapping';
+          document.getElementById('statTotal').textContent = data.total.toLocaleString();
+          document.getElementById('statMapped').textContent = data.mapped.toLocaleString();
+          document.getElementById('statUnmapped').textContent = data.unmapped.toLocaleString();
+          document.getElementById('statCoverage').textContent = data.coverage_pct + '%';
 
-      // Material distribution
-      renderDist('materialDist', data.material_distribution, data.mapped);
+          typeDist = data.type_distribution;
+          materialDist = data.material_distribution;
 
-      // Unmapped categories
-      if (data.unmapped_categories.length > 0) {
-        document.getElementById('unmappedCard').style.display = 'block';
-        var html = '';
-        data.unmapped_categories.forEach(function(c) {
-          html += '<div class="unmapped-row"><span class="dist-name">' + esc(c.clothing_type) + '</span><span class="dist-count">' + c.cnt + '</span></div>';
-        });
-        document.getElementById('unmappedList').innerHTML = html;
-      }
+          renderDist('typeDist', typeDist, data.mapped);
+          renderDist('materialDist', materialDist, data.mapped);
+          renderTypeList(typeDist, data.total, data.unmapped);
 
-      // Render products
-      renderProducts();
-    })
-    .catch(function(err) {
-      document.getElementById('productGrid').innerHTML = '<p style="color:red;">Failed to load: ' + esc(err.message) + '</p>';
-    });
+          if (data.unmapped_categories.length > 0) {
+            document.getElementById('unmappedCard').style.display = 'block';
+            var html = '';
+            data.unmapped_categories.forEach(function(c) {
+              html += '<div class="unmapped-row"><span class="dist-name">' + esc(c.clothing_type) + '</span><span class="dist-count">' + c.cnt + '</span></div>';
+            });
+            document.getElementById('unmappedList').innerHTML = html;
+          }
+        }
+
+        renderProducts(data.products, data.filtered_total);
+        loading = false;
+        grid.style.opacity = '1';
+      })
+      .catch(function(err) {
+        grid.innerHTML = '<p style="color:red;">Failed to load: ' + esc(err.message) + '</p>';
+        loading = false;
+        grid.style.opacity = '1';
+      });
+  }
 
   function renderDist(elId, items, total) {
     var el = document.getElementById(elId);
@@ -191,40 +248,123 @@
     items.forEach(function(item) {
       var pct = total > 0 ? Math.round(100 * item.cnt / total) : 0;
       var name = item.qfix_clothing_type || item.qfix_material || '(unknown)';
-      html += '<div class="dist-row">';
+      var isType = elId === 'typeDist';
+      html += '<div class="dist-row' + (isType && currentType === name ? ' active' : '') + '"' +
+              (isType ? ' data-type="' + esc(name) + '"' : '') + '>';
       html += '<span class="dist-name">' + esc(name) + '</span>';
       html += '<div class="dist-bar"><div class="dist-fill" style="width:' + Math.round(100 * item.cnt / max) + '%"></div></div>';
       html += '<span class="dist-count">' + item.cnt + ' <span style="color:#aaa; font-size:11px;">(' + pct + '%)</span></span>';
       html += '</div>';
     });
     el.innerHTML = html;
+
+    if (elId === 'typeDist') {
+      el.addEventListener('click', function(e) {
+        var row = e.target.closest('.dist-row');
+        if (!row || !row.dataset.type) return;
+        setTypeFilter(row.dataset.type === currentType ? null : row.dataset.type);
+      });
+    }
   }
 
-  function getFilteredProducts() {
-    return allProducts.filter(function(p) {
-      if (currentFilter === 'mapped' && !p.qfix_url) return false;
-      if (currentFilter === 'unmapped' && p.qfix_url) return false;
-      if (searchTerm) {
-        var s = searchTerm.toLowerCase();
-        var name = (p.product_name || '').toLowerCase();
-        var pid = (p.product_id || '').toLowerCase();
-        var ct = (p.clothing_type || '').toLowerCase();
-        if (name.indexOf(s) === -1 && pid.indexOf(s) === -1 && ct.indexOf(s) === -1) return false;
+  function renderTypeList(items, total, unmappedCount) {
+    var el = document.getElementById('typeList');
+    var html = '';
+    html += '<div class="type-item type-all' + (!currentType ? ' active' : '') + '" data-type="">';
+    html += '<span class="type-item-name">All Products</span>';
+    html += '<span class="type-item-count">' + total + '</span>';
+    html += '</div>';
+
+    items.forEach(function(item) {
+      var name = item.qfix_clothing_type;
+      html += '<div class="type-item' + (currentType === name ? ' active' : '') + '" data-type="' + esc(name) + '">';
+      html += '<span class="type-item-name">' + esc(name) + '</span>';
+      html += '<span class="type-item-count">' + item.cnt + '</span>';
+      html += '</div>';
+    });
+
+    if (unmappedCount > 0) {
+      html += '<div style="border-top: 1px solid #f0f0f0; margin-top: 4px; padding-top: 4px;">';
+      html += '<div class="type-item" data-type="__unmapped" style="color: #991b1b;">';
+      html += '<span class="type-item-name">Unmapped</span>';
+      html += '<span class="type-item-count">' + unmappedCount + '</span>';
+      html += '</div></div>';
+    }
+
+    el.innerHTML = html;
+  }
+
+  function setTypeFilter(type) {
+    if (type === '__unmapped') {
+      currentType = null;
+      currentFilter = 'unmapped';
+      // Update tab UI
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelector('[data-filter="unmapped"]').classList.add('active');
+    } else {
+      currentType = type || null;
+      // Reset status filter when selecting a type
+      if (currentType) {
+        currentFilter = 'all';
+        document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+        document.querySelector('[data-filter="all"]').classList.add('active');
       }
-      return true;
+    }
+    currentOffset = 0;
+    updateActiveFilterBar();
+    updateTypeListUI();
+    updateDistUI();
+    loadProducts();
+  }
+
+  function updateTypeListUI() {
+    var items = document.querySelectorAll('#typeList .type-item');
+    items.forEach(function(item) {
+      var t = item.dataset.type;
+      if (t === '' && !currentType && currentFilter !== 'unmapped') {
+        item.classList.add('active');
+      } else if (t === '__unmapped' && currentFilter === 'unmapped' && !currentType) {
+        item.classList.add('active');
+      } else if (t && t !== '__unmapped' && t === currentType) {
+        item.classList.add('active');
+      } else {
+        item.classList.remove('active');
+      }
     });
   }
 
-  function renderProducts() {
-    var filtered = getFilteredProducts();
-    var page = filtered.slice(currentOffset, currentOffset + PAGE_SIZE);
+  function updateDistUI() {
+    var rows = document.querySelectorAll('#typeDist .dist-row');
+    rows.forEach(function(row) {
+      if (row.dataset.type === currentType) {
+        row.classList.add('active');
+      } else {
+        row.classList.remove('active');
+      }
+    });
+  }
+
+  function updateActiveFilterBar() {
+    var bar = document.getElementById('activeFilterBar');
+    if (currentType) {
+      bar.innerHTML = '<div class="active-filter">' + esc(currentType) + '<button onclick="window._clearTypeFilter()">&times;</button></div>';
+    } else {
+      bar.innerHTML = '';
+    }
+  }
+
+  window._clearTypeFilter = function() {
+    setTypeFilter(null);
+  };
+
+  function renderProducts(products, filteredTotal) {
     var grid = document.getElementById('productGrid');
 
-    if (page.length === 0) {
+    if (products.length === 0) {
       grid.innerHTML = '<p style="color:#aaa; grid-column:1/-1;">No products found.</p>';
     } else {
       var html = '';
-      page.forEach(function(p) {
+      products.forEach(function(p) {
         var verifyUrl = '/docs/?productId=' + encodeURIComponent(p.product_id);
         html += '<a class="product-card" href="' + verifyUrl + '" target="_blank">';
         if (p.image_url) {
@@ -252,11 +392,19 @@
 
     // Pagination
     document.getElementById('prevBtn').disabled = currentOffset === 0;
-    document.getElementById('nextBtn').disabled = currentOffset + PAGE_SIZE >= filtered.length;
+    document.getElementById('nextBtn').disabled = currentOffset + PAGE_SIZE >= filteredTotal;
     var pageNum = Math.floor(currentOffset / PAGE_SIZE) + 1;
-    var totalPages = Math.ceil(filtered.length / PAGE_SIZE) || 1;
-    document.getElementById('pageInfo').textContent = 'Page ' + pageNum + ' of ' + totalPages + ' (' + filtered.length + ' products)';
+    var totalPages = Math.ceil(filteredTotal / PAGE_SIZE) || 1;
+    document.getElementById('pageInfo').textContent = 'Page ' + pageNum + ' of ' + totalPages + ' (' + filteredTotal + ' products)';
   }
+
+  // Sidebar type clicks
+  document.getElementById('typeList').addEventListener('click', function(e) {
+    var item = e.target.closest('.type-item');
+    if (!item) return;
+    var type = item.dataset.type;
+    setTypeFilter(type || null);
+  });
 
   // Tab clicks
   document.getElementById('filterTabs').addEventListener('click', function(e) {
@@ -265,7 +413,8 @@
       e.target.classList.add('active');
       currentFilter = e.target.dataset.filter;
       currentOffset = 0;
-      renderProducts();
+      updateTypeListUI();
+      loadProducts();
     }
   });
 
@@ -276,21 +425,24 @@
     searchTimeout = setTimeout(function() {
       searchTerm = document.getElementById('searchInput').value.trim();
       currentOffset = 0;
-      renderProducts();
-    }, 250);
+      loadProducts();
+    }, 350);
   });
 
   // Pagination
   document.getElementById('prevBtn').addEventListener('click', function() {
     currentOffset = Math.max(0, currentOffset - PAGE_SIZE);
-    renderProducts();
+    loadProducts();
     window.scrollTo(0, document.getElementById('productGrid').offsetTop - 100);
   });
   document.getElementById('nextBtn').addEventListener('click', function() {
     currentOffset += PAGE_SIZE;
-    renderProducts();
+    loadProducts();
     window.scrollTo(0, document.getElementById('productGrid').offsetTop - 100);
   });
+
+  // Initial load
+  loadProducts();
 })();
 </script>
 

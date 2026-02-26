@@ -777,6 +777,8 @@ def map_clothing_type(kappahl_clothing_type, brand=None, product_name=None, desc
             if "vastar" in sub:
                 return "Unlined Jacket / Vest"
             if "kavajer" in sub:
+                if pn and any(kw in pn for kw in ("väst", "vest", "gilet")):
+                    return "Unlined Jacket / Vest"
                 return "Suit"
             return "Jacket"
 
@@ -917,6 +919,12 @@ def map_clothing_type(kappahl_clothing_type, brand=None, product_name=None, desc
 
     # ── KappAhl sub-mappings ──
     if brand == "kappahl":
+        # Kavajer: distinguish vests from blazers using product name/description
+        if first in ("kavajer", "kavajer, västar & kostymer"):
+            if pn and any(kw in pn for kw in ("väst", "vest", "gilet")):
+                return "Unlined Jacket / Vest"
+            return "Suit"
+
         # Badkläder > Bikini: bikini tops/bottoms should map to Bikini, not Swimsuit
         if first in ("badkläder", "badklader") and len(parts) > 1:
             sub = " > ".join(parts[1:])
