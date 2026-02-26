@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KappAhl</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color: #212121;
+  background: #fff;
+  line-height: 1.5;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ── Header ─────────────────────────────────────── */
+.site-header {
+  border-bottom: 1px solid #e5e5e5;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  height: 64px;
+  gap: 40px;
+}
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.header-nav { display: flex; gap: 28px; }
+.header-nav a {
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+  transition: border-color .2s;
+}
+.header-nav a:hover { border-bottom-color: #212121; }
+
+.promo-banner {
+  background: #212121;
+  color: #fff;
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* ── Breadcrumb ────────────────────────────────── */
+.breadcrumb {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 16px 24px;
+  font-size: 13px;
+  color: #888;
+}
+.breadcrumb a { color: #888; }
+.breadcrumb a:hover { color: #212121; text-decoration: underline; }
+.breadcrumb span { color: #212121; }
+
+/* ── Product layout ────────────────────────────── */
+.product-layout {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px 48px;
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 48px;
+}
+@media (max-width: 768px) {
+  .product-layout {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+}
+
+/* ── Image ─────────────────────────────────────── */
+.product-image {
+  aspect-ratio: 3/4;
+  background: #f2f2f2;
+  overflow: hidden;
+  position: relative;
+}
+.product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ── Product info ──────────────────────────────── */
+.product-info { padding-top: 8px; }
+
+.product-name {
+  font-size: 24px;
+  font-weight: 400;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+.product-price {
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.product-color {
+  font-size: 14px;
+  margin-bottom: 20px;
+}
+.product-color .color-label { color: #888; }
+.color-swatch {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #212121;
+  vertical-align: middle;
+  margin-left: 8px;
+  background: #888;
+}
+
+/* ── Size selector ─────────────────────────────── */
+.size-section { margin-bottom: 24px; }
+.size-label {
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.size-options { display: flex; gap: 8px; flex-wrap: wrap; }
+.size-btn {
+  min-width: 48px;
+  height: 44px;
+  border: 1px solid #ccc;
+  background: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+  padding: 0 12px;
+}
+.size-btn:hover { border-color: #212121; }
+.size-btn.selected {
+  border-color: #212121;
+  background: #212121;
+  color: #fff;
+}
+
+/* ── Add to cart ───────────────────────────────── */
+.add-to-cart {
+  width: 100%;
+  padding: 16px;
+  background: #212121;
+  color: #fff;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  margin-bottom: 24px;
+  transition: background .2s;
+}
+.add-to-cart:hover { background: #000; }
+
+/* ── QFix services section ─────────────────────── */
+.qfix-section {
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 24px;
+  background: #fafafa;
+}
+.qfix-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #555;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.qfix-section-title svg {
+  width: 16px;
+  height: 16px;
+  color: #4CAF50;
+}
+.qfix-buttons { display: flex; flex-direction: column; gap: 10px; }
+
+.qfix-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all .15s;
+  text-decoration: none;
+  color: #212121;
+}
+.qfix-btn:hover {
+  border-color: #212121;
+  background: #f8f8f8;
+}
+.qfix-btn .icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 18px;
+}
+.qfix-btn .icon.repair { background: #E8F5E9; }
+.qfix-btn .icon.adjust { background: #E3F2FD; }
+.qfix-btn .icon.care { background: #FFF3E0; }
+
+.qfix-btn .btn-text { flex: 1; }
+.qfix-btn .btn-title { font-weight: 600; font-size: 14px; }
+.qfix-btn .btn-desc { font-size: 12px; color: #888; margin-top: 2px; }
+.qfix-btn .arrow { color: #aaa; font-size: 18px; }
+
+.qfix-powered {
+  text-align: center;
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 10px;
+  letter-spacing: 0.3px;
+}
+
+/* ── Accordions ────────────────────────────────── */
+.accordion-section {
+  border-top: 1px solid #e5e5e5;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+.accordion {
+  border-bottom: 1px solid #e5e5e5;
+}
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+.accordion-header:hover { color: #555; }
+.accordion-header .chevron {
+  transition: transform .2s;
+  font-size: 18px;
+  color: #888;
+}
+.accordion.open .accordion-header .chevron { transform: rotate(180deg); }
+.accordion-body {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height .3s ease;
+}
+.accordion.open .accordion-body {
+  max-height: 500px;
+}
+.accordion-content {
+  padding: 0 0 18px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.7;
+}
+
+/* ── Footer ────────────────────────────────────── */
+.site-footer {
+  background: #f2f2f2;
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+  border-top: 1px solid #e5e5e5;
+  margin-top: 48px;
+}
+
+/* ── Loading ───────────────────────────────────── */
+.loading {
+  text-align: center;
+  padding: 120px 24px;
+  color: #888;
+}
+.loading::after {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 16px auto 0;
+  border: 3px solid #e5e5e5;
+  border-top-color: #212121;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.error-state {
+  text-align: center;
+  padding: 120px 24px;
+  color: #888;
+}
+</style>
+</head>
+<body>
+
+<div class="promo-banner">Fri frakt vid köp över 500 kr &nbsp;|&nbsp; Gratis returer i butik</div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/shop/kappahl/" class="logo">KappAhl</a>
+    <nav class="header-nav">
+      <a href="/shop/kappahl/?cat=dam">Dam</a>
+      <a href="/shop/kappahl/?cat=herr">Herr</a>
+      <a href="/shop/kappahl/?cat=barn">Barn</a>
+      <a href="/shop/kappahl/?cat=baby">Baby</a>
+    </nav>
+  </div>
+</header>
+
+<div id="content">
+  <div class="loading" id="loading">Laddar produkt...</div>
+</div>
+
+<footer class="site-footer">
+  Demo – KappAhl &times; QFix &nbsp;|&nbsp; Hållbarhetstjänster integrerade i butiken
+</footer>
+
+<script>
+const productId = window.location.pathname.split('/').pop();
+
+function fakePrice(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+  const prices = [199, 249, 299, 349, 399, 449, 499, 599, 699, 799, 899];
+  return prices[Math.abs(h) % prices.length];
+}
+
+function colorToHex(colorName) {
+  const map = {
+    'svart': '#222', 'black': '#222', 'vit': '#fff', 'white': '#fff',
+    'blå': '#2962FF', 'blue': '#2962FF', 'marinblå': '#1a237e',
+    'röd': '#D44333', 'red': '#D44333', 'rosa': '#E91E63', 'pink': '#E91E63',
+    'grön': '#388E3C', 'green': '#388E3C', 'grå': '#9E9E9E', 'grey': '#9E9E9E',
+    'brun': '#795548', 'brown': '#795548', 'beige': '#D7CCC8',
+    'gul': '#FDD835', 'yellow': '#FDD835', 'orange': '#FF9800',
+    'lila': '#7B1FA2', 'purple': '#7B1FA2', 'multi': 'linear-gradient(135deg,#E91E63,#2962FF,#388E3C)',
+  };
+  if (!colorName) return '#888';
+  const lower = colorName.toLowerCase();
+  for (const [k, v] of Object.entries(map)) {
+    if (lower.includes(k)) return v;
+  }
+  return '#888';
+}
+
+async function loadProduct() {
+  try {
+    const res = await fetch(`/docs/verify/${productId}`);
+    if (!res.ok) throw new Error('Not found');
+    const data = await res.json();
+    render(data);
+  } catch (err) {
+    document.getElementById('content').innerHTML = `
+      <div class="error-state">
+        <p>Produkten kunde inte hittas.</p>
+        <p style="margin-top:16px"><a href="/shop/kappahl/" style="color:#D44333;text-decoration:underline">Tillbaka till butiken</a></p>
+      </div>`;
+  }
+}
+
+function render(data) {
+  const p = data.product;
+  const m = data.mapping;
+  const services = data.services || [];
+  const persistedUrls = data.persisted_service_urls || {};
+  const topActions = data.top_actions || {};
+
+  const price = fakePrice(p.product_id);
+  const colorHex = colorToHex(p.category); // category often has color info for kappahl
+  const imgSrc = p.image_url || '';
+
+  document.title = `${p.product_name || 'Produkt'} – KappAhl`;
+
+  // Determine category from the product category field
+  let catLabel = '';
+  const cat = (p.category || '').toLowerCase();
+  if (cat.includes('dam') || cat.includes('kvinn')) catLabel = 'Dam';
+  else if (cat.includes('herr') || cat.includes('man') || cat.includes('män')) catLabel = 'Herr';
+  else if (cat.includes('barn') || cat.includes('kid') || cat.includes('flick') || cat.includes('pojk')) catLabel = 'Barn';
+  else if (cat.includes('baby') || cat.includes('beb')) catLabel = 'Baby';
+
+  // Build QFix service buttons with services_id from top actions
+  function buildServiceUrl(baseUrl, actions) {
+    if (!baseUrl) return null;
+    if (!actions || actions.length === 0) return baseUrl;
+    const ids = actions.map(a => a.id).join(',');
+    const sep = baseUrl.includes('?') ? '&' : '?';
+    return baseUrl + sep + 'services_id=' + ids;
+  }
+
+  const repairBase = persistedUrls.repair || `/kappahl/repair/?productId=${p.product_id}`;
+  const adjustBase = persistedUrls.adjustment || `/kappahl/adjustment/?productId=${p.product_id}`;
+  const careBase = persistedUrls.care || `/kappahl/care/?productId=${p.product_id}`;
+
+  const repairUrl = buildServiceUrl(repairBase, topActions.repair);
+  const adjustUrl = buildServiceUrl(adjustBase, topActions.adjustment);
+  const careUrl = buildServiceUrl(careBase, topActions.care);
+
+  // Top actions preview
+  const svcTranslations = {
+    // Repair
+    'Zipper replacement': 'Byte av dragkedja',
+    'Zipper repair': 'Lagning av dragkedja',
+    'Button replacement': 'Byte av knapp',
+    'Button repair': 'Lagning av knapp',
+    'Hole repair': 'Lagning av hål',
+    'Seam repair': 'Sömslagning',
+    'Patch repair': 'Lappning',
+    'Elastic replacement': 'Byte av resår',
+    'Lining repair': 'Lagning av foder',
+    'Hook & eye replacement': 'Byte av hyska',
+    'Snap button replacement': 'Byte av tryckknapp',
+    'Drawstring replacement': 'Byte av dragsko',
+    'Velcro replacement': 'Byte av kardborrband',
+    'Darn repair': 'Stoppning',
+    'Reinforcement': 'Förstärkning',
+    'Tear repair': 'Lagning av reva',
+    'Repair seam': 'Laga söm',
+    'Repair tear': 'Laga reva',
+    'Repair hole': 'Laga hål',
+    'Repair wear': 'Laga slitage',
+    'Repair zipper': 'Laga dragkedja',
+    'Replace zipper': 'Byta dragkedja',
+    'Replace button': 'Byta knapp',
+    'Replace elastic': 'Byta resår',
+    'Replace snap button': 'Byta tryckknapp',
+    'Replace hook & eye': 'Byta hyska',
+    'Replace drawstring': 'Byta dragsko',
+    'Replace velcro': 'Byta kardborrband',
+    'Attach new inner lining': 'Nytt innerfoder',
+    'Repair lining': 'Laga foder',
+    'Repair burn mark': 'Laga brännmärke',
+    'Repair cuffs': 'Laga muddar',
+    // Adjustment
+    'Hem pants': 'Lägga upp byxor',
+    'Hem dress': 'Lägga upp klänning',
+    'Hem skirt': 'Lägga upp kjol',
+    'Shorten length': 'Korta längden',
+    'Shorten sleeves': 'Korta ärmar',
+    'Take in waist': 'Sy in midja',
+    'Take in sides': 'Sy in sidor',
+    'Let out waist': 'Sy ut midja',
+    'Let out sides': 'Sy ut sidor',
+    'Shorten jacket': 'Korta jacka',
+    'Taper legs': 'Smalna av ben',
+    'Shorten coat': 'Korta kappa',
+    // Care
+    'Wash & press': 'Tvätt & pressning',
+    'Dry cleaning': 'Kemtvätt',
+    'Steam press': 'Ångpressning',
+    'Stain removal': 'Fläckborttagning',
+    'Ironing': 'Strykning',
+    'Wash': 'Tvätt',
+    'Press': 'Pressning',
+    'Freshening up': 'Uppfräschning',
+    'Waterproofing': 'Impregnering',
+    'Pilling removal': 'Noppborttagning',
+    'Whitening': 'Blekning',
+    'Odor removal': 'Luktborttagning',
+    'Waterwash': 'Vattentvätt',
+    'Stain treatment and wash': 'Fläckbehandling och tvätt',
+    'Clean and condition': 'Rengöring och vård',
+    'Reproofing': 'Omimpregnering',
+    // Adjustment
+    'Hem': 'Lägga upp',
+    'Shorten': 'Korta',
+    'Lengthen': 'Förlänga',
+    'Take in sides': 'Sy in sidor',
+    'Take in waist': 'Sy in midja',
+    'Narrow shoulder area': 'Smalna av axelparti',
+    'Take in': 'Sy in',
+    'Let out': 'Sy ut',
+    'Taper': 'Smalna av',
+    'Replace lining': 'Byta foder',
+  };
+
+  function translateAction(name) {
+    return svcTranslations[name] || name;
+  }
+
+  function actionPreview(actions) {
+    if (!actions || actions.length === 0) return '';
+    return actions.slice(0, 2).map(a => translateAction(a.name)).join(', ');
+  }
+
+  const repairPreview = actionPreview(topActions.repair);
+  const adjustPreview = actionPreview(topActions.adjustment);
+  const carePreview = actionPreview(topActions.care);
+
+  const hasAnyService = m.qfix_url;
+
+  let html = `
+    <nav class="breadcrumb">
+      <a href="/shop/kappahl/">Hem</a> &rsaquo;
+      ${catLabel ? `<a href="/shop/kappahl/?cat=${catLabel.toLowerCase()}">${catLabel}</a> &rsaquo;` : ''}
+      ${p.clothing_type ? `<a href="/shop/kappahl/">${p.clothing_type}</a> &rsaquo;` : ''}
+      <span>${p.product_name || ''}</span>
+    </nav>
+
+    <div class="product-layout">
+      <div class="product-image">
+        ${imgSrc ? `<img src="${imgSrc}" alt="${(p.product_name||'').replace(/"/g,'&quot;')}" onerror="this.style.display='none'">` : ''}
+      </div>
+
+      <div class="product-info">
+        <h1 class="product-name">${p.product_name || ''}</h1>
+        <div class="product-price">${price} kr</div>
+
+        ${p.category ? `
+        <div class="product-color">
+          <span class="color-label">Färg:</span>
+          <span class="color-swatch" style="background:${colorHex}"></span>
+          <span style="margin-left:4px">${p.category}</span>
+        </div>` : ''}
+
+        <div class="size-section">
+          <div class="size-label">Storlek</div>
+          <div class="size-options">
+            <button class="size-btn">XS</button>
+            <button class="size-btn selected">S</button>
+            <button class="size-btn">M</button>
+            <button class="size-btn">L</button>
+            <button class="size-btn">XL</button>
+          </div>
+        </div>
+
+        <button class="add-to-cart">Lägg i varukorgen</button>
+
+        ${hasAnyService ? `
+        <div class="qfix-section">
+          <div class="qfix-section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M8 12l2 2 4-4"/></svg>
+            Hållbarhetstjänster
+          </div>
+          <div class="qfix-buttons">
+            <a class="qfix-btn" href="${repairUrl}">
+              <div class="icon repair">🔧</div>
+              <div class="btn-text">
+                <div class="btn-title">Reparera</div>
+                <div class="btn-desc">${repairPreview || 'Laga och förläng plaggets livslängd'}</div>
+              </div>
+              <div class="arrow">›</div>
+            </a>
+            <a class="qfix-btn" href="${adjustUrl}">
+              <div class="icon adjust">📐</div>
+              <div class="btn-text">
+                <div class="btn-title">Måttanpassa</div>
+                <div class="btn-desc">${adjustPreview || 'Anpassa passformen efter din kropp'}</div>
+              </div>
+              <div class="arrow">›</div>
+            </a>
+            <a class="qfix-btn" href="${careUrl}">
+              <div class="icon care">✨</div>
+              <div class="btn-text">
+                <div class="btn-title">Skötsel</div>
+                <div class="btn-desc">${carePreview || 'Professionell tvätt och vård'}</div>
+              </div>
+              <div class="arrow">›</div>
+            </a>
+          </div>
+          <div class="qfix-powered">Hållbarhetstjänster via QFix</div>
+        </div>` : ''}
+      </div>
+    </div>
+
+    <div class="accordion-section">
+      <div class="accordion open">
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+          Produktbeskrivning
+          <span class="chevron">▾</span>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content">
+            ${p.description || 'Ingen beskrivning tillgänglig.'}
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion">
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+          Material & Sammansättning
+          <span class="chevron">▾</span>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content">
+            ${m.material_input || 'Ingen materialinformation tillgänglig.'}
+          </div>
+        </div>
+      </div>
+
+      ${hasAnyService ? `
+      <div class="accordion">
+        <div class="accordion-header" onclick="this.parentElement.classList.toggle('open')">
+          QFix Mappning (demo)
+          <span class="chevron">▾</span>
+        </div>
+        <div class="accordion-body">
+          <div class="accordion-content">
+            <strong>Plaggtyp:</strong> ${m.clothing_type_input || '–'} &rarr; ${m.clothing_type_result || '–'} (ID: ${m.clothing_type_id || '–'})<br>
+            <strong>Material:</strong> ${m.material_input || '–'} &rarr; ${m.material_result || '–'} (ID: ${m.material_id || '–'})<br>
+            <strong>Kategori:</strong> ${m.subcategory || '–'}<br>
+            <strong>QFix URL:</strong> ${m.qfix_url ? `<a href="${m.qfix_url}" style="color:#D44333;text-decoration:underline" target="_blank">Öppna i QFix</a>` : '–'}
+          </div>
+        </div>
+      </div>` : ''}
+    </div>
+  `;
+
+  document.getElementById('content').innerHTML = html;
+
+  // Size button interaction
+  document.querySelectorAll('.size-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    });
+  });
+}
+
+loadProduct();
+</script>
+</body>
+</html>

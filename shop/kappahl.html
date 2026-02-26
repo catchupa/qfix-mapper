@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KappAhl</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color: #212121;
+  background: #fff;
+  line-height: 1.5;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* ── Header ─────────────────────────────────────── */
+.site-header {
+  border-bottom: 1px solid #e5e5e5;
+  background: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  height: 64px;
+  gap: 40px;
+}
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.header-nav { display: flex; gap: 28px; }
+.header-nav a {
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 4px 0;
+  border-bottom: 2px solid transparent;
+  transition: border-color .2s;
+}
+.header-nav a:hover,
+.header-nav a.active { border-bottom-color: #212121; }
+
+.header-search {
+  margin-left: auto;
+  position: relative;
+}
+.header-search input {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px 12px 8px 36px;
+  font-size: 14px;
+  width: 220px;
+  outline: none;
+  transition: border-color .2s;
+}
+.header-search input:focus { border-color: #212121; }
+.header-search svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 16px;
+  height: 16px;
+  color: #888;
+}
+
+/* ── Promo banner ──────────────────────────────── */
+.promo-banner {
+  background: #212121;
+  color: #fff;
+  text-align: center;
+  padding: 8px;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
+/* ── Main content ──────────────────────────────── */
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* ── Category tabs ─────────────────────────────── */
+.category-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 24px 0 16px;
+  flex-wrap: wrap;
+}
+.category-tabs button {
+  background: #f2f2f2;
+  border: 1px solid transparent;
+  border-radius: 24px;
+  padding: 8px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all .2s;
+  font-family: inherit;
+}
+.category-tabs button:hover { background: #e5e5e5; }
+.category-tabs button.active {
+  background: #212121;
+  color: #fff;
+}
+
+/* ── Results info ──────────────────────────────── */
+.results-info {
+  padding: 8px 0 16px;
+  font-size: 13px;
+  color: #666;
+}
+
+/* ── Product grid ──────────────────────────────── */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  padding-bottom: 40px;
+}
+@media (max-width: 1024px) { .product-grid { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 768px) { .product-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.product-card {
+  display: block;
+  transition: transform .15s;
+}
+.product-card:hover { transform: translateY(-2px); }
+
+.product-card .image-wrap {
+  position: relative;
+  aspect-ratio: 3/4;
+  background: #f2f2f2;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+.product-card .image-wrap img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .3s;
+}
+.product-card:hover .image-wrap img { transform: scale(1.03); }
+
+.product-card .tag {
+  display: inline-block;
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+.product-card .name {
+  font-size: 14px;
+  font-weight: 400;
+  margin-bottom: 4px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.product-card .price {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* ── Subcategory chips ─────────────────────────── */
+.subcategory-chips {
+  display: flex;
+  gap: 6px;
+  padding: 0 0 16px;
+  flex-wrap: wrap;
+}
+.subcategory-chips button {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all .15s;
+  font-family: inherit;
+  color: #444;
+}
+.subcategory-chips button:hover { border-color: #212121; color: #212121; }
+.subcategory-chips button.active {
+  background: #212121;
+  color: #fff;
+  border-color: #212121;
+}
+
+/* ── Pagination ────────────────────────────────── */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 24px 0 48px;
+}
+.pagination button {
+  background: #f2f2f2;
+  border: none;
+  border-radius: 4px;
+  padding: 10px 18px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .2s;
+}
+.pagination button:hover { background: #e5e5e5; }
+.pagination button:disabled { opacity: 0.4; cursor: default; }
+.pagination button:disabled:hover { background: #f2f2f2; }
+.pagination .page-info {
+  font-size: 13px;
+  color: #666;
+  padding: 0 12px;
+}
+
+/* ── Loading / empty ───────────────────────────── */
+.loading, .empty-state {
+  text-align: center;
+  padding: 80px 24px;
+  color: #888;
+  font-size: 16px;
+}
+.loading::after {
+  content: '';
+  display: block;
+  width: 32px;
+  height: 32px;
+  margin: 16px auto 0;
+  border: 3px solid #e5e5e5;
+  border-top-color: #212121;
+  border-radius: 50%;
+  animation: spin .6s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Footer ────────────────────────────────────── */
+.site-footer {
+  background: #f2f2f2;
+  padding: 32px 24px;
+  text-align: center;
+  font-size: 12px;
+  color: #888;
+  border-top: 1px solid #e5e5e5;
+}
+</style>
+</head>
+<body>
+
+<div class="promo-banner">Fri frakt vid köp över 500 kr &nbsp;|&nbsp; Gratis returer i butik</div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/shop/kappahl/" class="logo">KappAhl</a>
+    <nav class="header-nav">
+      <a href="#" data-category="dam">Dam</a>
+      <a href="#" data-category="herr">Herr</a>
+      <a href="#" data-category="barn">Barn</a>
+      <a href="#" data-category="baby">Baby</a>
+    </nav>
+    <div class="header-search">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Sök produkter..." />
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  <div class="category-tabs">
+    <button class="active" data-category="dam">Dam</button>
+    <button data-category="herr">Herr</button>
+    <button data-category="barn">Barn</button>
+    <button data-category="baby">Baby</button>
+    <button data-category="underkläder">Underkläder</button>
+  </div>
+
+  <div class="subcategory-chips" id="subcategoryChips"></div>
+  <div class="results-info" id="resultsInfo"></div>
+
+  <div id="productGrid" class="product-grid"></div>
+  <div id="loading" class="loading" style="display:none;">Laddar produkter...</div>
+  <div id="empty" class="empty-state" style="display:none;">Inga produkter hittades.</div>
+
+  <div class="pagination" id="pagination" style="display:none;">
+    <button id="prevBtn">&larr; Föregående</button>
+    <span class="page-info" id="pageInfo"></span>
+    <button id="nextBtn">Nästa &rarr;</button>
+  </div>
+</main>
+
+<footer class="site-footer">
+  Demo – KappAhl &times; QFix &nbsp;|&nbsp; Hållbarhetstjänster integrerade i butiken
+</footer>
+
+<script>
+const LIMIT = 48;
+let currentCategory = 'dam';
+let currentSubcategory = '';
+let currentSearch = '';
+let currentOffset = 0;
+let totalFiltered = 0;
+
+// Tabs that filter by clothing_type instead of category
+const CT_TABS = { 'underkläder': 'Underkläder' };
+
+const SUBCATEGORIES = {
+  'dam': [
+    'Underkläder', 'Badkläder', 'Toppar', 'Byxor', 'Skjortor & blusar',
+    'Jeans', 'Tröjor & cardigans', 'Accessoarer', 'Klänningar & kjolar',
+    'Shorts', 'Jackor & kappor', 'Loungewear', 'Mammakläder',
+    'Basplagg', 'Träningskläder', 'Kavajer',
+  ],
+  'herr': [
+    'Underkläder', 'T-shirts & pikétröjor', 'Tröjor & cardigans',
+    'Skjortor', 'Accessoarer', 'Sovkläder', 'Byxor', 'Jackor & rockar',
+    'Jeans', 'Shorts', 'Badkläder', 'Kavajer', 'Loungewear',
+  ],
+  'barn': [],
+  'baby': [],
+  'underkläder': [],
+};
+
+const grid = document.getElementById('productGrid');
+const loading = document.getElementById('loading');
+const empty = document.getElementById('empty');
+const pagination = document.getElementById('pagination');
+const pageInfo = document.getElementById('pageInfo');
+const prevBtn = document.getElementById('prevBtn');
+const nextBtn = document.getElementById('nextBtn');
+const resultsInfo = document.getElementById('resultsInfo');
+const subcategoryChips = document.getElementById('subcategoryChips');
+
+function renderSubcategories() {
+  const subs = SUBCATEGORIES[currentCategory] || [];
+  if (subs.length === 0) {
+    subcategoryChips.innerHTML = '';
+    return;
+  }
+  subcategoryChips.innerHTML =
+    subs.map(s => `<button class="${currentSubcategory === s ? 'active' : ''}" data-sub="${s}">${s}</button>`).join('');
+
+  subcategoryChips.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      currentSubcategory = btn.dataset.sub;
+      currentOffset = 0;
+      subcategoryChips.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      loadProducts();
+    });
+  });
+}
+
+// Random-ish prices per product (deterministic from product_id)
+function fakePrice(id) {
+  let h = 0;
+  for (let i = 0; i < id.length; i++) h = ((h << 5) - h + id.charCodeAt(i)) | 0;
+  const prices = [199, 249, 299, 349, 399, 449, 499, 599, 699, 799, 899];
+  return prices[Math.abs(h) % prices.length];
+}
+
+async function loadProducts() {
+  grid.innerHTML = '';
+  loading.style.display = '';
+  empty.style.display = 'none';
+  pagination.style.display = 'none';
+
+  const params = new URLSearchParams({ limit: LIMIT, offset: currentOffset });
+  if (CT_TABS[currentCategory]) {
+    params.set('ct', CT_TABS[currentCategory]);
+  } else if (currentCategory) {
+    params.set('category', currentCategory);
+  }
+  if (currentSearch) params.set('q', currentSearch);
+  if (currentSubcategory) params.set('ct', currentSubcategory);
+
+  try {
+    const res = await fetch(`/docs/brand/kappahl/products?${params}`);
+    const data = await res.json();
+    totalFiltered = data.filtered_total;
+    const products = data.products;
+
+    loading.style.display = 'none';
+
+    if (products.length === 0) {
+      empty.style.display = '';
+      resultsInfo.textContent = '';
+      return;
+    }
+
+    const catLabel = currentCategory
+      ? currentCategory.charAt(0).toUpperCase() + currentCategory.slice(1)
+      : 'Alla';
+    resultsInfo.textContent = `${catLabel} — ${totalFiltered} produkter`;
+
+    products.forEach(p => {
+      const card = document.createElement('a');
+      card.className = 'product-card';
+      card.href = `/shop/kappahl/p/${p.product_id}`;
+
+      const imgSrc = p.image_url || '';
+      const price = fakePrice(p.product_id);
+
+      card.innerHTML = `
+        <div class="image-wrap">
+          ${imgSrc ? `<img src="${imgSrc}" alt="${(p.product_name||'').replace(/"/g,'&quot;')}" loading="lazy" onerror="this.style.display='none'">` : ''}
+        </div>
+        <span class="tag">${p.clothing_type || p.category || ''}</span>
+        <div class="name">${p.product_name || ''}</div>
+        <div class="price">${price} kr</div>
+      `;
+      grid.appendChild(card);
+    });
+
+    // Pagination
+    const totalPages = Math.ceil(totalFiltered / LIMIT);
+    const currentPage = Math.floor(currentOffset / LIMIT) + 1;
+    if (totalPages > 1) {
+      pagination.style.display = '';
+      pageInfo.textContent = `Sida ${currentPage} av ${totalPages}`;
+      prevBtn.disabled = currentPage <= 1;
+      nextBtn.disabled = currentPage >= totalPages;
+    }
+  } catch (err) {
+    loading.style.display = 'none';
+    empty.textContent = 'Kunde inte ladda produkter.';
+    empty.style.display = '';
+    console.error(err);
+  }
+}
+
+// Category tabs
+document.querySelectorAll('.category-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.category-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCategory = btn.dataset.category;
+    currentSubcategory = '';
+    currentOffset = 0;
+    renderSubcategories();
+    loadProducts();
+    // Update nav active state
+    document.querySelectorAll('.header-nav a').forEach(a => {
+      a.classList.toggle('active', a.dataset.category === currentCategory);
+    });
+  });
+});
+
+// Header nav links
+document.querySelectorAll('.header-nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const cat = a.dataset.category;
+    currentCategory = cat;
+    currentSubcategory = '';
+    currentOffset = 0;
+    document.querySelectorAll('.category-tabs button').forEach(b => {
+      b.classList.toggle('active', b.dataset.category === cat);
+    });
+    document.querySelectorAll('.header-nav a').forEach(n => {
+      n.classList.toggle('active', n.dataset.category === cat);
+    });
+    renderSubcategories();
+    loadProducts();
+  });
+});
+
+// Pagination
+prevBtn.addEventListener('click', () => {
+  if (currentOffset >= LIMIT) {
+    currentOffset -= LIMIT;
+    loadProducts();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+nextBtn.addEventListener('click', () => {
+  if (currentOffset + LIMIT < totalFiltered) {
+    currentOffset += LIMIT;
+    loadProducts();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+});
+
+// Search
+let searchTimer;
+document.getElementById('searchInput').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(() => {
+    currentSearch = e.target.value.trim();
+    currentSubcategory = '';
+    currentOffset = 0;
+    subcategoryChips.querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.sub === ''));
+    loadProducts();
+  }, 350);
+});
+
+// Initial load
+renderSubcategories();
+loadProducts();
+</script>
+</body>
+</html>

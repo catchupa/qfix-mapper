@@ -8,6 +8,7 @@ RUN pip install --no-cache-dir -r requirements.txt gunicorn
 COPY api.py mapping.py mapping_v2.py database.py protocol_parser.py vision.py ./
 COPY widget/ ./widget/
 COPY docs/ ./docs/
+COPY shop/ ./shop/
 
 EXPOSE 8080
 

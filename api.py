@@ -2542,6 +2542,7 @@ def brand_demo(brand_slug):
 # --- Mapping Documentation & Verification ---
 
 DOCS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "docs")
+SHOP_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "shop")
 
 
 @app.route("/docs")
@@ -2570,6 +2571,7 @@ def docs_brand_products(brand_slug):
       material  – filter by qfix_material (exact match)
       status    – 'mapped' | 'unmapped' (filter by mapping status)
       q         – search term (matches product_name or product_id)
+      category  – filter by category (dam/herr/barn/baby, case-insensitive prefix)
     """
     brand_name = BRAND_ROUTES.get(brand_slug)
     if not brand_name:
@@ -2581,6 +2583,8 @@ def docs_brand_products(brand_slug):
     material_filter = request.args.get("material")
     status_filter = request.args.get("status")
     search_q = request.args.get("q", "").strip()
+    category_filter = request.args.get("category", "").strip()
+    clothing_type_prefix = request.args.get("ct", "").strip()
 
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
@@ -2607,8 +2611,14 @@ def docs_brand_products(brand_slug):
         elif status_filter == "unmapped":
             where.append("qfix_url IS NULL")
         if search_q:
-            where.append("(product_name ILIKE %s OR product_id ILIKE %s)")
-            params.extend([f"%{search_q}%", f"%{search_q}%"])
+            where.append("(product_name ILIKE %s OR product_id ILIKE %s OR clothing_type ILIKE %s)")
+            params.extend([f"%{search_q}%", f"%{search_q}%", f"%{search_q}%"])
+        if category_filter:
+            where.append("LOWER(category) LIKE %s")
+            params.append(f"{category_filter.lower()}%")
+        if clothing_type_prefix:
+            where.append("SPLIT_PART(clothing_type, ' > ', 1) ILIKE %s")
+            params.append(clothing_type_prefix)
 
         where_sql = " AND ".join(where)
 
@@ -2619,8 +2629,8 @@ def docs_brand_products(brand_slug):
         # Products with mapping info
         cur.execute(f"""
             SELECT product_id, product_name, category, clothing_type,
-                   material_composition, image_url, qfix_clothing_type,
-                   qfix_material, qfix_url
+                   material_composition, image_url, description, color,
+                   qfix_clothing_type, qfix_material, qfix_url
             FROM products_unified
             WHERE {where_sql}
             ORDER BY qfix_url IS NULL, product_name
@@ -3149,6 +3159,19 @@ Return ONLY a JSON array of the action names ordered by likelihood (most likely 
         "avg_overlap_out_of_5": round(avg_overlap, 2),
         "comparisons": comparisons,
     })
+
+
+# ── Shop demo pages ───────────────────────────────────────────────────────
+
+@app.route("/shop/kappahl")
+@app.route("/shop/kappahl/")
+def shop_kappahl():
+    return send_from_directory(SHOP_DIR, "kappahl.html")
+
+
+@app.route("/shop/kappahl/p/<product_id>")
+def shop_kappahl_product(product_id):
+    return send_from_directory(SHOP_DIR, "product.html")
 
 
 if __name__ == "__main__":

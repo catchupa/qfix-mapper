@@ -1104,6 +1104,7 @@ _CLOTHING_TYPE_OVERRIDES = {
         "Shirt / Blouse": 96,       # → Shirts/t-shirts (Men's)
         "Top / T-shirt": 96,        # → Shirts/t-shirts (Men's, no separate top)
         "T-shirt": 96,              # → Shirts/t-shirts (Men's)
+        "Trousers": 91,             # → Trousers / Shorts (Men's) — not MC wear 174
         "Trousers / Shorts": 91,
         "Sweatshirt / Hoodie": 94,
         "Knitted Jumper": 95,
@@ -1112,11 +1113,13 @@ _CLOTHING_TYPE_OVERRIDES = {
     },
     "Women's Clothing": {
         "T-shirt": 90,              # → Top / T-shirt (Women's)
+        "Trousers": 84,             # → Trousers / Shorts (Women's) — not MC wear 174
     },
     "Children's Clothing": {
         "Shirt / Blouse": 194,      # → Shirt / t-shirt / Body
         "Top / T-shirt": 194,       # → Shirt / t-shirt / Body
         "T-shirt": 194,             # → Shirt / t-shirt / Body
+        "Trousers": 104,            # → Trousers / Shorts (Children's) — not MC wear 174
         "Trousers / Shorts": 104,
         "Sweatshirt / Hoodie": 196,
         "Knitted Jumper": 193,
