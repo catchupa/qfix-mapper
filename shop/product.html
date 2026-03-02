@@ -295,6 +295,14 @@ a { color: inherit; text-decoration: none; }
   line-height: 1.7;
 }
 
+/* ── QFix widget section ───────────────────────── */
+.qfix-widget-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 24px;
+}
+
 /* ── Footer ────────────────────────────────────── */
 .site-footer {
   background: #f2f2f2;
@@ -601,6 +609,12 @@ function render(data) {
           </div>
           <div class="qfix-powered">Hållbarhetstjänster via QFix</div>
         </div>` : ''}
+
+        <div class="qfix-widget-section">
+          <div data-qfix data-product-id="${p.product_id}" data-brand="kappahl" data-service="repair" data-theme="light"></div>
+          <div data-qfix data-product-id="${p.product_id}" data-brand="kappahl" data-service="adjustment" data-theme="light"></div>
+          <div data-qfix data-product-id="${p.product_id}" data-brand="kappahl" data-service="washing" data-theme="light"></div>
+        </div>
       </div>
     </div>
 
@@ -656,6 +670,11 @@ function render(data) {
       btn.classList.add('selected');
     });
   });
+
+  // Load QFix widget after DOM is updated
+  const widgetScript = document.createElement('script');
+  widgetScript.src = '/widget.js';
+  document.body.appendChild(widgetScript);
 }
 
 loadProduct();

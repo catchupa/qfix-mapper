@@ -182,6 +182,33 @@ _qfix_subitems = {}   # L4 materials:      {id: {name, slug, link}}
 _qfix_services = {}   # {(L3_id, L4_id): [service_categories]}
 _qfix_catalog_loaded = False
 
+# ── QFix service allowlist (crawled from site) ───────────────────────────
+# The QFix API returns identical services for all clothing types, but the site
+# filters them per L3 item + L4 material. This allowlist captures the ground truth.
+_qfix_allowed_services = {}  # {ct_id_str: {mat_id_str: {svc_key: [{id, name}]}}}
+
+def _load_qfix_allowed_services():
+    global _qfix_allowed_services
+    if _qfix_allowed_services:
+        return
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "qfix_services_by_type.json")
+    if os.path.exists(path):
+        with open(path) as f:
+            _qfix_allowed_services = json.load(f)
+        logger.info("Loaded QFix service allowlist: %d clothing types", len(_qfix_allowed_services))
+
+
+def _filter_allowed_services(actions, ct_id, mat_id, service_key):
+    """Filter actions to only those QFix actually shows for this clothing type + material."""
+    _load_qfix_allowed_services()
+    if not _qfix_allowed_services:
+        return actions  # No allowlist data, pass through
+    allowed = _qfix_allowed_services.get(str(ct_id), {}).get(str(mat_id), {}).get(service_key)
+    if allowed is None:
+        return actions  # No data for this combo, pass through
+    allowed_ids = {s["id"] for s in allowed}
+    return [a for a in actions if a.get("id") in allowed_ids]
+
 
 def _build_catalog_node(node):
     """Extract the fields we want from a QFix catalog node."""
@@ -474,6 +501,8 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                         top_actions, product_text, qfix["qfix_services"])
 
                 actions = top_actions.get(ranking_key, [])
+                # Filter to only services QFix offers for this clothing type + material
+                actions = _filter_allowed_services(actions, ct_id, mat_id, ranking_key)
                 if actions:
                     ids = ",".join(str(a["id"]) for a in actions)
                     qfix_url += ("&" if "?" in qfix_url else "?") + f"services_id={ids}"
@@ -2813,6 +2842,11 @@ def docs_verify(product_id):
         ])).lower()
 
         top_actions = _inject_keyword_actions(top_actions, product_text, enriched["qfix_services"])
+
+    # Filter to only services QFix actually offers for this clothing type + material
+    if top_actions and ct_id and mat_id:
+        for key in list(top_actions.keys()):
+            top_actions[key] = _filter_allowed_services(top_actions[key], ct_id, mat_id, key)
 
     return jsonify({
         "product": {
