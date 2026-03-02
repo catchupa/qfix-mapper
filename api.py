@@ -3209,7 +3209,7 @@ def shop_kappahl():
     return send_from_directory(SHOP_DIR, "kappahl.html")
 
 
-@app.route("/shop/kappahl/p/<product_id>")
+@app.route("/shop/kappahl/product/<product_id>")
 def shop_kappahl_product(product_id):
     return send_from_directory(SHOP_DIR, "product.html")
 

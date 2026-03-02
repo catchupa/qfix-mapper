@@ -287,7 +287,6 @@ a { color: inherit; text-decoration: none; }
     <button data-category="herr">Herr</button>
     <button data-category="barn">Barn</button>
     <button data-category="baby">Baby</button>
-    <button data-category="underkläder">Underkläder</button>
   </div>
 
   <div class="subcategory-chips" id="subcategoryChips"></div>
@@ -317,7 +316,7 @@ let currentOffset = 0;
 let totalFiltered = 0;
 
 // Tabs that filter by clothing_type instead of category
-const CT_TABS = { 'underkläder': 'Underkläder' };
+const CT_TABS = {};
 
 const SUBCATEGORIES = {
   'dam': [
@@ -333,7 +332,6 @@ const SUBCATEGORIES = {
   ],
   'barn': [],
   'baby': [],
-  'underkläder': [],
 };
 
 const grid = document.getElementById('productGrid');
@@ -411,7 +409,7 @@ async function loadProducts() {
     products.forEach(p => {
       const card = document.createElement('a');
       card.className = 'product-card';
-      card.href = `/shop/kappahl/p/${p.product_id}`;
+      card.href = `/shop/kappahl/product/${p.product_id}`;
 
       const imgSrc = p.image_url || '';
       const price = fakePrice(p.product_id);
