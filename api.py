@@ -185,6 +185,8 @@ _qfix_catalog_loaded = False
 # ── QFix service allowlist (crawled from site) ───────────────────────────
 # The QFix API returns identical services for all clothing types, but the site
 # filters them per L3 item + L4 material. This allowlist captures the ground truth.
+# Set QFIX_FILTER_SERVICES=0 to disable filtering globally.
+QFIX_FILTER_SERVICES = os.environ.get("QFIX_FILTER_SERVICES", "1") != "0"
 _qfix_allowed_services = {}  # {ct_id_str: {mat_id_str: {svc_key: [{id, name}]}}}
 
 def _load_qfix_allowed_services():
@@ -199,7 +201,10 @@ def _load_qfix_allowed_services():
 
 
 def _filter_allowed_services(actions, ct_id, mat_id, service_key):
-    """Filter actions to only those QFix actually shows for this clothing type + material."""
+    """Filter actions to only those QFix actually shows for this clothing type + material.
+    Disabled when QFIX_FILTER_SERVICES=0 or ?filter=0 query param (checked by caller)."""
+    if not QFIX_FILTER_SERVICES:
+        return actions
     _load_qfix_allowed_services()
     if not _qfix_allowed_services:
         return actions  # No allowlist data, pass through
@@ -2844,7 +2849,8 @@ def docs_verify(product_id):
         top_actions = _inject_keyword_actions(top_actions, product_text, enriched["qfix_services"])
 
     # Filter to only services QFix actually offers for this clothing type + material
-    if top_actions and ct_id and mat_id:
+    # Pass ?filter=0 to disable for debugging
+    if top_actions and ct_id and mat_id and request.args.get("filter") != "0":
         for key in list(top_actions.keys()):
             top_actions[key] = _filter_allowed_services(top_actions[key], ct_id, mat_id, key)
 
