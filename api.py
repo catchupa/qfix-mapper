@@ -1832,6 +1832,15 @@ KEYWORD_ACTION_RULES = [
 
 # Keyword → action exclusion: remove irrelevant actions based on product text
 # Each entry: keywords to match in product text, action names to exclude, category
+# Actions that REQUIRE a keyword in product text — removed if no keyword matches
+KEYWORD_REQUIRE_RULES = [
+    {
+        "require_keywords": ["dragkedja", "zipper", "blixtlås", "zip", "zipup", "zip-up"],
+        "actions": ["Replace zipper", "Replace main zipper", "Replace zipper slider"],
+        "category": "repair",
+    },
+]
+
 KEYWORD_EXCLUSION_RULES = [
     {
         "keywords": ["väst", "vest", "gilet", "bodywarmer"],
@@ -1941,6 +1950,15 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
             if cat not in excluded:
                 excluded[cat] = set()
             excluded[cat].update(rule["exclude_actions"])
+
+    # Require-keyword rules: exclude actions when NO keyword matches
+    product_text_lower = product_text.lower()
+    for rule in KEYWORD_REQUIRE_RULES:
+        if not any(kw in product_text_lower for kw in rule["require_keywords"]):
+            cat = rule["category"]
+            if cat not in excluded:
+                excluded[cat] = set()
+            excluded[cat].update(rule["actions"])
 
     # Build a lookup: action name -> {id, name, price} from all services
     all_actions = {}  # name -> list of {id, name, price, category_key}
@@ -2552,6 +2570,80 @@ def health():
 WIDGET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widget")
 
 
+@app.route("/widget/<brand_slug>/product/<product_id>")
+def widget_product(brand_slug, product_id):
+    """Public endpoint for the widget — returns service URLs for a product."""
+    if brand_slug not in BRAND_ROUTES:
+        return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
+
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute(
+            """SELECT product_id, product_name, description, clothing_type,
+                      material_composition, brand,
+                      qfix_clothing_type_id, qfix_material_id, qfix_url,
+                      qfix_url_repair, qfix_url_adjustment, qfix_url_care
+               FROM products_unified
+               WHERE brand = %s AND product_id = %s LIMIT 1""",
+            (BRAND_ROUTES[brand_slug], product_id),
+        )
+        row = cur.fetchone()
+    conn.close()
+
+    if not row or not row.get("qfix_url"):
+        return jsonify({"error": "Product not found"}), 404
+
+    # Build service URLs with top action IDs appended
+    ct_id = row.get("qfix_clothing_type_id")
+    mat_id = row.get("qfix_material_id")
+
+    top_actions = {}
+    if ct_id and mat_id:
+        ranking_conn = get_db()
+        top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
+        ranking_conn.close()
+
+    # Apply keyword require/exclusion rules
+    if top_actions:
+        product_text = " ".join(filter(None, [
+            row.get("product_name", ""),
+            row.get("description", ""),
+            row.get("clothing_type", ""),
+        ]))
+        if product_text:
+            svc_cats = _qfix_services.get((ct_id, mat_id), [])
+            if svc_cats:
+                top_actions = _inject_keyword_actions(top_actions, product_text, svc_cats)
+            for key in list(top_actions.keys()):
+                top_actions[key] = _filter_allowed_services(top_actions[key], ct_id, mat_id, key)
+
+    def build_url(base_url, actions):
+        if not base_url:
+            return None
+        if not actions:
+            return base_url
+        ids = ",".join(str(a["id"]) for a in actions)
+        sep = "&" if "?" in base_url else "?"
+        return base_url + sep + "services_id=" + ids
+
+    services = {}
+    svc_map = {
+        "repair": row.get("qfix_url_repair"),
+        "adjustment": row.get("qfix_url_adjustment"),
+        "care": row.get("qfix_url_care"),
+    }
+    action_key_map = {"repair": "repair", "adjustment": "adjustment", "care": "care"}
+
+    for svc_key, base_url in svc_map.items():
+        if base_url:
+            actions = top_actions.get(action_key_map[svc_key], [])
+            services[svc_key] = build_url(base_url, actions)
+
+    resp = jsonify({"services": services})
+    resp.headers["Access-Control-Allow-Origin"] = "*"
+    return resp
+
+
 @app.route("/widget.js")
 def widget_js():
     return send_from_directory(WIDGET_DIR, "widget.js", mimetype="application/javascript")
@@ -2561,6 +2653,12 @@ def widget_js():
 @app.route("/demo/")
 def widget_demo():
     return send_from_directory(os.path.join(WIDGET_DIR, "demo"), "index.html")
+
+
+@app.route("/demo/example")
+@app.route("/demo/example/")
+def widget_example():
+    return send_from_directory(os.path.join(WIDGET_DIR, "demo"), "example.html")
 
 
 @app.route("/demo/<brand_slug>")

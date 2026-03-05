@@ -1,188 +1,75 @@
-# QFix Repair Widget — Integration Guide
+# QFix Widget
 
-Add a "Repair this item" button to your product pages. When a customer clicks it, they are taken directly to the QFix repair booking page with the correct service category pre-selected for that product.
+Add **Reparera**, **Mattanpassa** and **Skotsel** buttons to your product pages.
 
-## Live demo
+When a customer clicks a button, they go directly to the QFix booking page for that product and service.
 
-See the widget in action on a sample product page:
-https://kappahl-qfix.fly.dev/demo/
+**Live example:** https://qfix.fly.dev/demo/example/
 
 ---
 
-## Integration (2 steps)
-
-### Step 1: Add the placeholder element
-
-Place this `<div>` wherever you want the repair button to appear on your product page — typically below the "Add to cart" button:
+## Add to your page
 
 ```html
-<div id="qfix-repair"
-     data-product-id="YOUR_PRODUCT_ID"
-     data-brand="YOUR_BRAND_SLUG"
-     data-api-key="YOUR_API_KEY">
-</div>
+<!-- Place where you want the buttons -->
+<div data-qfix data-product-id="YOUR_PRODUCT_ID" data-brand="YOUR_BRAND"></div>
+
+<!-- Before </body> -->
+<script src="https://qfix.fly.dev/widget.js"
+        data-api-base="https://qfix.fly.dev"></script>
 ```
 
 Replace:
-- `YOUR_PRODUCT_ID` with the product's article number (e.g. `530956`)
-- `YOUR_BRAND_SLUG` with your brand identifier (see table below)
-- `YOUR_API_KEY` with the API key provided by the QFix team
+- `YOUR_PRODUCT_ID` with the product's article number (e.g. `846030`)
+- `YOUR_BRAND` with your brand identifier:
 
-| Brand        | Slug          |
-|--------------|---------------|
-| KappAhl      | `kappahl`     |
-| Gina Tricot  | `ginatricot`  |
-| Eton         | `eton`        |
-| Nudie Jeans  | `nudie`       |
-| Lindex       | `lindex`      |
+| Brand        | `data-brand` value |
+|--------------|--------------------|
+| KappAhl      | `kappahl`          |
+| Gina Tricot  | `ginatricot`       |
+| Eton         | `eton`             |
+| Nudie Jeans  | `nudie`            |
+| Lindex       | `lindex`           |
 
-### Step 2: Load the widget script
-
-Add this script tag at the bottom of your page, before `</body>`:
-
-```html
-<script src="https://kappahl-qfix.fly.dev/widget.js"></script>
-```
-
-### Complete example
-
-```html
-<!-- Repair button (eager: fetches on page load) -->
-<div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here"></div>
-
-<!-- Or lazy: all three service buttons, fetch only when clicked -->
-<div data-qfix data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here" data-lazy></div>
-<div data-qfix data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here" data-lazy data-service="adjustment"></div>
-<div data-qfix data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here" data-lazy data-service="washing"></div>
-
-<!-- Load the widget (before </body>) -->
-<script src="https://kappahl-qfix.fly.dev/widget.js"></script>
-```
-
-That's it. The widget handles everything else automatically.
+That's it. The widget:
+- Fetches the available services for the product
+- Renders buttons for each service (Reparera, Mattanpassa, Skotsel)
+- Opens the QFix booking page in a new tab when clicked
+- Shows nothing if the product isn't found
 
 ---
 
-## Loading modes
-
-The widget supports two loading modes: **eager** (default) and **lazy**.
-
-### Eager loading (default)
-
-The widget makes an API request as soon as the page loads. If a repair service is available, the button appears automatically. If not, nothing is shown.
-
-1. The script runs when the page loads
-2. It looks up your product against the QFix product database
-3. If a repair service is available, a styled "Reparera" button appears
-4. If the product can't be matched, nothing is shown — no empty space, no errors
-5. Clicking the button opens the QFix repair booking page in a new tab
+## Full page example
 
 ```html
-<div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here"></div>
-```
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <title>Product Page</title>
+</head>
+<body>
+  <h1>Hoodie med dragkedja</h1>
+  <p>299 kr</p>
+  <button>Lagg i varukorgen</button>
 
-### Lazy loading
+  <!-- QFix buttons -->
+  <div data-qfix data-product-id="846030" data-brand="kappahl"></div>
 
-Add the `data-lazy` attribute to defer the API request until the user clicks the button. The widget renders a placeholder "Reparera" button immediately — no network request is made on page load. When the user clicks, the widget fetches the repair URL and redirects.
-
-This is useful when:
-- You have many product pages and want to reduce API load
-- Page load performance is a priority
-- The repair button is below the fold or secondary to the main content
-
-```html
-<div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here" data-lazy></div>
-```
-
-**Lazy loading flow:**
-1. Page loads — a styled "Reparera" button appears immediately (no API call)
-2. User clicks the button
-3. The widget fetches the product data from the API (loading animation shown)
-4. If a repair service is available, the button is replaced with a link to the repair page
-5. If the product can't be matched, the button is removed
-
----
-
-## Options
-
-### API key
-
-Each brand receives a unique API key for authentication. Set it via the `data-api-key` attribute on the widget div. Requests without a valid key will receive a `401` error.
-
-```html
-<div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-api-key="your-key-here"></div>
-```
-
-### Theme
-
-The widget comes in two variants. Set the `data-theme` attribute to match your page background:
-
-| Value   | Button style                          | Use when                    |
-|---------|---------------------------------------|-----------------------------|
-| `light` | Dark button (black background, white text) | Light/white page background (default) |
-| `dark`  | Light button (white background, dark text) | Dark page background        |
-
-```html
-<div id="qfix-repair" data-product-id="530956" data-brand="kappahl" data-theme="dark"></div>
-```
-
-### Service type
-
-By default the widget links to the general repair page. Use `data-service` to link directly to a specific service category. The widget looks up the service ID from the API — if the service isn't available for a given product, the button is hidden.
-
-| Value        | Service                | Default label  | Icon     |
-|--------------|------------------------|----------------|----------|
-| *(none)*     | General repair page    | Reparera       | Wrench   |
-| `repair`     | Repair                 | Reparera       | Wrench   |
-| `adjustment` | Adjust measurements    | Måttanpassa    | Ruler    |
-| `washing`    | Washing and care       | Skötsel        | Droplets |
-
-```html
-<div data-qfix data-product-id="530956" data-brand="kappahl" data-service="adjustment" data-lazy></div>
-```
-
-You can override the default label and icon with `data-label` and `data-icon`:
-
-```html
-<div data-qfix data-product-id="530956" data-brand="kappahl" data-service="washing" data-label="Tvätt & vård" data-icon="droplets" data-lazy></div>
-```
-
-Available icons: `wrench`, `ruler`, `droplets`.
-
-### Multiple buttons on the same page
-
-Use `data-qfix` instead of `id` when placing multiple buttons on a page — for example to offer repair, adjustment, and care for the same product:
-
-```html
-<div data-qfix data-product-id="530956" data-brand="kappahl" data-lazy></div>
-<div data-qfix data-product-id="530956" data-brand="kappahl" data-lazy data-service="adjustment"></div>
-<div data-qfix data-product-id="530956" data-brand="kappahl" data-lazy data-service="washing"></div>
-```
-
-This also works for product bundles with different product IDs:
-
-```html
-<div data-qfix data-product-id="530956" data-brand="kappahl"></div>
-<div data-qfix data-product-id="534008" data-brand="kappahl"></div>
-```
-
-### Dynamic product pages (SPA)
-
-If your site is a single-page application where product content loads dynamically, you can re-initialize the widget after updating the DOM:
-
-```js
-// After inserting the qfix-repair div into the DOM
-window.QFixWidget && window.QFixWidget.init();
+  <script src="https://qfix.fly.dev/widget.js"
+          data-api-base="https://qfix.fly.dev"></script>
+</body>
+</html>
 ```
 
 ---
 
-## Customizing the button style
+## Customize the look
 
-The widget uses scoped CSS classes that won't conflict with your site. To match your brand's design, override the styles:
+Override the default styles with CSS:
 
 ```css
-/* Change button color */
+/* Button color */
 .qfix-widget .qfix-btn {
   background: #0057a8;
 }
@@ -190,30 +77,43 @@ The widget uses scoped CSS classes that won't conflict with your site. To match 
   background: #004080;
 }
 
-/* Change border radius */
+/* Border radius */
 .qfix-widget .qfix-btn {
-  border-radius: 0;
+  border-radius: 8px;
 }
 
-/* Change font */
+/* Font */
 .qfix-widget .qfix-btn {
-  font-family: "Your Brand Font", sans-serif;
+  font-family: "Your Font", sans-serif;
 }
+```
+
+### Built-in themes
+
+Use `data-theme` for quick styling:
+
+| Theme     | Look                               |
+|-----------|-------------------------------------|
+| *(none)*  | Gray pill buttons (default)         |
+| `light`   | Black buttons (for light backgrounds) |
+| `dark`    | White buttons (for dark backgrounds)  |
+
+```html
+<div data-qfix data-product-id="846030" data-brand="kappahl" data-theme="light"></div>
 ```
 
 ---
 
-## Troubleshooting
+## Single-page apps
 
-| Problem                     | Cause                                              | Solution                                                  |
-|-----------------------------|----------------------------------------------------|------------------------------------------------------------|
-| Button doesn't appear       | Product ID not found in the QFix database          | Verify the product ID and brand slug are correct           |
-| Button doesn't appear       | Script not loaded                                  | Check browser console for 404 on widget.js                 |
-| Button doesn't appear       | `data-product-id` missing                          | Ensure the attribute is set on the div                     |
-| Button appears but link fails | QFix booking page URL changed                    | Contact QFix support                                       |
+Re-initialize after dynamically adding widget elements:
+
+```js
+window.QFixWidget.init();
+```
 
 ---
 
 ## Questions?
 
-Contact the QFix integration team for help with setup or to register your brand.
+Contact the QFix team for help or to register your products.
