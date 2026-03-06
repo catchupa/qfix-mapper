@@ -207,6 +207,46 @@ def _load_qfix_allowed_services():
         logger.info("Loaded QFix service allowlist: %d clothing types", len(_qfix_allowed_services))
 
 
+def _swap_to_valid_variants(actions, ct_id, mat_id, service_key):
+    """Swap action variants to prefer ones valid for this clothing type.
+
+    When the AI ranking picks e.g. "Replace main zipper" #1401 but that ID
+    isn't in assigned_categories for this ct_id, look for another variant
+    with the same name (e.g. #1395) that IS valid, and swap it in.
+    Preserves the AI ranking order — only changes which variant is used.
+    """
+    if not _action_assigned_categories:
+        return actions
+
+    # Build name→[valid variants] from the catalog for this (ct_id, mat_id)
+    slug_map = {"repair": "repair", "adjustment": "adjustment", "care": "washing"}
+    slug_pattern = slug_map.get(service_key, service_key)
+    svc_cats = _qfix_services.get((ct_id, mat_id), [])
+
+    name_to_valid = {}  # action_name -> [valid action dicts]
+    for svc_cat in svc_cats:
+        if slug_pattern not in svc_cat.get("slug", ""):
+            continue
+        for s in svc_cat.get("services", []):
+            if ct_id in _action_assigned_categories.get(s["id"], set()):
+                name_to_valid.setdefault(s["name"], []).append(s)
+
+    result = []
+    for a in actions:
+        aid = a.get("id")
+        if ct_id in _action_assigned_categories.get(aid, set()):
+            result.append(a)  # Already valid
+            continue
+        # Not valid — look for a same-name variant that is
+        variants = name_to_valid.get(a.get("name"), [])
+        if variants:
+            best = min(variants, key=lambda v: v.get("price") or 9999)
+            result.append({"id": best["id"], "name": best["name"], "price": best.get("price")})
+        else:
+            result.append(a)  # No valid variant found, keep original (filtering will handle it)
+    return result
+
+
 def _filter_by_assigned_categories(actions, ct_id, mat_id, service_key, max_actions=5):
     """Filter actions by assigned_categories from QFix API.
 
@@ -2656,6 +2696,12 @@ def _get_filtered_actions(product_row):
         ranking_conn = get_db()
         top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
         ranking_conn.close()
+
+    # Swap variants: if an action has a same-name sibling with valid assigned_categories, use it
+    if top_actions and _action_assigned_categories:
+        _load_qfix_catalog()
+        for key in list(top_actions.keys()):
+            top_actions[key] = _swap_to_valid_variants(top_actions[key], ct_id, mat_id, key)
 
     # Filter — remove actions not valid for this clothing type
     if top_actions:

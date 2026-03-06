@@ -4,173 +4,377 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jeansjacka — KappAhl</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      color: #1a1a1a;
-      background: #fff;
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #FAF7F2;
+      --surface: #FFFFFF;
+      --text: #1C1917;
+      --text-secondary: #78716C;
+      --text-tertiary: #A8A29E;
+      --border: #E7E5E4;
+      --coral: #DC5945;
+      --coral-bg: #FDF2F0;
+      --emerald: #0F7B5F;
+      --emerald-bg: #ECFDF5;
+      --emerald-border: #A7F3D0;
+      --amber: #B45309;
+      --amber-bg: #FFFBEB;
+      --blue: #1D4ED8;
+      --blue-bg: #EFF6FF;
+      --font-display: "Instrument Serif", Georgia, serif;
+      --font-body: "DM Sans", -apple-system, sans-serif;
     }
+
+    body {
+      font-family: var(--font-body);
+      color: var(--text);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    a { color: inherit; text-decoration: none; }
 
     /* Header */
     .kh-header {
-      border-bottom: 1px solid #e5e5e5;
-      padding: 16px 32px;
+      border-bottom: 1px solid var(--border);
+      padding: 0 40px;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      height: 60px;
+      background: var(--surface);
     }
     .kh-logo {
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: 2px;
-      text-transform: uppercase;
+      font-family: var(--font-display);
+      font-size: 26px;
+      font-weight: 400;
+      letter-spacing: 1px;
     }
-    .kh-nav { display: flex; gap: 24px; font-size: 14px; color: #555; }
-    .kh-nav span { cursor: pointer; }
-    .kh-nav span:hover { color: #1a1a1a; }
+    .kh-nav { display: flex; gap: 28px; }
+    .kh-nav span {
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: color 0.15s;
+    }
+    .kh-nav span:hover { color: var(--text); }
 
     /* Breadcrumb */
     .kh-breadcrumb {
-      padding: 12px 32px;
+      padding: 14px 40px;
       font-size: 12px;
-      color: #888;
+      color: var(--text-tertiary);
+      letter-spacing: 0.3px;
     }
-    .kh-breadcrumb a { color: #888; text-decoration: none; }
-    .kh-breadcrumb a:hover { text-decoration: underline; }
+    .kh-breadcrumb a {
+      color: var(--text-tertiary);
+      transition: color 0.15s;
+    }
+    .kh-breadcrumb a:hover { color: var(--text-secondary); }
 
     /* Product layout */
     .kh-product {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      max-width: 1100px;
+      max-width: 1140px;
       margin: 0 auto;
-      padding: 24px 32px;
-      gap: 48px;
+      padding: 24px 40px 80px;
+      gap: 56px;
     }
     @media (max-width: 768px) {
-      .kh-product { grid-template-columns: 1fr; }
+      .kh-product { grid-template-columns: 1fr; gap: 32px; padding: 20px 20px 60px; }
+      .kh-header { padding: 0 20px; }
+      .kh-breadcrumb { padding: 12px 20px; }
     }
 
     /* Image */
     .kh-image {
-      background: #f5f5f5;
+      background: #f0ece6;
       aspect-ratio: 3/4;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 4px;
+      border-radius: 8px;
       overflow: hidden;
+      position: sticky;
+      top: 80px;
     }
     .kh-image img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      transition: transform 0.4s ease;
     }
+    .kh-image:hover img { transform: scale(1.03); }
 
     /* Info panel */
-    .kh-info { display: flex; flex-direction: column; gap: 16px; padding-top: 8px; }
-    .kh-brand-label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: #888; }
-    .kh-title { font-size: 24px; font-weight: 600; }
-    .kh-price { font-size: 20px; font-weight: 600; }
-    .kh-color { font-size: 14px; color: #555; }
+    .kh-info { display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
+    .kh-brand-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+    .kh-title {
+      font-family: var(--font-display);
+      font-size: 32px;
+      font-weight: 400;
+      line-height: 1.2;
+      letter-spacing: -0.3px;
+    }
+    .kh-price {
+      font-size: 22px;
+      font-weight: 500;
+      letter-spacing: -0.3px;
+    }
+    .kh-color { font-size: 14px; color: var(--text-secondary); }
     .kh-color-swatch {
       display: inline-block;
       width: 16px; height: 16px;
       border-radius: 50%;
-      border: 2px solid #ccc;
+      border: 2px solid var(--border);
       vertical-align: middle;
-      margin-right: 6px;
+      margin-right: 8px;
     }
 
     /* Size selector */
-    .kh-sizes { display: flex; flex-direction: column; gap: 8px; }
-    .kh-sizes-label { font-size: 13px; font-weight: 600; }
+    .kh-sizes { display: flex; flex-direction: column; gap: 10px; }
+    .kh-sizes-label {
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-secondary);
+    }
     .kh-sizes-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .kh-size {
-      padding: 8px 16px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      padding: 9px 18px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
       font-size: 13px;
+      font-family: var(--font-body);
       cursor: pointer;
-      background: #fff;
-      transition: border-color 0.15s;
+      background: var(--surface);
+      color: var(--text);
+      transition: all 0.15s;
     }
-    .kh-size:hover { border-color: #1a1a1a; }
-    .kh-size--active { border-color: #1a1a1a; font-weight: 600; }
+    .kh-size:hover { border-color: var(--text); }
+    .kh-size--active { border-color: var(--text); font-weight: 600; background: var(--text); color: var(--surface); }
 
     /* Add to cart */
     .kh-add-to-cart {
       width: 100%;
-      padding: 14px;
-      background: #1a1a1a;
-      color: #fff;
+      padding: 15px;
+      background: var(--text);
+      color: var(--surface);
       border: none;
-      border-radius: 6px;
-      font-size: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: var(--font-body);
       font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: background 0.2s, transform 0.1s;
     }
     .kh-add-to-cart:hover { background: #333; }
+    .kh-add-to-cart:active { transform: scale(0.99); }
 
-    /* Redirect link */
+    /* QFix Service Links */
+    .qfix-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0; }
     .kh-redirect-link {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 10px 20px;
-      background: #1a1a1a;
-      color: #fff;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
+      padding: 11px 22px;
+      background: var(--surface);
+      color: var(--text);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 13px;
+      font-family: var(--font-body);
       font-weight: 600;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      transition: all 0.2s;
       text-decoration: none;
     }
-    .kh-redirect-link:hover { background: #333; transform: translateY(-1px); }
+    .kh-redirect-link:hover {
+      border-color: var(--text);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(28,25,23,0.08);
+    }
     .kh-redirect-link:active { transform: translateY(0); }
 
     /* Divider */
-    .kh-divider { border: none; border-top: 1px solid #e5e5e5; }
-
-    /* Details */
-    .kh-details { font-size: 13px; color: #555; line-height: 1.6; }
-    .kh-details summary {
-      font-weight: 600;
-      color: #1a1a1a;
-      cursor: pointer;
-      padding: 8px 0;
-    }
-
-    /* Mapping info */
-    .kh-mapping-table { width: 100%; font-size: 13px; border-collapse: collapse; }
-    .kh-mapping-table td { padding: 4px 0; vertical-align: top; }
-    .kh-mapping-table td:first-child { color: #888; width: 120px; }
-    .kh-mapping-arrow { color: #aaa; padding: 0 6px; }
+    .kh-divider { border: none; border-top: 1px solid var(--border); }
 
     /* Suggested actions */
-    .kh-actions-group { margin-bottom: 10px; }
-    .kh-actions-label { font-size: 12px; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+    .kh-actions-group { margin-bottom: 14px; }
+    .kh-actions-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      margin-bottom: 8px;
+    }
     .kh-actions-row { display: flex; flex-wrap: wrap; gap: 6px; }
     .kh-action-chip {
-      display: inline-block; padding: 6px 14px; background: #f5f5f5; border-radius: 20px;
-      font-size: 13px; color: #1a1a1a; transition: background 0.15s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 14px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      font-size: 13px;
+      color: var(--text);
+      transition: all 0.15s;
     }
-    .kh-action-chip:hover { background: #e8e8e8; }
-    .kh-action-price { color: #888; font-size: 12px; }
+    .kh-action-chip:hover { border-color: var(--text-secondary); }
+    .kh-action-price { color: var(--text-tertiary); font-size: 11px; }
+    .kh-action-removed {
+      text-decoration: line-through;
+      opacity: 0.35;
+      border-style: dashed;
+    }
+    .kh-action-added {
+      border-color: var(--emerald);
+      background: var(--emerald-bg);
+    }
+    .kh-action-swapped {
+      border-color: var(--amber);
+      background: var(--amber-bg);
+    }
+    .kh-action-swapped-out {
+      text-decoration: line-through;
+      opacity: 0.35;
+      border-style: dashed;
+      border-color: var(--amber);
+      background: var(--amber-bg);
+    }
+
+    /* Filter comparison */
+    .comparison-section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 4px 0 12px;
+    }
+    .comparison-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .comparison-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: var(--text-tertiary);
+    }
+    .filter-btn {
+      padding: 6px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 20px;
+      font-size: 12px;
+      font-family: var(--font-body);
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--surface);
+      color: var(--text-secondary);
+      transition: all 0.2s;
+    }
+    .filter-btn:hover { border-color: var(--text-secondary); }
+    .filter-btn.active {
+      background: var(--text);
+      color: var(--surface);
+      border-color: var(--text);
+    }
+    .comparison-diff {
+      font-size: 12px;
+      color: var(--text-tertiary);
+      line-height: 1.6;
+    }
+    .diff-dot {
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 4px;
+      vertical-align: middle;
+    }
+    .diff-dot.green { background: var(--emerald); }
+    .diff-dot.gray { background: var(--text-tertiary); }
+
+    /* Details / Mapping */
+    .kh-details {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .kh-details summary {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+      padding: 10px 0;
+      letter-spacing: 0.2px;
+    }
+    .kh-mapping-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+    .kh-mapping-table td { padding: 5px 0; vertical-align: top; }
+    .kh-mapping-table td:first-child {
+      color: var(--text-tertiary);
+      width: 130px;
+      font-weight: 500;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
 
     /* Footer */
     .kh-footer {
-      margin-top: 64px;
-      padding: 24px 32px;
-      border-top: 1px solid #e5e5e5;
+      margin-top: 0;
+      padding: 24px 40px;
+      border-top: 1px solid var(--border);
       text-align: center;
       font-size: 12px;
-      color: #aaa;
+      color: var(--text-tertiary);
+      letter-spacing: 0.3px;
     }
+
+    /* Animations */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .kh-info > * {
+      animation: slideUp 0.5s ease both;
+    }
+    .kh-info > *:nth-child(1) { animation-delay: 0.05s; }
+    .kh-info > *:nth-child(2) { animation-delay: 0.1s; }
+    .kh-info > *:nth-child(3) { animation-delay: 0.15s; }
+    .kh-info > *:nth-child(4) { animation-delay: 0.2s; }
+    .kh-info > *:nth-child(5) { animation-delay: 0.25s; }
+    .kh-info > *:nth-child(6) { animation-delay: 0.3s; }
+    .kh-info > *:nth-child(7) { animation-delay: 0.32s; }
+    .kh-info > *:nth-child(8) { animation-delay: 0.34s; }
+    .kh-info > *:nth-child(9) { animation-delay: 0.36s; }
+    .kh-info > *:nth-child(10) { animation-delay: 0.38s; }
+    .kh-info > *:nth-child(n+11) { animation-delay: 0.4s; }
   </style>
 </head>
 <body>
@@ -223,23 +427,33 @@
       <hr class="kh-divider">
 
       <!-- QFix Service Links -->
-      <div style="margin:12px 0; display:flex; flex-wrap:wrap; gap:8px">
+      <div class="qfix-links">
         <a class="kh-redirect-link qfix-redirect" href="/kappahl/repair/?productId=530956" target="_blank" rel="noopener">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
           Reparera
         </a>
         <a class="kh-redirect-link qfix-redirect" href="/kappahl/adjustment/?productId=530956" target="_blank" rel="noopener">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
           Måttanpassa
         </a>
         <a class="kh-redirect-link qfix-redirect" href="/kappahl/care/?productId=530956" target="_blank" rel="noopener">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
           Skötsel
         </a>
       </div>
 
       <!-- Suggested Actions (loaded dynamically) -->
       <div id="suggestedActions" style="display:none; margin:4px 0 12px;"></div>
+
+      <!-- Comparison toggle -->
+      <div id="comparisonSection" class="comparison-section" style="display:none;">
+        <div class="comparison-header">
+          <span class="comparison-label">Filter mode</span>
+          <button id="btnFiltered" class="filter-btn active" onclick="showFilter('filtered')">assigned_categories</button>
+          <button id="btnUnfiltered" class="filter-btn" onclick="showFilter('unfiltered')">AI ranking (no filter)</button>
+        </div>
+        <div id="comparisonDiff" class="comparison-diff"></div>
+      </div>
 
       <hr class="kh-divider">
 
@@ -250,7 +464,7 @@
           <table class="kh-mapping-table">
             <tr><td>Varumärke</td><td id="infoBrand">—</td></tr>
             <tr><td>Typ (brand)</td><td id="infoClothingType">—</td></tr>
-            <tr><td>Material (brand)</td><td id="infoMaterial">—</td></tr>
+            <tr><td>Material</td><td id="infoMaterial">—</td></tr>
             <tr><td>QFix typ</td><td><span id="infoQfixType">—</span></td></tr>
             <tr><td>QFix material</td><td><span id="infoQfixMaterial">—</span></td></tr>
           </table>
@@ -265,32 +479,129 @@
   </main>
 
   <footer class="kh-footer">
-    Demo page — QFix Repair Widget integration example
+    Demo — QFix Repair Widget
   </footer>
 
-  <!-- Override product ID via ?productId= query param + load suggested actions -->
   <script>
     (function () {
       function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : String(s); return d.innerHTML; }
       var params = new URLSearchParams(location.search);
       var pid = params.get("productId") || "530956";
 
-      // Update redirect links with correct product ID
       document.querySelectorAll(".qfix-redirect").forEach(function (el) {
         el.href = el.href.replace(/productId=[^&]*/, "productId=" + pid);
       });
-
-      // Update art.nr
       document.getElementById("infoArtNr").textContent = pid;
 
-      // Load product data, mapping info, and suggested actions
-      fetch("/docs/verify/" + encodeURIComponent(pid))
-        .then(function(r) { return r.json(); })
-        .then(function(data) {
+      var filteredActions = null;
+      var unfilteredActions = null;
+
+      function renderActions(ta, compareWith) {
+        var labels = {repair: "Reparation", adjustment: "Justering", care: "Tvätt & skötsel", other: "Övrigt"};
+        var compareIds = {};
+        var compareNames = {};
+        var currentNames = {};
+        if (compareWith) {
+          for (var key in compareWith) {
+            compareIds[key] = {};
+            compareNames[key] = {};
+            (compareWith[key] || []).forEach(function(a) {
+              compareIds[key][a.id] = true;
+              compareNames[key][a.name] = a;
+            });
+          }
+        }
+        var html = "";
+        for (var key in labels) {
+          var actions = ta[key];
+          if (!actions || !actions.length) continue;
+          currentNames[key] = {};
+          actions.forEach(function(a) { currentNames[key][a.name] = a; });
+
+          html += '<div class="kh-actions-group"><div class="kh-actions-label">' + labels[key] + '</div><div class="kh-actions-row">';
+          for (var i = 0; i < actions.length; i++) {
+            var a = actions[i];
+            var price = a.price ? " — from " + a.price + " kr" : "";
+            var cls = "kh-action-chip";
+            if (compareWith && compareIds[key] && !compareIds[key][a.id]) {
+              // Not in other view — is it a variant swap (same name, different ID)?
+              if (compareNames[key] && compareNames[key][a.name] && compareNames[key][a.name].id !== a.id) {
+                cls += " kh-action-swapped";
+                var otherA = compareNames[key][a.name];
+                html += '<span class="' + cls + '" title="Variant swap: #' + otherA.id + ' → #' + a.id + '">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + ' ← was #' + otherA.id + '</span></span>';
+                continue;
+              }
+              cls += " kh-action-added";
+            }
+            html += '<span class="' + cls + '">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + '</span></span>';
+          }
+          // Show removed actions from comparison
+          if (compareWith && compareWith[key]) {
+            var currentIds = {};
+            actions.forEach(function(a) { currentIds[a.id] = true; });
+            compareWith[key].forEach(function(a) {
+              if (!currentIds[a.id]) {
+                var price = a.price ? " — from " + a.price + " kr" : "";
+                // Skip if it was a variant swap (already shown inline)
+                if (currentNames[key] && currentNames[key][a.name] && currentNames[key][a.name].id !== a.id) return;
+                html += '<span class="kh-action-chip kh-action-removed">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + '</span></span>';
+              }
+            });
+          }
+          html += '</div></div>';
+        }
+        return html;
+      }
+
+      window.showFilter = function(mode) {
+        document.getElementById("btnFiltered").classList.toggle("active", mode === "filtered");
+        document.getElementById("btnUnfiltered").classList.toggle("active", mode === "unfiltered");
+        var ta = mode === "filtered" ? filteredActions : unfilteredActions;
+        var compare = mode === "filtered" ? unfilteredActions : filteredActions;
+        var el = document.getElementById("suggestedActions");
+        el.innerHTML = renderActions(ta, compare);
+        el.style.display = "block";
+
+        var diffEl = document.getElementById("comparisonDiff");
+        if (filteredActions && unfilteredActions) {
+          var removed = 0, added = 0, swapped = 0;
+          var cats = {repair:1, adjustment:1, care:1, other:1};
+          for (var key in cats) {
+            var fIds = {}; var fNames = {}; (filteredActions[key]||[]).forEach(function(a){fIds[a.id]=1; fNames[a.name]=a;});
+            var uIds = {}; var uNames = {}; (unfilteredActions[key]||[]).forEach(function(a){uIds[a.id]=1; uNames[a.name]=a;});
+            for (var id in uIds) if (!fIds[id]) {
+              // Check if it's a swap
+              var ua = (unfilteredActions[key]||[]).find(function(a){return a.id==id;});
+              if (ua && fNames[ua.name] && fNames[ua.name].id != ua.id) swapped++;
+              else removed++;
+            }
+            for (var id in fIds) if (!uIds[id]) {
+              var fa = (filteredActions[key]||[]).find(function(a){return a.id==id;});
+              if (fa && uNames[fa.name] && uNames[fa.name].id != fa.id) {} // swap, already counted
+              else added++;
+            }
+          }
+          var legend = '<span class="diff-dot green"></span> Added &nbsp;&nbsp; <span class="diff-dot gray"></span> Removed &nbsp;&nbsp; <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--amber);margin-right:4px;vertical-align:middle;"></span> Variant swap';
+          if (mode === 'filtered') {
+            diffEl.innerHTML = legend + ' &nbsp;&nbsp;|&nbsp;&nbsp; ' + removed + ' removed, ' + added + ' replaced, ' + swapped + ' swapped';
+          } else {
+            diffEl.innerHTML = legend + ' &nbsp;&nbsp;|&nbsp;&nbsp; ' + added + ' filtered out, ' + removed + ' backfilled, ' + swapped + ' swapped';
+          }
+        }
+      };
+
+      Promise.all([
+        fetch("/docs/verify/" + encodeURIComponent(pid)).then(function(r) { return r.json(); }),
+        fetch("/docs/verify/" + encodeURIComponent(pid) + "?filter=0").then(function(r) { return r.json(); })
+      ]).then(function(results) {
+          var data = results[0];
+          var unfiltered = results[1];
           var p = data.product || {};
           var m = data.mapping || {};
 
-          // Update page title and header
+          filteredActions = data.top_actions || {};
+          unfilteredActions = unfiltered.top_actions || {};
+
           var name = p.product_name || ("Product " + pid);
           var brand = p.brand || "KappAhl";
           document.querySelector(".kh-title").textContent = name;
@@ -298,25 +609,18 @@
           document.querySelector(".kh-logo").textContent = brand;
           document.title = name + " — " + brand;
 
-          // Update product image
           if (p.image_url) {
             var img = document.querySelector(".kh-image img");
-            if (img) {
-              img.src = p.image_url;
-              img.alt = name;
-            }
+            if (img) { img.src = p.image_url; img.alt = name; }
           }
 
-          // Update breadcrumb
           var category = p.category || p.clothing_type || "";
-          var qfixType = m.clothing_type_result || "";
           var bc = '<a href="#">Hem</a>';
           if (brand) bc += ' / <a href="#">' + esc(brand) + '</a>';
           if (category) bc += ' / <a href="#">' + esc(category) + '</a>';
           bc += ' / ' + esc(name);
           document.getElementById("breadcrumb").innerHTML = bc;
 
-          // Update redirect link brand slugs
           var brandSlug = brand.toLowerCase().replace(/\s+/g, "");
           if (brandSlug === "ginatricot") brandSlug = "ginatricot";
           else if (brandSlug === "nudiejeans") brandSlug = "nudie";
@@ -324,38 +628,17 @@
             el.href = el.href.replace(/\/[^/]+\/(repair|adjustment|care)\//, "/" + brandSlug + "/$1/");
           });
 
-          // Populate mapping info
           document.getElementById("infoBrand").textContent = brand;
           document.getElementById("infoClothingType").textContent = p.clothing_type || "—";
           document.getElementById("infoMaterial").textContent = p.material_composition || "—";
           document.getElementById("infoQfixType").textContent = m.clothing_type_result
-            ? m.clothing_type_result + " (ID " + m.clothing_type_id + ")"
-            : "—";
+            ? m.clothing_type_result + " (ID " + m.clothing_type_id + ")" : "—";
           document.getElementById("infoQfixMaterial").textContent = m.material_result
-            ? m.material_result + " (ID " + m.material_id + ")"
-            : "—";
+            ? m.material_result + " (ID " + m.material_id + ")" : "—";
           document.getElementById("mappingInfo").style.display = "block";
 
-          // Render suggested actions
-          var ta = data.top_actions || {};
-          var labels = {repair: "Reparation", adjustment: "Justering", care: "Tvätt & skötsel", other: "Övrigt"};
-          var html = "";
-          for (var key in labels) {
-            var actions = ta[key];
-            if (!actions || !actions.length) continue;
-            html += '<div class="kh-actions-group"><div class="kh-actions-label">' + labels[key] + '</div><div class="kh-actions-row">';
-            for (var i = 0; i < actions.length; i++) {
-              var a = actions[i];
-              var price = a.price ? " — from " + a.price + " kr" : "";
-              html += '<span class="kh-action-chip">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + '</span></span>';
-            }
-            html += '</div></div>';
-          }
-          if (html) {
-            var el = document.getElementById("suggestedActions");
-            el.innerHTML = html;
-            el.style.display = "block";
-          }
+          document.getElementById("comparisonSection").style.display = "block";
+          showFilter("filtered");
         })
         .catch(function(err) { console.error("Failed to load product data:", err); });
     })();
