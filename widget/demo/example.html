@@ -47,12 +47,14 @@ h1 { font-size: 22px; margin-bottom: 4px; }
   letter-spacing: 0.5px;
   margin-bottom: 8px;
 }
+.qfix-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
 
 .code-section {
   background: #fff;
   border-radius: 12px;
   padding: 24px 32px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  margin-bottom: 24px;
 }
 .code-section h2 { font-size: 16px; margin-bottom: 12px; }
 .code-section p { font-size: 14px; color: #666; margin-bottom: 12px; }
@@ -74,31 +76,50 @@ code { font-family: "SF Mono", Consolas, "Courier New", monospace; }
 <div class="container">
 
   <h1>QFix Widget</h1>
-  <p class="subtitle">Add Reparera, Mattanpassa and Skotsel buttons to any product page</p>
+  <p class="subtitle">Add Reparera, Måttanpassa and Skötsel buttons to any product page</p>
 
-  <!-- Live preview -->
+  <!-- Live preview: all buttons together -->
   <div class="product-card">
     <div class="product-name">Hoodie med dragkedja</div>
     <div class="product-meta">Artikel: 846030</div>
     <div class="product-price">299 kr</div>
-    <button class="add-to-cart">Lagg i varukorgen</button>
+    <button class="add-to-cart">Lägg i varukorgen</button>
 
-    <div class="section-label">QFix tjanster</div>
+    <div class="section-label">Alla QFix-tjänster</div>
+    <div class="qfix-row">
+      <div data-qfix data-product-id="846030" data-brand="kappahl"></div>
+    </div>
 
-    <!-- The widget — this is all you need -->
-    <div data-qfix data-product-id="846030" data-brand="kappahl"></div>
+    <div class="section-label">Enskilda knappar</div>
+    <div class="qfix-row">
+      <div data-qfix="repair" data-product-id="846030" data-brand="kappahl"></div>
+      <div data-qfix="adjustment" data-product-id="846030" data-brand="kappahl"></div>
+      <div data-qfix="care" data-product-id="846030" data-brand="kappahl"></div>
+    </div>
   </div>
 
-  <!-- Code -->
+  <!-- Code: all buttons -->
   <div class="code-section">
-    <h2>Add this to your product page</h2>
-    <p>Place the div where you want the buttons. Replace the product ID and brand with yours.</p>
-    <pre><code><span class="hl">&lt;!-- QFix service buttons --&gt;</span>
-&lt;div data-qfix data-product-id=<span class="hl">"YOUR_PRODUCT_ID"</span> data-brand=<span class="hl">"YOUR_BRAND"</span>&gt;&lt;/div&gt;
+    <h2>All buttons</h2>
+    <p>Renders Reparera, Måttanpassa and Skötsel together.</p>
+    <pre><code>&lt;div <span class="hl">data-qfix</span> data-product-id=<span class="hl">"YOUR_PRODUCT_ID"</span> data-brand=<span class="hl">"YOUR_BRAND"</span>&gt;&lt;/div&gt;</code></pre>
+  </div>
 
-<span class="hl">&lt;!-- Before &lt;/body&gt; --&gt;</span>
-&lt;script src=<span class="hl">"https://qfix.fly.dev/widget.js"</span>
-        data-api-base=<span class="hl">"https://qfix.fly.dev"</span>&gt;&lt;/script&gt;</code></pre>
+  <!-- Code: single button -->
+  <div class="code-section">
+    <h2>Single button</h2>
+    <p>Pick only the service you need.</p>
+    <pre><code>&lt;div data-qfix=<span class="hl">"repair"</span> data-product-id=<span class="hl">"YOUR_PRODUCT_ID"</span> data-brand=<span class="hl">"YOUR_BRAND"</span>&gt;&lt;/div&gt;
+&lt;div data-qfix=<span class="hl">"adjustment"</span> data-product-id=<span class="hl">"YOUR_PRODUCT_ID"</span> data-brand=<span class="hl">"YOUR_BRAND"</span>&gt;&lt;/div&gt;
+&lt;div data-qfix=<span class="hl">"care"</span> data-product-id=<span class="hl">"YOUR_PRODUCT_ID"</span> data-brand=<span class="hl">"YOUR_BRAND"</span>&gt;&lt;/div&gt;</code></pre>
+  </div>
+
+  <!-- Code: script tag -->
+  <div class="code-section">
+    <h2>Include the script</h2>
+    <p>Add this once before &lt;/body&gt;.</p>
+    <pre><code>&lt;script src=<span class="hl">"https://qfix.fly.dev/widget/v1.js"</span>
+        data-api-base=<span class="hl">"https://qfix.fly.dev"</span> defer&gt;&lt;/script&gt;</code></pre>
   </div>
 
 </div>

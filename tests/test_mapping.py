@@ -46,7 +46,7 @@ def test_map_clothing_type_unknown():
 
 
 def test_map_clothing_type_accessories():
-    assert map_clothing_type("Accessoarer > Vantar & handskar") == "Gloves"
+    assert map_clothing_type("Vantar & handskar") == "Gloves"
 
 
 def test_map_material_bomull():
@@ -105,7 +105,8 @@ def test_map_product_full():
     }
     result = map_product(product)
     assert result["qfix_clothing_type"] == "Trousers"
-    assert result["qfix_clothing_type_id"] == QFIX_CLOTHING_TYPE_IDS["Trousers"]
+    # Women's Clothing has a gender-specific override for Trousers (ID 84)
+    assert result["qfix_clothing_type_id"] == 84
     assert result["qfix_material"] == "Standard textile"
     assert result["qfix_material_id"] is not None
     assert result["qfix_subcategory"] == "Women's Clothing"

@@ -1,6 +1,6 @@
 # QFix Widget
 
-Add **Reparera**, **Mattanpassa** and **Skotsel** buttons to your product pages.
+Add **Reparera**, **Måttanpassa** and **Skötsel** buttons to your product pages.
 
 When a customer clicks a button, they go directly to the QFix booking page for that product and service.
 
@@ -15,8 +15,8 @@ When a customer clicks a button, they go directly to the QFix booking page for t
 <div data-qfix data-product-id="YOUR_PRODUCT_ID" data-brand="YOUR_BRAND"></div>
 
 <!-- Before </body> -->
-<script src="https://qfix.fly.dev/widget.js"
-        data-api-base="https://qfix.fly.dev"></script>
+<script src="https://qfix.fly.dev/widget/v1.js"
+        data-api-base="https://qfix.fly.dev" defer></script>
 ```
 
 Replace:
@@ -24,18 +24,39 @@ Replace:
 - `YOUR_BRAND` with your brand identifier:
 
 | Brand        | `data-brand` value |
-|--------------|--------------------|
-| KappAhl      | `kappahl`          |
-| Gina Tricot  | `ginatricot`       |
-| Eton         | `eton`             |
-| Nudie Jeans  | `nudie`            |
-| Lindex       | `lindex`           |
+|--------------|---------------------|
+| KappAhl      | `kappahl`           |
+| Gina Tricot  | `ginatricot`        |
+| Eton         | `eton`              |
+| Nudie Jeans  | `nudie`             |
+| Lindex       | `lindex`            |
 
-That's it. The widget:
-- Fetches the available services for the product
-- Renders buttons for each service (Reparera, Mattanpassa, Skotsel)
-- Opens the QFix booking page in a new tab when clicked
-- Shows nothing if the product isn't found
+---
+
+## All buttons or single button
+
+**All three buttons** — leave `data-qfix` empty:
+
+```html
+<div data-qfix data-product-id="846030" data-brand="kappahl"></div>
+```
+
+**Single button** — set `data-qfix` to the service you want:
+
+```html
+<div data-qfix="repair" data-product-id="846030" data-brand="kappahl"></div>
+<div data-qfix="adjustment" data-product-id="846030" data-brand="kappahl"></div>
+<div data-qfix="care" data-product-id="846030" data-brand="kappahl"></div>
+```
+
+Each div renders independently, so you can place them anywhere on the page.
+
+| `data-qfix` value | Button        |
+|--------------------|---------------|
+| *(empty)*          | All three     |
+| `repair`           | Reparera      |
+| `adjustment`       | Måttanpassa   |
+| `care`             | Skötsel       |
 
 ---
 
@@ -53,8 +74,11 @@ That's it. The widget:
   <p>299 kr</p>
   <button>Lagg i varukorgen</button>
 
-  <!-- QFix buttons -->
+  <!-- All QFix buttons -->
   <div data-qfix data-product-id="846030" data-brand="kappahl"></div>
+
+  <!-- Or pick one -->
+  <div data-qfix="repair" data-product-id="846030" data-brand="kappahl"></div>
 
   <script src="https://qfix.fly.dev/widget.js"
           data-api-base="https://qfix.fly.dev"></script>
@@ -101,6 +125,17 @@ Use `data-theme` for quick styling:
 ```html
 <div data-qfix data-product-id="846030" data-brand="kappahl" data-theme="light"></div>
 ```
+
+---
+
+## Versioning
+
+Always use the versioned URL in production. Versioned URLs are stable and won't change behavior.
+
+| URL               | Behavior                                    |
+|-------------------|---------------------------------------------|
+| `/widget/v1.js`   | Stable — pinned to version 1 (recommended)  |
+| `/widget.js`      | Always serves the latest version            |
 
 ---
 

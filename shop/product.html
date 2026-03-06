@@ -202,27 +202,6 @@ a { color: inherit; text-decoration: none; }
   height: 16px;
   color: #4CAF50;
 }
-.qfix-buttons { display: flex; flex-direction: column; gap: 10px; }
-
-.qfix-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 32px;
-  background: #6b7280;
-  font-size: 14px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition: background 0.15s;
-  text-decoration: none;
-  color: #fff;
-}
-.qfix-btn:hover {
-  background: #4b5563;
-}
 .qfix-powered {
   text-align: center;
   font-size: 11px;
@@ -273,14 +252,6 @@ a { color: inherit; text-decoration: none; }
   font-size: 14px;
   color: #555;
   line-height: 1.7;
-}
-
-/* ── QFix widget section ───────────────────────── */
-.qfix-widget-section {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  margin-bottom: 24px;
 }
 
 /* ── Footer ────────────────────────────────────── */
@@ -390,9 +361,6 @@ async function loadProduct() {
 function render(data) {
   const p = data.product;
   const m = data.mapping;
-  const services = data.services || [];
-  const persistedUrls = data.persisted_service_urls || {};
-  const topActions = data.top_actions || {};
 
   const price = fakePrice(p.product_id);
   const colorHex = colorToHex(p.category); // category often has color info for kappahl
@@ -407,114 +375,6 @@ function render(data) {
   else if (cat.includes('herr') || cat.includes('man') || cat.includes('män')) catLabel = 'Herr';
   else if (cat.includes('barn') || cat.includes('kid') || cat.includes('flick') || cat.includes('pojk')) catLabel = 'Barn';
   else if (cat.includes('baby') || cat.includes('beb')) catLabel = 'Baby';
-
-  // Build QFix service buttons with services_id from top actions
-  function buildServiceUrl(baseUrl, actions) {
-    if (!baseUrl) return null;
-    if (!actions || actions.length === 0) return baseUrl;
-    const ids = actions.map(a => a.id).join(',');
-    const sep = baseUrl.includes('?') ? '&' : '?';
-    return baseUrl + sep + 'services_id=' + ids;
-  }
-
-  const repairBase = persistedUrls.repair || `/kappahl/repair/?productId=${p.product_id}`;
-  const adjustBase = persistedUrls.adjustment || `/kappahl/adjustment/?productId=${p.product_id}`;
-  const careBase = persistedUrls.care || `/kappahl/care/?productId=${p.product_id}`;
-
-  const repairUrl = buildServiceUrl(repairBase, topActions.repair);
-  const adjustUrl = buildServiceUrl(adjustBase, topActions.adjustment);
-  const careUrl = buildServiceUrl(careBase, topActions.care);
-
-  // Top actions preview
-  const svcTranslations = {
-    // Repair
-    'Zipper replacement': 'Byte av dragkedja',
-    'Zipper repair': 'Lagning av dragkedja',
-    'Button replacement': 'Byte av knapp',
-    'Button repair': 'Lagning av knapp',
-    'Hole repair': 'Lagning av hål',
-    'Seam repair': 'Sömslagning',
-    'Patch repair': 'Lappning',
-    'Elastic replacement': 'Byte av resår',
-    'Lining repair': 'Lagning av foder',
-    'Hook & eye replacement': 'Byte av hyska',
-    'Snap button replacement': 'Byte av tryckknapp',
-    'Drawstring replacement': 'Byte av dragsko',
-    'Velcro replacement': 'Byte av kardborrband',
-    'Darn repair': 'Stoppning',
-    'Reinforcement': 'Förstärkning',
-    'Tear repair': 'Lagning av reva',
-    'Repair seam': 'Laga söm',
-    'Repair tear': 'Laga reva',
-    'Repair hole': 'Laga hål',
-    'Repair wear': 'Laga slitage',
-    'Repair zipper': 'Laga dragkedja',
-    'Replace zipper': 'Byta dragkedja',
-    'Replace button': 'Byta knapp',
-    'Replace elastic': 'Byta resår',
-    'Replace snap button': 'Byta tryckknapp',
-    'Replace hook & eye': 'Byta hyska',
-    'Replace drawstring': 'Byta dragsko',
-    'Replace velcro': 'Byta kardborrband',
-    'Attach new inner lining': 'Nytt innerfoder',
-    'Repair lining': 'Laga foder',
-    'Repair burn mark': 'Laga brännmärke',
-    'Repair cuffs': 'Laga muddar',
-    // Adjustment
-    'Hem pants': 'Lägga upp byxor',
-    'Hem dress': 'Lägga upp klänning',
-    'Hem skirt': 'Lägga upp kjol',
-    'Shorten length': 'Korta längden',
-    'Shorten sleeves': 'Korta ärmar',
-    'Take in waist': 'Sy in midja',
-    'Take in sides': 'Sy in sidor',
-    'Let out waist': 'Sy ut midja',
-    'Let out sides': 'Sy ut sidor',
-    'Shorten jacket': 'Korta jacka',
-    'Taper legs': 'Smalna av ben',
-    'Shorten coat': 'Korta kappa',
-    // Care
-    'Wash & press': 'Tvätt & pressning',
-    'Dry cleaning': 'Kemtvätt',
-    'Steam press': 'Ångpressning',
-    'Stain removal': 'Fläckborttagning',
-    'Ironing': 'Strykning',
-    'Wash': 'Tvätt',
-    'Press': 'Pressning',
-    'Freshening up': 'Uppfräschning',
-    'Waterproofing': 'Impregnering',
-    'Pilling removal': 'Noppborttagning',
-    'Whitening': 'Blekning',
-    'Odor removal': 'Luktborttagning',
-    'Waterwash': 'Vattentvätt',
-    'Stain treatment and wash': 'Fläckbehandling och tvätt',
-    'Clean and condition': 'Rengöring och vård',
-    'Reproofing': 'Omimpregnering',
-    // Adjustment
-    'Hem': 'Lägga upp',
-    'Shorten': 'Korta',
-    'Lengthen': 'Förlänga',
-    'Take in sides': 'Sy in sidor',
-    'Take in waist': 'Sy in midja',
-    'Narrow shoulder area': 'Smalna av axelparti',
-    'Take in': 'Sy in',
-    'Let out': 'Sy ut',
-    'Taper': 'Smalna av',
-    'Replace lining': 'Byta foder',
-  };
-
-  function translateAction(name) {
-    return svcTranslations[name] || name;
-  }
-
-  function actionPreview(actions) {
-    if (!actions || actions.length === 0) return '';
-    return actions.slice(0, 2).map(a => translateAction(a.name)).join(', ');
-  }
-
-  const repairPreview = actionPreview(topActions.repair);
-  const adjustPreview = actionPreview(topActions.adjustment);
-  const carePreview = actionPreview(topActions.care);
 
   const hasAnyService = m.qfix_url;
 
@@ -561,26 +421,9 @@ function render(data) {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="M8 12l2 2 4-4"/></svg>
             Hållbarhetstjänster
           </div>
-          <div class="qfix-buttons">
-            <a class="qfix-btn" href="${repairUrl}" target="_blank" rel="noopener">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M3 21L14 10"/><path d="M14 10l-3-3 5-5 3 3-5 5z"/><path d="M14 10a6 6 0 0 1-6 6"/></svg>
-              Reparera
-            </a>
-            <a class="qfix-btn" href="${adjustUrl}" target="_blank" rel="noopener">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><path d="M22 12h-3"/><path d="M21.2 8.5l-2.8.8"/><path d="M21.2 15.5l-2.8-.8"/><path d="M19.5 5.5l-2.3 1.6"/><path d="M19.5 18.5l-2.3-1.6"/></svg>
-              Måttanpassa
-            </a>
-            <a class="qfix-btn" href="${careUrl}" target="_blank" rel="noopener">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
-              Skötsel
-            </a>
-          </div>
+          <div data-qfix data-product-id="${p.product_id}" data-brand="kappahl"></div>
           <div class="qfix-powered">Hållbarhetstjänster via QFix</div>
         </div>` : ''}
-
-        <div class="qfix-widget-section">
-          <div data-qfix data-product-id="${p.product_id}" data-brand="kappahl"></div>
-        </div>
       </div>
     </div>
 
@@ -639,7 +482,7 @@ function render(data) {
 
   // Load QFix widget after DOM is updated
   const widgetScript = document.createElement('script');
-  widgetScript.src = '/widget.js';
+  widgetScript.src = '/widget/v1.js';
   document.body.appendChild(widgetScript);
 }
 

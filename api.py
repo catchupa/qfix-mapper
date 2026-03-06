@@ -180,13 +180,20 @@ QFIX_CATEGORIES_URL = "https://dev.qfixr.me/wp-json/qfix/v1/product-categories?p
 _qfix_items = {}      # L3 clothing types: {id: {name, slug, link, parent}}
 _qfix_subitems = {}   # L4 materials:      {id: {name, slug, link}}
 _qfix_services = {}   # {(L3_id, L4_id): [service_categories]}
+_action_assigned_categories = {}  # {action_id: set(L3 category IDs)}
 _qfix_catalog_loaded = False
 
-# ── QFix service allowlist (crawled from site) ───────────────────────────
-# The QFix API returns identical services for all clothing types, but the site
-# filters them per L3 item + L4 material. This allowlist captures the ground truth.
-# Set QFIX_FILTER_SERVICES=0 to disable filtering globally.
-QFIX_FILTER_SERVICES = os.environ.get("QFIX_FILTER_SERVICES", "1") != "0"
+# ── Service filtering ────────────────────────────────────────────────────
+# Two filtering strategies:
+#   1. "assigned_categories" — use assigned_categories from QFix API (authoritative)
+#   2. "allowlist" — use crawled qfix_services_by_type.json (legacy, better ranking)
+# Set QFIX_SERVICE_FILTER to choose: "assigned_categories" (default) or "allowlist"
+# Set to "off" to disable all filtering.
+QFIX_SERVICE_FILTER = os.environ.get("QFIX_SERVICE_FILTER", "assigned_categories")
+# Legacy env var — QFIX_FILTER_SERVICES=0 disables all filtering
+if os.environ.get("QFIX_FILTER_SERVICES") == "0":
+    QFIX_SERVICE_FILTER = "off"
+
 _qfix_allowed_services = {}  # {ct_id_str: {mat_id_str: {svc_key: [{id, name}]}}}
 
 def _load_qfix_allowed_services():
@@ -200,11 +207,48 @@ def _load_qfix_allowed_services():
         logger.info("Loaded QFix service allowlist: %d clothing types", len(_qfix_allowed_services))
 
 
+def _filter_by_assigned_categories(actions, ct_id, mat_id, service_key, max_actions=5):
+    """Filter actions by assigned_categories from QFix API.
+
+    Only keeps actions whose assigned_categories includes the product's
+    clothing_type_id (L3 category). If fewer than max_actions survive,
+    backfills from the full valid action list for this (ct_id, mat_id) combo.
+    """
+    if not _action_assigned_categories:
+        return actions  # Data not loaded yet, pass through
+
+    # Filter ranked actions to only valid ones
+    filtered = [a for a in actions
+                if ct_id in _action_assigned_categories.get(a.get("id"), set())]
+
+    # Backfill if we have fewer than max_actions
+    if len(filtered) < max_actions:
+        seen_ids = {a["id"] for a in filtered}
+        # Map service_key to slug pattern for finding the right L5 category
+        slug_map = {"repair": "repair", "adjustment": "adjustment", "care": "washing"}
+        slug_pattern = slug_map.get(service_key, service_key)
+
+        svc_cats = _qfix_services.get((ct_id, mat_id), [])
+        for svc_cat in svc_cats:
+            if slug_pattern not in svc_cat.get("slug", ""):
+                continue
+            for s in svc_cat.get("services", []):
+                if s["id"] in seen_ids:
+                    continue
+                if ct_id not in _action_assigned_categories.get(s["id"], set()):
+                    continue
+                filtered.append({"id": s["id"], "name": s["name"], "price": s.get("price")})
+                seen_ids.add(s["id"])
+                if len(filtered) >= max_actions:
+                    break
+            break
+
+    return filtered
+
+
 def _filter_allowed_services(actions, ct_id, mat_id, service_key):
     """Filter actions to only those QFix actually shows for this clothing type + material.
-    Disabled when QFIX_FILTER_SERVICES=0 or ?filter=0 query param (checked by caller)."""
-    if not QFIX_FILTER_SERVICES:
-        return actions
+    Legacy allowlist filter — used when QFIX_SERVICE_FILTER=allowlist."""
     _load_qfix_allowed_services()
     if not _qfix_allowed_services:
         return actions  # No allowlist data, pass through
@@ -213,6 +257,23 @@ def _filter_allowed_services(actions, ct_id, mat_id, service_key):
         return actions  # No data for this combo, pass through
     allowed_ids = {s["id"] for s in allowed}
     return [a for a in actions if a.get("id") in allowed_ids]
+
+
+def filter_services(actions, ct_id, mat_id, service_key):
+    """Apply the active service filter strategy.
+
+    Uses QFIX_SERVICE_FILTER to choose between:
+      - "assigned_categories": filter by API assigned_categories + backfill (default)
+      - "allowlist": filter by crawled site allowlist (legacy)
+      - "off": no filtering
+    """
+    if QFIX_SERVICE_FILTER == "off":
+        return actions
+    if QFIX_SERVICE_FILTER == "allowlist":
+        return _filter_allowed_services(actions, ct_id, mat_id, service_key)
+    # Default: assigned_categories
+    _load_qfix_catalog()
+    return _filter_by_assigned_categories(actions, ct_id, mat_id, service_key)
 
 
 def _build_catalog_node(node):
@@ -234,7 +295,7 @@ def _load_qfix_catalog():
         → L4 (Standard textile/Leather/...) → L5 (Repair/Adjust/Washing/Other)
           → Products (services) → Variants
     """
-    global _qfix_items, _qfix_subitems, _qfix_catalog_loaded, _qfix_services
+    global _qfix_items, _qfix_subitems, _qfix_catalog_loaded, _qfix_services, _action_assigned_categories
     if _qfix_catalog_loaded:
         return
     try:
@@ -283,12 +344,18 @@ def _load_qfix_catalog():
                                 ],
                             }
                             svc_cat["services"].append(service)
+                            # Extract assigned_categories for service filtering
+                            ac = prod.get("assigned_categories", "")
+                            if ac and prod["id"] not in _action_assigned_categories:
+                                _action_assigned_categories[prod["id"]] = set(
+                                    int(c) for c in ac.split(",") if c.strip()
+                                )
                         service_categories.append(svc_cat)
                     _qfix_services[(l3_id, l4_id)] = service_categories
 
     _qfix_catalog_loaded = True
-    logger.info("QFix catalog loaded: %d items, %d subitems, %d service combos",
-                len(_qfix_items), len(_qfix_subitems), len(_qfix_services))
+    logger.info("QFix catalog loaded: %d items, %d subitems, %d service combos, %d actions with assigned_categories",
+                len(_qfix_items), len(_qfix_subitems), len(_qfix_services), len(_action_assigned_categories))
 
 
 def enrich_qfix(qfix):
@@ -485,32 +552,14 @@ def _redirect_to_qfix(brand_slug, service_key=None):
                 break
 
         # Add top-ranked action IDs as services_id
-        ct_id = qfix.get("qfix_clothing_type_id")
-        mat_id = qfix.get("qfix_material_id")
-        if ct_id and mat_id:
-            ranking_key_map = {"repair": "repair", "adjustment": "adjustment", "washing": "care", "customize": "other"}
-            ranking_key = ranking_key_map.get(service_key)
-            if ranking_key:
-                ranking_conn = get_db()
-                top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
-                ranking_conn.close()
-
-                # Apply keyword-based injection for this product
-                product_text = " ".join(filter(None, [
-                    product.get("product_name", ""),
-                    product.get("description", ""),
-                    product.get("clothing_type", ""),
-                ])).lower()
-                if product_text and qfix.get("qfix_services"):
-                    top_actions = _inject_keyword_actions(
-                        top_actions, product_text, qfix["qfix_services"])
-
-                actions = top_actions.get(ranking_key, [])
-                # Filter to only services QFix offers for this clothing type + material
-                actions = _filter_allowed_services(actions, ct_id, mat_id, ranking_key)
-                if actions:
-                    ids = ",".join(str(a["id"]) for a in actions)
-                    qfix_url += ("&" if "?" in qfix_url else "?") + f"services_id={ids}"
+        ranking_key_map = {"repair": "repair", "adjustment": "adjustment", "washing": "care", "customize": "other"}
+        ranking_key = ranking_key_map.get(service_key)
+        if ranking_key:
+            top_actions = _get_filtered_actions(product)
+            actions = top_actions.get(ranking_key, [])
+            if actions:
+                ids = ",".join(str(a["id"]) for a in actions)
+                qfix_url += ("&" if "?" in qfix_url else "?") + f"services_id={ids}"
 
     # Validate redirect URL to prevent open redirect
     if not qfix_url.startswith("https://") or not _is_allowed_redirect(qfix_url):
@@ -522,6 +571,10 @@ def _redirect_to_qfix(brand_slug, service_key=None):
 def redirect_to_repair(brand_slug):
     """Redirect to QFix repair booking page.
 
+    Looks up the product, maps it to QFix, and redirects to the booking page
+    with pre-selected repair actions. Used by the embeddable widget (widget.js)
+    and can be linked to directly.
+
     Usage: /<brand>/repair/?productId=534008
     ---
     tags:
@@ -531,10 +584,12 @@ def redirect_to_repair(brand_slug):
         in: path
         type: string
         required: true
+        description: Brand identifier (kappahl, ginatricot, eton, nudie, lindex)
       - name: productId
         in: query
         type: string
         required: true
+        description: Product article number
     responses:
       302:
         description: Redirect to QFix booking page with services_id for repair
@@ -548,6 +603,10 @@ def redirect_to_repair(brand_slug):
 def redirect_to_adjustment(brand_slug):
     """Redirect to QFix adjustment booking page.
 
+    Looks up the product, maps it to QFix, and redirects to the booking page
+    with pre-selected adjustment actions. Used by the embeddable widget (widget.js)
+    and can be linked to directly.
+
     Usage: /<brand>/adjustment/?productId=534008
     ---
     tags:
@@ -557,10 +616,12 @@ def redirect_to_adjustment(brand_slug):
         in: path
         type: string
         required: true
+        description: Brand identifier (kappahl, ginatricot, eton, nudie, lindex)
       - name: productId
         in: query
         type: string
         required: true
+        description: Product article number
     responses:
       302:
         description: Redirect to QFix booking page with services_id for adjustment
@@ -574,6 +635,10 @@ def redirect_to_adjustment(brand_slug):
 def redirect_to_care(brand_slug):
     """Redirect to QFix washing & care booking page.
 
+    Looks up the product, maps it to QFix, and redirects to the booking page
+    with pre-selected care actions. Used by the embeddable widget (widget.js)
+    and can be linked to directly.
+
     Usage: /<brand>/care/?productId=534008
     ---
     tags:
@@ -583,10 +648,12 @@ def redirect_to_care(brand_slug):
         in: path
         type: string
         required: true
+        description: Brand identifier (kappahl, ginatricot, eton, nudie, lindex)
       - name: productId
         in: query
         type: string
         required: true
+        description: Product article number
     responses:
       302:
         description: Redirect to QFix booking page with services_id for washing/care
@@ -1769,7 +1836,7 @@ KEYWORD_ACTION_RULES = [
         "keywords": ["dragkedja", "zipper", "blixtlås", "zip"],
         "actions": [
             {"name": "Replace zipper", "default": True},
-            {"name": "Replace main zipper", "sub_keywords": ["jacka", "jacket", "coat", "kappa", "rock"]},
+            {"name": "Replace main zipper", "default": True},
             {"name": "Replace zipper slider", "sub_keywords": ["slider", "dragare", "rits"]},
         ],
         "category": "repair",
@@ -1937,7 +2004,7 @@ KEYWORD_EXCLUSION_RULES = [
 ]
 
 
-def _inject_keyword_actions(top_actions, product_text, qfix_services):
+def _inject_keyword_actions(top_actions, product_text, qfix_services, ct_id=None):
     """Inject/exclude actions in top_actions based on keywords found in product text."""
     if not product_text:
         return top_actions
@@ -2002,6 +2069,11 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services):
                 variants = [a for a in all_actions[action_name] if a["category_key"] == cat]
                 if not variants:
                     variants = all_actions[action_name]
+                # Filter by assigned_categories if active
+                if ct_id and QFIX_SERVICE_FILTER == "assigned_categories" and _action_assigned_categories:
+                    variants = [a for a in variants if ct_id in _action_assigned_categories.get(a["id"], set())]
+                if not variants:
+                    continue
                 best = min(variants, key=lambda a: a["price"] or 9999)
                 entry = {"id": best["id"], "name": best["name"], "price": best["price"]}
 
@@ -2570,9 +2642,88 @@ def health():
 WIDGET_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "widget")
 
 
+def _get_filtered_actions(product_row):
+    """Shared helper: load rankings, filter by assigned_categories, apply keyword rules.
+
+    Returns a dict of {service_key: [actions]} with filtered & backfilled actions.
+    Works with both full product dicts and minimal widget rows.
+    """
+    ct_id = product_row.get("qfix_clothing_type_id")
+    mat_id = product_row.get("qfix_material_id")
+
+    top_actions = {}
+    if ct_id and mat_id:
+        ranking_conn = get_db()
+        top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
+        ranking_conn.close()
+
+    # Filter — remove actions not valid for this clothing type
+    if top_actions:
+        for key in list(top_actions.keys()):
+            top_actions[key] = filter_services(top_actions[key], ct_id, mat_id, key)
+
+    # Apply keyword require/exclusion rules
+    if top_actions:
+        product_text = " ".join(filter(None, [
+            product_row.get("product_name", ""),
+            product_row.get("description", ""),
+            product_row.get("clothing_type", ""),
+        ]))
+        if product_text:
+            svc_cats = _qfix_services.get((ct_id, mat_id), [])
+            if svc_cats:
+                top_actions = _inject_keyword_actions(top_actions, product_text, svc_cats, ct_id=ct_id)
+
+    return top_actions
+
+
+def _build_service_url(base_url, actions):
+    """Append services_id parameter to a QFix service URL."""
+    if not base_url:
+        return None
+    if not actions:
+        return base_url
+    ids = ",".join(str(a["id"]) for a in actions)
+    sep = "&" if "?" in base_url else "?"
+    return base_url + sep + "services_id=" + ids
+
+
 @app.route("/widget/<brand_slug>/product/<product_id>")
 def widget_product(brand_slug, product_id):
-    """Public endpoint for the widget — returns service URLs for a product."""
+    """Return service URLs for a product (public, no auth).
+
+    Returns JSON with direct QFix booking URLs for each available service
+    (repair, adjustment, care), including pre-selected service action IDs.
+
+    Note: The embeddable widget (widget.js) no longer uses this endpoint —
+    it links directly to the redirect endpoints instead. This endpoint is
+    kept as a public JSON API for custom integrations.
+    ---
+    tags:
+      - Widget
+    parameters:
+      - name: brand_slug
+        in: path
+        type: string
+        required: true
+        description: Brand identifier (kappahl, ginatricot, eton, nudie, lindex)
+      - name: product_id
+        in: path
+        type: string
+        required: true
+        description: Product article number
+    responses:
+      200:
+        description: Service URLs for the product
+        examples:
+          application/json:
+            services:
+              repair: "https://kappahl.dev.qfixr.me/sv/?subitem_id=94&material_id=69&service_category_id=37&services_id=916,1443"
+              adjustment: "https://kappahl.dev.qfixr.me/sv/?subitem_id=94&material_id=69&service_category_id=39&services_id=1355,971"
+              care: "https://kappahl.dev.qfixr.me/sv/?subitem_id=94&material_id=69&service_category_id=42&services_id=1312,1349"
+      404:
+        description: Unknown brand or product not found
+    """
     if brand_slug not in BRAND_ROUTES:
         return jsonify({"error": f"Unknown brand: {brand_slug}"}), 404
 
@@ -2593,38 +2744,7 @@ def widget_product(brand_slug, product_id):
     if not row or not row.get("qfix_url"):
         return jsonify({"error": "Product not found"}), 404
 
-    # Build service URLs with top action IDs appended
-    ct_id = row.get("qfix_clothing_type_id")
-    mat_id = row.get("qfix_material_id")
-
-    top_actions = {}
-    if ct_id and mat_id:
-        ranking_conn = get_db()
-        top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
-        ranking_conn.close()
-
-    # Apply keyword require/exclusion rules
-    if top_actions:
-        product_text = " ".join(filter(None, [
-            row.get("product_name", ""),
-            row.get("description", ""),
-            row.get("clothing_type", ""),
-        ]))
-        if product_text:
-            svc_cats = _qfix_services.get((ct_id, mat_id), [])
-            if svc_cats:
-                top_actions = _inject_keyword_actions(top_actions, product_text, svc_cats)
-            for key in list(top_actions.keys()):
-                top_actions[key] = _filter_allowed_services(top_actions[key], ct_id, mat_id, key)
-
-    def build_url(base_url, actions):
-        if not base_url:
-            return None
-        if not actions:
-            return base_url
-        ids = ",".join(str(a["id"]) for a in actions)
-        sep = "&" if "?" in base_url else "?"
-        return base_url + sep + "services_id=" + ids
+    top_actions = _get_filtered_actions(row)
 
     services = {}
     svc_map = {
@@ -2632,21 +2752,63 @@ def widget_product(brand_slug, product_id):
         "adjustment": row.get("qfix_url_adjustment"),
         "care": row.get("qfix_url_care"),
     }
-    action_key_map = {"repair": "repair", "adjustment": "adjustment", "care": "care"}
-
     for svc_key, base_url in svc_map.items():
         if base_url:
-            actions = top_actions.get(action_key_map[svc_key], [])
-            services[svc_key] = build_url(base_url, actions)
+            services[svc_key] = _build_service_url(base_url, top_actions.get(svc_key, []))
 
     resp = jsonify({"services": services})
     resp.headers["Access-Control-Allow-Origin"] = "*"
     return resp
 
 
+WIDGET_CURRENT_VERSION = "v1"
+
+
 @app.route("/widget.js")
 def widget_js():
-    return send_from_directory(WIDGET_DIR, "widget.js", mimetype="application/javascript")
+    """Serve latest widget version (alias for current version).
+
+    Third parties should use /widget/v1.js for stability.
+    ---
+    tags:
+      - Widget
+    responses:
+      200:
+        description: Widget JavaScript file
+    """
+    resp = send_from_directory(WIDGET_DIR, f"widget.{WIDGET_CURRENT_VERSION}.js",
+                               mimetype="application/javascript")
+    resp.headers["Cache-Control"] = "public, max-age=300"
+    return resp
+
+
+@app.route("/widget/<version>.js")
+def widget_js_versioned(version):
+    """Serve a specific widget version (e.g. /widget/v1.js).
+
+    Versioned URLs are stable — they won't change behavior.
+    ---
+    tags:
+      - Widget
+    parameters:
+      - name: version
+        in: path
+        type: string
+        required: true
+        description: Widget version (e.g. v1)
+    responses:
+      200:
+        description: Widget JavaScript file
+      404:
+        description: Unknown version
+    """
+    filename = f"widget.{version}.js"
+    path = os.path.join(WIDGET_DIR, filename)
+    if not os.path.exists(path):
+        return jsonify({"error": f"Unknown widget version: {version}"}), 404
+    resp = send_from_directory(WIDGET_DIR, filename, mimetype="application/javascript")
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
 
 
 @app.route("/demo")
@@ -2908,12 +3070,17 @@ def docs_verify(product_id):
         "other": product.get("qfix_url_other"),
     }
 
-    # Top ranked actions from DB (or fallback to first 5 from catalog)
-    top_actions = {}
-    if ct_id and mat_id:
-        ranking_conn = get_db()
-        top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
-        ranking_conn.close()
+    # Top ranked actions — filtered and keyword-adjusted
+    # Pass ?filter=0 to disable service filtering for debugging
+    if request.args.get("filter") == "0":
+        # Debug mode: raw rankings, no filtering
+        top_actions = {}
+        if ct_id and mat_id:
+            ranking_conn = get_db()
+            top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
+            ranking_conn.close()
+    else:
+        top_actions = _get_filtered_actions(product)
 
     # Fallback: if no rankings persisted, use first 5 unique per service category
     if not top_actions and enriched.get("qfix_services"):
@@ -2935,22 +3102,6 @@ def docs_verify(product_id):
                             break
                     top_actions[key] = actions
                     break
-
-    # Keyword-based action injection: boost relevant actions based on product text
-    if top_actions and enriched.get("qfix_services"):
-        product_text = " ".join(filter(None, [
-            product.get("product_name", ""),
-            product.get("description", ""),
-            product.get("clothing_type", ""),
-        ])).lower()
-
-        top_actions = _inject_keyword_actions(top_actions, product_text, enriched["qfix_services"])
-
-    # Filter to only services QFix actually offers for this clothing type + material
-    # Pass ?filter=0 to disable for debugging
-    if top_actions and ct_id and mat_id and request.args.get("filter") != "0":
-        for key in list(top_actions.keys()):
-            top_actions[key] = _filter_allowed_services(top_actions[key], ct_id, mat_id, key)
 
     return jsonify({
         "product": {
@@ -3209,7 +3360,7 @@ def validate_keyword_scores():
                 product.get("clothing_type", ""),
             ])).lower()
 
-            merged = _inject_keyword_actions(ai_top, product_text, svc_cats)
+            merged = _inject_keyword_actions(ai_top, product_text, svc_cats, ct_id=ct_id)
             merged_actions = merged.get(rule["category"], [])
 
             # Check if injection actually changed the list

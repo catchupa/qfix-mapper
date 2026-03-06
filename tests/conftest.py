@@ -29,6 +29,15 @@ def _create_tables_sqlite(conn):
             image_url TEXT,
             care_text TEXT,
             country_of_origin TEXT,
+            qfix_clothing_type TEXT,
+            qfix_clothing_type_id INTEGER,
+            qfix_material TEXT,
+            qfix_material_id INTEGER,
+            qfix_url TEXT,
+            qfix_url_repair TEXT,
+            qfix_url_adjustment TEXT,
+            qfix_url_care TEXT,
+            qfix_url_other TEXT,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             UNIQUE (brand, product_id)
         );
