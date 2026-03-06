@@ -1,0 +1,2613 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assigned Categories Gap Analysis</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  color: #212121;
+  background: #f5f5f5;
+  line-height: 1.5;
+  padding: 32px 20px;
+}
+.container { max-width: 1200px; margin: 0 auto; }
+h1 { font-size: 24px; margin-bottom: 4px; }
+.subtitle { color: #666; font-size: 14px; margin-bottom: 24px; }
+.stats {
+  display: flex; gap: 16px; margin-bottom: 32px; flex-wrap: wrap;
+}
+.stat-card {
+  background: #fff; border-radius: 12px; padding: 20px 28px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); min-width: 180px;
+}
+.stat-value { font-size: 32px; font-weight: 700; color: #1a1a1a; }
+.stat-label { font-size: 13px; color: #888; margin-top: 2px; }
+
+.filters {
+  background: #fff; border-radius: 12px; padding: 16px 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 24px;
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+}
+.filters label { font-size: 13px; color: #666; font-weight: 500; }
+.filters select, .filters input {
+  padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px;
+  font-size: 14px; background: #fff;
+}
+.filters input { width: 240px; }
+
+.service-card {
+  background: #fff; border-radius: 12px; padding: 24px 28px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px;
+}
+.service-header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+}
+.service-name { font-size: 18px; font-weight: 600; }
+.service-id { font-size: 13px; color: #888; }
+.service-meta { display: flex; gap: 16px; font-size: 13px; color: #666; margin-bottom: 16px; }
+.badge {
+  display: inline-flex; align-items: center; padding: 2px 10px;
+  border-radius: 12px; font-size: 12px; font-weight: 500;
+}
+.badge-red { background: #FEE2E2; color: #991B1B; }
+.badge-green { background: #D1FAE5; color: #065F46; }
+.badge-gray { background: #F3F4F6; color: #374151; }
+
+.category-grid {
+  display: flex; flex-wrap: wrap; gap: 6px;
+}
+.cat-tag {
+  padding: 4px 10px; border-radius: 6px; font-size: 12px;
+  background: #FEE2E2; color: #991B1B; border: 1px solid #FECACA;
+}
+.cat-tag.current {
+  background: #D1FAE5; color: #065F46; border-color: #A7F3D0;
+}
+
+.section-label {
+  font-size: 11px; color: #999; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-bottom: 6px; margin-top: 12px;
+}
+
+.toggle-btn {
+  background: none; border: 1px solid #ddd; border-radius: 6px;
+  padding: 4px 10px; font-size: 12px; color: #666; cursor: pointer;
+}
+.toggle-btn:hover { background: #f5f5f5; }
+
+.hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Assigned Categories Gap Analysis</h1>
+  <p class="subtitle">Services where AI ranking selects actions that are blocked by assigned_categories</p>
+
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-value">29</div>
+      <div class="stat-label">Services with gaps</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">715</div>
+      <div class="stat-label">Missing category assignments</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">55.9%</div>
+      <div class="stat-label">AI picks blocked</div>
+    </div>
+  </div>
+
+  <div class="filters">
+    <label>Search:</label>
+    <input type="text" id="search" placeholder="Filter by service name or category...">
+    <label>Sort:</label>
+    <select id="sort">
+      <option value="missing-desc">Most missing first</option>
+      <option value="missing-asc">Least missing first</option>
+      <option value="name">Service name</option>
+      <option value="id">Service ID</option>
+    </select>
+    <label><input type="checkbox" id="showCurrent"> Show current assignments</label>
+  </div>
+
+  <div id="services">
+    <div class="service-card" data-name="dry cleaning" data-missing="42" data-id="1323" data-cats="lined jacket / vest midlayer unlined jacket / vest ski / shell jacket coat others rain jacket rain trousers overall overall trousers / shorts sweatshirt / hoodie shirt / blouse others underwear skirt / dress knitted jumper bikini top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper shirt / t-shirt / body knitted jumper overall other belt cap others swimming trunks swimsuit trousers highvis jacket sweater overalls t-shirt trousers jacket scarf / shawl gloves hat">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Dry Cleaning</span>
+          <span class="service-id">ID: 1323</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">11 assigned</span>
+          <span class="badge badge-red">42 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 399 SEK</span>
+        <span>Missing category IDs: 102, 201, 99, 60, 100, 98, 81, 173, 87, 95, 193, 61, 161, 105, 202, 203, 200, 175, 198, 199, 160, 142, 185, 101, 89, 194, 96, 78, 66, 162, 88, 94, 169, 168, 163, 90, 82, 174, 84, 91, 171, 62</span>
+      </div>
+      <div class="section-label">Categories to add (42)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers <small>(174)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (11)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Washing and Care <small>(42)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Larger Bag / Duffel <small>(124)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="clean and condition" data-missing="41" data-id="1294" data-cats="trousers midlayer overalls ski / shell jacket ski / shell trousers t-shirt others rain jacket rain trousers trousers / shorts sweatshirt / hoodie shirt / blouse skirt / dress underwear knitted jumper bikini suit jacket top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper jacket suit / smoking trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket overall suit / smoking other scarf / shawl cap others wet suit swimming trunks swimsuit highvis jacket sweater">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Clean and condition</span>
+          <span class="service-id">ID: 1294</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">13 assigned</span>
+          <span class="badge badge-red">41 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 599 SEK</span>
+        <span>Missing category IDs: 201, 99, 81, 85, 93, 103, 87, 95, 193, 161, 105, 202, 200, 199, 160, 142, 185, 101, 89, 194, 96, 80, 78, 66, 86, 92, 195, 162, 88, 94, 196, 169, 168, 163, 90, 82, 84, 91, 104, 171, 170</span>
+      </div>
+      <div class="section-label">Categories to add (41)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (13)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Washing and Care <small>(42)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Hat <small>(98)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Belt <small>(102)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="dry cleaning" data-missing="39" data-id="1325" data-cats="trousers unlined jacket / vest ski / shell jacket ski / shell trousers t-shirt rain trousers trousers / shorts sweatshirt / hoodie shirt / blouse skirt / dress knitted jumper bikini suit jacket top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper jacket suit / smoking trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket suit / smoking other scarf / shawl cap hat others swimming trunks swimsuit sweater midlayer gloves underwear overall">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Dry cleaning</span>
+          <span class="service-id">ID: 1325</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">19 assigned</span>
+          <span class="badge badge-red">39 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 599 SEK</span>
+        <span>Missing category IDs: 201, 99, 100, 98, 85, 93, 103, 87, 95, 193, 161, 105, 200, 199, 185, 101, 89, 194, 96, 80, 78, 66, 86, 92, 195, 162, 88, 94, 196, 169, 168, 163, 90, 82, 84, 91, 104, 171, 62</span>
+      </div>
+      <div class="section-label">Categories to add (39)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (19)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Washing and Care <small>(42)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Larger Bag / Duffel <small>(124)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="replace zipper" data-missing="37" data-id="938" data-cats="lined jacket / vest midlayer unlined jacket / vest overalls ski / shell jacket ski / shell trousers coat others rain trousers trousers overall overall sweatshirt / hoodie others shirt / blouse skirt / dress knitted jumper suit jacket sweatshirt / hoodie shirts/t-shirts knitted jumper jacket suit / smoking knitted jumper jacket suit / smoking other others wet suit swimsuit highvis jacket sweater jacket top / t-shirt gloves swimming trunks">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Replace zipper</span>
+          <span class="service-id">ID: 938</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">48 assigned</span>
+          <span class="badge badge-red">37 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 419 SEK</span>
+        <span>Missing category IDs: 60, 100, 81, 85, 93, 103, 173, 87, 95, 193, 61, 161, 105, 202, 203, 200, 198, 175, 160, 185, 89, 96, 80, 78, 66, 86, 92, 195, 162, 88, 94, 169, 168, 90, 174, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (37)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(174)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (48)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Bags <small>(51)</small></span>
+          <span class="cat-tag current">Backpack <small>(75)</small></span>
+          <span class="cat-tag current">Others <small>(76)</small></span>
+          <span class="cat-tag current">Men's Shoes <small>(106)</small></span>
+          <span class="cat-tag current">Women's Shoes <small>(107)</small></span>
+          <span class="cat-tag current">Children's Shoes <small>(108)</small></span>
+          <span class="cat-tag current">Workwear Shoes <small>(109)</small></span>
+          <span class="cat-tag current">Boots <small>(110)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(111)</small></span>
+          <span class="cat-tag current">Sneakers <small>(112)</small></span>
+          <span class="cat-tag current">Boots <small>(113)</small></span>
+          <span class="cat-tag current">High heels <small>(114)</small></span>
+          <span class="cat-tag current">Sneakers <small>(115)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(116)</small></span>
+          <span class="cat-tag current">Briefcase <small>(117)</small></span>
+          <span class="cat-tag current">Handbags <small>(118)</small></span>
+          <span class="cat-tag current">Larger bag / Duffel <small>(119)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(120)</small></span>
+          <span class="cat-tag current">Backpack <small>(121)</small></span>
+          <span class="cat-tag current">Briefcase <small>(122)</small></span>
+          <span class="cat-tag current">Handbags <small>(123)</small></span>
+          <span class="cat-tag current">Larger Bag / Duffel <small>(124)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(125)</small></span>
+          <span class="cat-tag current">ID 136 <small>(136)</small></span>
+          <span class="cat-tag current">Boots <small>(138)</small></span>
+          <span class="cat-tag current">Shoes <small>(140)</small></span>
+          <span class="cat-tag current">Sandals <small>(141)</small></span>
+          <span class="cat-tag current">Winter boots <small>(145)</small></span>
+          <span class="cat-tag current">Other shoes <small>(146)</small></span>
+          <span class="cat-tag current">Rain boots <small>(147)</small></span>
+          <span class="cat-tag current">Rain boots <small>(148)</small></span>
+          <span class="cat-tag current">Rain boots <small>(149)</small></span>
+          <span class="cat-tag current">Rain boots <small>(150)</small></span>
+          <span class="cat-tag current">Sandals <small>(164)</small></span>
+          <span class="cat-tag current">Sandals <small>(165)</small></span>
+          <span class="cat-tag current">Protective / MC shoes <small>(181)</small></span>
+          <span class="cat-tag current">Boots <small>(182)</small></span>
+          <span class="cat-tag current">Shoes <small>(183)</small></span>
+          <span class="cat-tag current">ID 186 <small>(186)</small></span>
+          <span class="cat-tag current">Leather <small>(187)</small></span>
+          <span class="cat-tag current">Suede <small>(188)</small></span>
+          <span class="cat-tag current">Standard textile <small>(189)</small></span>
+          <span class="cat-tag current">Galloon <small>(190)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(191)</small></span>
+          <span class="cat-tag current">Riding boots <small>(204)</small></span>
+          <span class="cat-tag current">Ancle boots <small>(205)</small></span>
+          <span class="cat-tag current">Knee-high boots <small>(206)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="waterproofing" data-missing="36" data-id="1652" data-cats="lined jacket / vest midlayer unlined jacket / vest ski / shell jacket coat others rain jacket trousers / shorts sweatshirt / hoodie shirt / blouse others skirt / dress suit jacket trousers / shorts sweatshirt / hoodie shirts/t-shirts jacket suit / smoking trousers / shorts sweatshirt / hoodie shirt / t-shirt / body jacket overall suit / smoking other belt cap hat others wet suit highvis jacket sweater jacket scarf / shawl gloves">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Waterproofing</span>
+          <span class="service-id">ID: 1652</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">12 assigned</span>
+          <span class="badge badge-red">36 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 379 SEK</span>
+        <span>Missing category IDs: 102, 99, 60, 100, 98, 81, 85, 93, 103, 173, 61, 161, 105, 202, 203, 200, 199, 142, 101, 89, 194, 96, 78, 66, 86, 92, 195, 162, 88, 94, 196, 84, 91, 104, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (36)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (12)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Washing and Care <small>(42)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">ID 137 <small>(137)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="waterwash" data-missing="36" data-id="1352" data-cats="lined jacket / vest unlined jacket / vest overalls ski / shell jacket ski / shell trousers coat others rain jacket rain trousers trousers overall overall sweatshirt / hoodie skirt / dress knitted jumper suit jacket sweatshirt / hoodie knitted jumper jacket suit / smoking sweatshirt / hoodie knitted jumper jacket overall suit / smoking other belt cap hat others wet suit highvis jacket sweater jacket others">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Waterwash</span>
+          <span class="service-id">ID: 1352</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">20 assigned</span>
+          <span class="badge badge-red">36 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 59 SEK</span>
+        <span>Missing category IDs: 102, 99, 60, 98, 81, 85, 93, 103, 173, 87, 95, 193, 61, 105, 202, 200, 203, 175, 198, 199, 160, 142, 185, 80, 78, 66, 86, 92, 195, 162, 88, 94, 196, 174, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (36)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Trousers <small>(174)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (20)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Washing and Care <small>(42)</small></span>
+          <span class="cat-tag current">Women's Clothing <small>(55)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Shirt / Blouse <small>(89)</small></span>
+          <span class="cat-tag current">Top / T-shirt <small>(90)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Shirts/t-shirts <small>(96)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Scarf / Shawl <small>(101)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(104)</small></span>
+          <span class="cat-tag current">ID 137 <small>(137)</small></span>
+          <span class="cat-tag current">Midlayer <small>(161)</small></span>
+          <span class="cat-tag current">T-shirt <small>(163)</small></span>
+          <span class="cat-tag current">Swimsuit <small>(168)</small></span>
+          <span class="cat-tag current">Swimming trunks <small>(169)</small></span>
+          <span class="cat-tag current">Underwear <small>(171)</small></span>
+          <span class="cat-tag current">Shirt / t-shirt / Body <small>(194)</small></span>
+          <span class="cat-tag current">Bikini <small>(201)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="repair tear" data-missing="33" data-id="1420" data-cats="trousers lined jacket / vest midlayer unlined jacket / vest overalls ski / shell jacket ski / shell trousers t-shirt coat others rain jacket rain trousers overall overall others underwear bikini suit jacket jacket suit / smoking belt scarf / shawl cap hat others wet suit swimsuit highvis jacket sweater jacket gloves swimming trunks">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Repair tear</span>
+          <span class="service-id">ID: 1420</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">44 assigned</span>
+          <span class="badge badge-red">33 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 269 SEK</span>
+        <span>Missing category IDs: 102, 201, 99, 60, 100, 98, 81, 85, 93, 173, 61, 161, 202, 203, 200, 175, 198, 160, 142, 185, 101, 80, 78, 86, 92, 162, 169, 168, 163, 82, 171, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (33)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (44)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Clothing <small>(49)</small></span>
+          <span class="cat-tag current">Outerwear <small>(54)</small></span>
+          <span class="cat-tag current">Women's Clothing <small>(55)</small></span>
+          <span class="cat-tag current">Men's Clothing <small>(56)</small></span>
+          <span class="cat-tag current">Accessories <small>(57)</small></span>
+          <span class="cat-tag current">Children's Clothing <small>(58)</small></span>
+          <span class="cat-tag current">Workwear <small>(59)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Backpack <small>(75)</small></span>
+          <span class="cat-tag current">Others <small>(76)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(87)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(88)</small></span>
+          <span class="cat-tag current">Shirt / Blouse <small>(89)</small></span>
+          <span class="cat-tag current">Top / T-shirt <small>(90)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(94)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Shirts/t-shirts <small>(96)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(104)</small></span>
+          <span class="cat-tag current">Other <small>(105)</small></span>
+          <span class="cat-tag current">Men's Shoes <small>(106)</small></span>
+          <span class="cat-tag current">Briefcase <small>(117)</small></span>
+          <span class="cat-tag current">Handbags <small>(118)</small></span>
+          <span class="cat-tag current">Backpack <small>(121)</small></span>
+          <span class="cat-tag current">Briefcase <small>(122)</small></span>
+          <span class="cat-tag current">Handbags <small>(123)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimwear / Wet suits <small>(167)</small></span>
+          <span class="cat-tag current">Protective / MC wear <small>(172)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(193)</small></span>
+          <span class="cat-tag current">Shirt / t-shirt / Body <small>(194)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(196)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="repair hole" data-missing="33" data-id="916" data-cats="trousers lined jacket / vest midlayer unlined jacket / vest overalls ski / shell jacket ski / shell trousers coat others rain jacket rain trousers trousers overall overall others bikini suit jacket top / t-shirt jacket suit / smoking trousers / shorts other belt scarf / shawl cap hat others wet suit swimsuit highvis jacket jacket gloves">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Repair hole</span>
+          <span class="service-id">ID: 916</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">41 assigned</span>
+          <span class="badge badge-red">33 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 269 SEK</span>
+        <span>Missing category IDs: 102, 201, 99, 60, 100, 98, 81, 85, 93, 173, 61, 161, 105, 202, 203, 200, 175, 198, 160, 142, 185, 101, 80, 78, 86, 92, 168, 90, 82, 174, 104, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (33)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers <small>(174)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (41)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">ID 23 <small>(23)</small></span>
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Clothing <small>(49)</small></span>
+          <span class="cat-tag current">Men's Clothing <small>(56)</small></span>
+          <span class="cat-tag current">Children's Clothing <small>(58)</small></span>
+          <span class="cat-tag current">Workwear <small>(59)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Backpack <small>(75)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(87)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(88)</small></span>
+          <span class="cat-tag current">Shirt / Blouse <small>(89)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(94)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Shirts/t-shirts <small>(96)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Briefcase <small>(117)</small></span>
+          <span class="cat-tag current">Handbags <small>(118)</small></span>
+          <span class="cat-tag current">Backpack <small>(121)</small></span>
+          <span class="cat-tag current">Briefcase <small>(122)</small></span>
+          <span class="cat-tag current">Handbags <small>(123)</small></span>
+          <span class="cat-tag current">ID 136 <small>(136)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Sweater <small>(162)</small></span>
+          <span class="cat-tag current">T-shirt <small>(163)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimwear / Wet suits <small>(167)</small></span>
+          <span class="cat-tag current">Swimming trunks <small>(169)</small></span>
+          <span class="cat-tag current">Underwear <small>(171)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Suede <small>(188)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(193)</small></span>
+          <span class="cat-tag current">Shirt / t-shirt / Body <small>(194)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(196)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="stain removal" data-missing="33" data-id="1282" data-cats="trousers midlayer t-shirt others rain jacket rain trousers overall trousers / shorts sweatshirt / hoodie shirt / blouse skirt / dress underwear knitted jumper bikini top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket overall suit / smoking belt cap others wet suit swimming trunks swimsuit sweater">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Stain removal</span>
+          <span class="service-id">ID: 1282</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">25 assigned</span>
+          <span class="badge badge-red">33 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 289 SEK</span>
+        <span>Missing category IDs: 102, 201, 99, 103, 87, 95, 193, 161, 202, 200, 198, 199, 142, 185, 89, 194, 96, 66, 195, 162, 88, 94, 196, 169, 168, 163, 90, 82, 84, 91, 104, 171, 170</span>
+      </div>
+      <div class="section-label">Categories to add (33)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (25)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Washing and Care <small>(42)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Hat <small>(98)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Scarf / Shawl <small>(101)</small></span>
+          <span class="cat-tag current">Other <small>(105)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="take in waist" data-missing="30" data-id="958" data-cats="midlayer unlined jacket / vest overalls ski / shell jacket t-shirt coat rain jacket sweatshirt / hoodie shirt / blouse underwear knitted jumper jacket top / t-shirt sweatshirt / hoodie shirts/t-shirts knitted jumper jacket shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket overall belt wet suit swimsuit highvis jacket sweater jacket overall lined jacket / vest">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Take in waist</span>
+          <span class="service-id">ID: 958</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">25 assigned</span>
+          <span class="badge badge-red">30 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 314 SEK</span>
+        <span>Missing category IDs: 102, 60, 81, 85, 93, 103, 173, 87, 95, 193, 61, 161, 199, 175, 160, 142, 89, 194, 96, 78, 162, 88, 94, 196, 168, 163, 90, 171, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (30)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (25)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(104)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimming trunks <small>(169)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Bikini <small>(201)</small></span>
+          <span class="cat-tag current">Others <small>(202)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="take in the back" data-missing="30" data-id="1328" data-cats="midlayer unlined jacket / vest ski / shell jacket ski / shell trousers t-shirt rain jacket rain trousers trousers trousers / shorts sweatshirt / hoodie shirt / blouse underwear knitted jumper bikini top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket overall suit / smoking wet suit swimsuit trousers sweater">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Take in the back</span>
+          <span class="service-id">ID: 1328</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">17 assigned</span>
+          <span class="badge badge-red">30 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 699 SEK</span>
+        <span>Missing category IDs: 201, 103, 87, 95, 193, 161, 199, 142, 185, 89, 194, 96, 80, 78, 195, 162, 88, 94, 196, 168, 163, 90, 174, 82, 84, 91, 104, 171, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (30)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(174)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (17)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="replace main zipper" data-missing="29" data-id="1401" data-cats="trousers midlayer others trousers / shorts sweatshirt / hoodie shirt / blouse skirt / dress knitted jumper suit jacket top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper jacket suit / smoking trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket overall suit / smoking other others swimsuit sweater swimming trunks">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Replace main zipper</span>
+          <span class="service-id">ID: 1401</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">29 assigned</span>
+          <span class="badge badge-red">29 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 299 SEK</span>
+        <span>Missing category IDs: 85, 93, 103, 87, 95, 193, 161, 105, 202, 200, 199, 89, 194, 96, 66, 86, 92, 195, 162, 88, 94, 196, 169, 168, 90, 82, 84, 91, 104</span>
+      </div>
+      <div class="section-label">Categories to add (29)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (29)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Belt <small>(102)</small></span>
+          <span class="cat-tag current">Rain Jacket <small>(142)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="repair wear" data-missing="29" data-id="1408" data-cats="trousers midlayer t-shirt others trousers / shorts sweatshirt / hoodie shirt / blouse underwear knitted jumper top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket overall suit / smoking other belt scarf / shawl cap hat others sweater gloves">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Repair wear</span>
+          <span class="service-id">ID: 1408</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">86 assigned</span>
+          <span class="badge badge-red">29 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 434 SEK</span>
+        <span>Missing category IDs: 102, 99, 100, 98, 103, 87, 95, 193, 161, 105, 202, 200, 199, 101, 89, 194, 96, 195, 162, 88, 94, 196, 163, 90, 82, 84, 91, 104, 171</span>
+      </div>
+      <div class="section-label">Categories to add (29)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (86)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Clothing <small>(49)</small></span>
+          <span class="cat-tag current">Bags <small>(51)</small></span>
+          <span class="cat-tag current">Outerwear <small>(54)</small></span>
+          <span class="cat-tag current">Women's Clothing <small>(55)</small></span>
+          <span class="cat-tag current">Workwear <small>(59)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Others <small>(76)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Boots <small>(110)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(111)</small></span>
+          <span class="cat-tag current">Sneakers <small>(112)</small></span>
+          <span class="cat-tag current">Boots <small>(113)</small></span>
+          <span class="cat-tag current">High heels <small>(114)</small></span>
+          <span class="cat-tag current">Sneakers <small>(115)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(116)</small></span>
+          <span class="cat-tag current">Larger bag / Duffel <small>(119)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(120)</small></span>
+          <span class="cat-tag current">Larger Bag / Duffel <small>(124)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(125)</small></span>
+          <span class="cat-tag current">Medium (3 to 6sqm) <small>(129)</small></span>
+          <span class="cat-tag current">Large (more than 6sqm) <small>(130)</small></span>
+          <span class="cat-tag current">Medium (3 to 6sqm) <small>(132)</small></span>
+          <span class="cat-tag current">Large (more than 6sqm) <small>(133)</small></span>
+          <span class="cat-tag current">ID 136 <small>(136)</small></span>
+          <span class="cat-tag current">Boots <small>(138)</small></span>
+          <span class="cat-tag current">Shoes <small>(140)</small></span>
+          <span class="cat-tag current">Sandals <small>(141)</small></span>
+          <span class="cat-tag current">Rain Jacket <small>(142)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Winter boots <small>(145)</small></span>
+          <span class="cat-tag current">Other shoes <small>(146)</small></span>
+          <span class="cat-tag current">Rain boots <small>(147)</small></span>
+          <span class="cat-tag current">Rain boots <small>(148)</small></span>
+          <span class="cat-tag current">Rain boots <small>(149)</small></span>
+          <span class="cat-tag current">Rain boots <small>(150)</small></span>
+          <span class="cat-tag current">ID 151 <small>(151)</small></span>
+          <span class="cat-tag current">ID 152 <small>(152)</small></span>
+          <span class="cat-tag current">ID 153 <small>(153)</small></span>
+          <span class="cat-tag current">ID 154 <small>(154)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Sandals <small>(164)</small></span>
+          <span class="cat-tag current">Sandals <small>(165)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimwear / Wet suits <small>(167)</small></span>
+          <span class="cat-tag current">Swimsuit <small>(168)</small></span>
+          <span class="cat-tag current">Swimming trunks <small>(169)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Protective / MC wear <small>(172)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Medium (3 to 6sqm) <small>(179)</small></span>
+          <span class="cat-tag current">Large (more than 6sqm) <small>(180)</small></span>
+          <span class="cat-tag current">Boots <small>(182)</small></span>
+          <span class="cat-tag current">Shoes <small>(183)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">ID 186 <small>(186)</small></span>
+          <span class="cat-tag current">Leather <small>(187)</small></span>
+          <span class="cat-tag current">Suede <small>(188)</small></span>
+          <span class="cat-tag current">Standard textile <small>(189)</small></span>
+          <span class="cat-tag current">Galloon <small>(190)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(191)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Bikini <small>(201)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+          <span class="cat-tag current">Ancle boots <small>(205)</small></span>
+          <span class="cat-tag current">Knee-high boots <small>(206)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="replace button" data-missing="28" data-id="914" data-cats="midlayer others trousers / shorts sweatshirt / hoodie shirt / blouse skirt / dress knitted jumper suit jacket top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper jacket suit / smoking trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket overall suit / smoking other others sweater t-shirt swimming trunks">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Replace button</span>
+          <span class="service-id">ID: 914</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">74 assigned</span>
+          <span class="badge badge-red">28 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 69 SEK</span>
+        <span>Missing category IDs: 85, 93, 103, 87, 95, 193, 161, 105, 202, 200, 199, 89, 194, 96, 66, 86, 92, 195, 162, 88, 94, 196, 169, 163, 90, 84, 91, 104</span>
+      </div>
+      <div class="section-label">Categories to add (28)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (74)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">ID 23 <small>(23)</small></span>
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Clothing <small>(49)</small></span>
+          <span class="cat-tag current">Outerwear <small>(54)</small></span>
+          <span class="cat-tag current">Women's Clothing <small>(55)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">ID 67 <small>(67)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Hat <small>(98)</small></span>
+          <span class="cat-tag current">Cap <small>(99)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Belt <small>(102)</small></span>
+          <span class="cat-tag current">Men's Shoes <small>(106)</small></span>
+          <span class="cat-tag current">Boots <small>(110)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(111)</small></span>
+          <span class="cat-tag current">Sneakers <small>(112)</small></span>
+          <span class="cat-tag current">Boots <small>(113)</small></span>
+          <span class="cat-tag current">High heels <small>(114)</small></span>
+          <span class="cat-tag current">Sneakers <small>(115)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(116)</small></span>
+          <span class="cat-tag current">Larger bag / Duffel <small>(119)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(120)</small></span>
+          <span class="cat-tag current">Larger Bag / Duffel <small>(124)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(125)</small></span>
+          <span class="cat-tag current">ID 136 <small>(136)</small></span>
+          <span class="cat-tag current">Boots <small>(138)</small></span>
+          <span class="cat-tag current">Shoes <small>(140)</small></span>
+          <span class="cat-tag current">Sandals <small>(141)</small></span>
+          <span class="cat-tag current">Rain Jacket <small>(142)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Winter boots <small>(145)</small></span>
+          <span class="cat-tag current">Other shoes <small>(146)</small></span>
+          <span class="cat-tag current">Rain boots <small>(147)</small></span>
+          <span class="cat-tag current">Rain boots <small>(148)</small></span>
+          <span class="cat-tag current">Rain boots <small>(149)</small></span>
+          <span class="cat-tag current">Rain boots <small>(150)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Sandals <small>(164)</small></span>
+          <span class="cat-tag current">Sandals <small>(165)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimsuit <small>(168)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Underwear <small>(171)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Boots <small>(182)</small></span>
+          <span class="cat-tag current">Shoes <small>(183)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">ID 186 <small>(186)</small></span>
+          <span class="cat-tag current">Leather <small>(187)</small></span>
+          <span class="cat-tag current">Suede <small>(188)</small></span>
+          <span class="cat-tag current">Standard textile <small>(189)</small></span>
+          <span class="cat-tag current">Galloon <small>(190)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(191)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Bikini <small>(201)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+          <span class="cat-tag current">Ancle boots <small>(205)</small></span>
+          <span class="cat-tag current">Knee-high boots <small>(206)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="repair burn mark" data-missing="27" data-id="1416" data-cats="midlayer t-shirt others trousers / shorts sweatshirt / hoodie shirt / blouse underwear knitted jumper top / t-shirt sweatshirt / hoodie trousers / shorts shirts/t-shirts knitted jumper shirt / t-shirt / body sweatshirt / hoodie knitted jumper overall suit / smoking other belt scarf / shawl cap hat others sweater overalls gloves">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Repair burn mark</span>
+          <span class="service-id">ID: 1416</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">79 assigned</span>
+          <span class="badge badge-red">27 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 439 SEK</span>
+        <span>Missing category IDs: 102, 99, 100, 98, 87, 95, 193, 161, 105, 202, 200, 199, 160, 101, 89, 194, 96, 195, 162, 88, 94, 196, 163, 90, 84, 91, 171</span>
+      </div>
+      <div class="section-label">Categories to add (27)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (79)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Carpet <small>(52)</small></span>
+          <span class="cat-tag current">Outerwear <small>(54)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Workwear Shoes <small>(109)</small></span>
+          <span class="cat-tag current">Boots <small>(110)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(111)</small></span>
+          <span class="cat-tag current">Sneakers <small>(112)</small></span>
+          <span class="cat-tag current">Boots <small>(113)</small></span>
+          <span class="cat-tag current">High heels <small>(114)</small></span>
+          <span class="cat-tag current">Sneakers <small>(115)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(116)</small></span>
+          <span class="cat-tag current">Larger bag / Duffel <small>(119)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(120)</small></span>
+          <span class="cat-tag current">Larger Bag / Duffel <small>(124)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(125)</small></span>
+          <span class="cat-tag current">Other Carpet <small>(127)</small></span>
+          <span class="cat-tag current">Small (less than 3sqm) <small>(128)</small></span>
+          <span class="cat-tag current">Medium (3 to 6sqm) <small>(129)</small></span>
+          <span class="cat-tag current">Large (more than 6sqm) <small>(130)</small></span>
+          <span class="cat-tag current">Medium (3 to 6sqm) <small>(132)</small></span>
+          <span class="cat-tag current">Large (more than 6sqm) <small>(133)</small></span>
+          <span class="cat-tag current">ID 136 <small>(136)</small></span>
+          <span class="cat-tag current">Boots <small>(138)</small></span>
+          <span class="cat-tag current">Shoes <small>(140)</small></span>
+          <span class="cat-tag current">Sandals <small>(141)</small></span>
+          <span class="cat-tag current">Rain Jacket <small>(142)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Winter boots <small>(145)</small></span>
+          <span class="cat-tag current">Other shoes <small>(146)</small></span>
+          <span class="cat-tag current">Rain boots <small>(147)</small></span>
+          <span class="cat-tag current">Rain boots <small>(148)</small></span>
+          <span class="cat-tag current">Rain boots <small>(150)</small></span>
+          <span class="cat-tag current">ID 152 <small>(152)</small></span>
+          <span class="cat-tag current">ID 153 <small>(153)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Sandals <small>(164)</small></span>
+          <span class="cat-tag current">Sandals <small>(165)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimsuit <small>(168)</small></span>
+          <span class="cat-tag current">Swimming trunks <small>(169)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Medium (3 to 6sqm) <small>(179)</small></span>
+          <span class="cat-tag current">Large (more than 6sqm) <small>(180)</small></span>
+          <span class="cat-tag current">Boots <small>(182)</small></span>
+          <span class="cat-tag current">Shoes <small>(183)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">ID 186 <small>(186)</small></span>
+          <span class="cat-tag current">Leather <small>(187)</small></span>
+          <span class="cat-tag current">Suede <small>(188)</small></span>
+          <span class="cat-tag current">Standard textile <small>(189)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(191)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Bikini <small>(201)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+          <span class="cat-tag current">Ancle boots <small>(205)</small></span>
+          <span class="cat-tag current">Knee-high boots <small>(206)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="shorten length" data-missing="27" data-id="1337" data-cats="midlayer ski / shell jacket ski / shell trousers t-shirt rain jacket rain trousers trousers / shorts sweatshirt / hoodie shirt / blouse underwear knitted jumper bikini top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper belt scarf / shawl wet suit swimsuit trousers sweater gloves">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Shorten length</span>
+          <span class="service-id">ID: 1337</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">25 assigned</span>
+          <span class="badge badge-red">27 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 559 SEK</span>
+        <span>Missing category IDs: 102, 201, 100, 87, 193, 161, 142, 185, 101, 89, 194, 96, 80, 78, 162, 88, 94, 196, 168, 163, 90, 82, 84, 91, 104, 171, 170</span>
+      </div>
+      <div class="section-label">Categories to add (27)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (25)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="replace lining" data-missing="26" data-id="957" data-cats="trousers overalls ski / shell trousers overall trousers / shorts sweatshirt / hoodie shirt / blouse others skirt / dress underwear trousers / shorts sweatshirt / hoodie shirts/t-shirts trousers / shorts sweatshirt / hoodie other scarf / shawl hat others swimsuit midlayer others trousers cap swimming trunks bikini">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Replace lining</span>
+          <span class="service-id">ID: 957</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">33 assigned</span>
+          <span class="badge badge-red">26 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 1299 SEK</span>
+        <span>Missing category IDs: 201, 99, 98, 161, 105, 203, 200, 202, 175, 160, 101, 89, 96, 80, 66, 88, 94, 196, 169, 168, 82, 174, 84, 91, 104, 171</span>
+      </div>
+      <div class="section-label">Categories to add (26)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Other <small>(105)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers <small>(174)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (33)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Briefcase <small>(117)</small></span>
+          <span class="cat-tag current">Handbags <small>(118)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(120)</small></span>
+          <span class="cat-tag current">Briefcase <small>(122)</small></span>
+          <span class="cat-tag current">Handbags <small>(123)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(125)</small></span>
+          <span class="cat-tag current">Rain Jacket <small>(142)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="take in sides" data-missing="26" data-id="1329" data-cats="midlayer unlined jacket / vest ski / shell jacket t-shirt rain jacket trousers / shorts sweatshirt / hoodie shirt / blouse underwear knitted jumper bikini top / t-shirt trousers / shorts sweatshirt / hoodie shirts/t-shirts knitted jumper trousers / shorts shirt / t-shirt / body sweatshirt / hoodie knitted jumper scarf / shawl wet suit swimsuit trousers sweater gloves">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Take in sides</span>
+          <span class="service-id">ID: 1329</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">24 assigned</span>
+          <span class="badge badge-red">26 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 599 SEK</span>
+        <span>Missing category IDs: 201, 100, 87, 95, 193, 161, 142, 101, 89, 194, 96, 78, 162, 88, 94, 196, 168, 163, 90, 82, 84, 91, 104, 171, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (26)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Scarf / Shawl <small>(101)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (24)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="expand waist" data-missing="24" data-id="960" data-cats="unlined jacket / vest ski / shell jacket coat rain jacket sweatshirt / hoodie shirt / blouse underwear knitted jumper bikini jacket sweatshirt / hoodie shirts/t-shirts knitted jumper jacket shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket swimsuit highvis jacket sweater t-shirt jacket lined jacket / vest">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Expand waist</span>
+          <span class="service-id">ID: 960</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">27 assigned</span>
+          <span class="badge badge-red">24 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 349 SEK</span>
+        <span>Missing category IDs: 201, 60, 81, 85, 93, 103, 173, 87, 95, 193, 61, 142, 89, 194, 96, 78, 162, 88, 94, 196, 168, 163, 171, 62</span>
+      </div>
+      <div class="section-label">Categories to add (24)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Jacket <small>(93)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (27)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(104)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Midlayer <small>(161)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="narrow shoulder area" data-missing="22" data-id="1327" data-cats="midlayer unlined jacket / vest ski / shell jacket t-shirt coat rain jacket sweatshirt / hoodie shirt / blouse knitted jumper top / t-shirt sweatshirt / hoodie shirts/t-shirts knitted jumper shirt / t-shirt / body sweatshirt / hoodie knitted jumper jacket overall suit / smoking wet suit highvis jacket sweater">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Narrow shoulder area</span>
+          <span class="service-id">ID: 1327</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">16 assigned</span>
+          <span class="badge badge-red">22 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 699 SEK</span>
+        <span>Missing category IDs: 60, 81, 103, 87, 95, 193, 161, 199, 142, 89, 194, 96, 78, 195, 162, 88, 94, 196, 163, 90, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (22)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(103)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(87)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(95)</small></span>
+        <span class="cat-tag">Knitted Jumper <small>(193)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Sweater <small>(162)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(88)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(94)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (16)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="repair seam" data-missing="21" data-id="1443" data-cats="lined jacket / vest unlined jacket / vest overalls ski / shell jacket ski / shell trousers coat others rain jacket rain trousers trousers overall overall others skirt / dress belt cap hat others wet suit highvis jacket jacket">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Repair seam</span>
+          <span class="service-id">ID: 1443</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">44 assigned</span>
+          <span class="badge badge-red">21 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 254 SEK</span>
+        <span>Missing category IDs: 102, 99, 60, 98, 81, 173, 61, 202, 203, 200, 175, 198, 160, 142, 185, 80, 78, 66, 174, 62, 170</span>
+      </div>
+      <div class="section-label">Categories to add (21)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Coat <small>(60)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Ski / Shell Trousers <small>(80)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Skirt / Dress <small>(66)</small></span>
+        <span class="cat-tag">Trousers <small>(174)</small></span>
+        <span class="cat-tag">Unlined Jacket / Vest <small>(62)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (44)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Backpack <small>(75)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(87)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(88)</small></span>
+          <span class="cat-tag current">Shirt / Blouse <small>(89)</small></span>
+          <span class="cat-tag current">Top / T-shirt <small>(90)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(94)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Shirts/t-shirts <small>(96)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Scarf / Shawl <small>(101)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(104)</small></span>
+          <span class="cat-tag current">Other <small>(105)</small></span>
+          <span class="cat-tag current">Briefcase <small>(117)</small></span>
+          <span class="cat-tag current">Handbags <small>(118)</small></span>
+          <span class="cat-tag current">Backpack <small>(121)</small></span>
+          <span class="cat-tag current">Briefcase <small>(122)</small></span>
+          <span class="cat-tag current">Handbags <small>(123)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Midlayer <small>(161)</small></span>
+          <span class="cat-tag current">Sweater <small>(162)</small></span>
+          <span class="cat-tag current">T-shirt <small>(163)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimsuit <small>(168)</small></span>
+          <span class="cat-tag current">Swimming trunks <small>(169)</small></span>
+          <span class="cat-tag current">Underwear <small>(171)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(193)</small></span>
+          <span class="cat-tag current">Shirt / t-shirt / Body <small>(194)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(196)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+          <span class="cat-tag current">Bikini <small>(201)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="stain treatment and wash" data-missing="20" data-id="1312" data-cats="trousers midlayer overalls others rain jacket rain trousers trousers overall others underwear bikini belt cap hat others wet suit swimming trunks swimsuit highvis jacket jacket">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Stain treatment and wash</span>
+          <span class="service-id">ID: 1312</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">38 assigned</span>
+          <span class="badge badge-red">20 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 269 SEK</span>
+        <span>Missing category IDs: 102, 201, 99, 98, 81, 173, 161, 202, 203, 200, 175, 160, 142, 185, 169, 168, 82, 174, 171, 170</span>
+      </div>
+      <div class="section-label">Categories to add (20)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Belt <small>(102)</small></span>
+        <span class="cat-tag">Bikini <small>(201)</small></span>
+        <span class="cat-tag">Cap <small>(99)</small></span>
+        <span class="cat-tag">Hat <small>(98)</small></span>
+        <span class="cat-tag">Highvis jacket <small>(81)</small></span>
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Others <small>(202)</small></span>
+        <span class="cat-tag">Others <small>(203)</small></span>
+        <span class="cat-tag">Others <small>(200)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers <small>(174)</small></span>
+        <span class="cat-tag">Underwear <small>(171)</small></span>
+        <span class="cat-tag">Wet suit <small>(170)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (38)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Washing and Care <small>(42)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(87)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(88)</small></span>
+          <span class="cat-tag current">Shirt / Blouse <small>(89)</small></span>
+          <span class="cat-tag current">Top / T-shirt <small>(90)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(94)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Shirts/t-shirts <small>(96)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Scarf / Shawl <small>(101)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(104)</small></span>
+          <span class="cat-tag current">Other <small>(105)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Sweater <small>(162)</small></span>
+          <span class="cat-tag current">T-shirt <small>(163)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(193)</small></span>
+          <span class="cat-tag current">Shirt / t-shirt / Body <small>(194)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(196)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="replace zipper slider" data-missing="14" data-id="942" data-cats="trousers / shorts shirt / blouse suit jacket top / t-shirt trousers / shorts shirts/t-shirts suit / smoking trousers / shorts shirt / t-shirt / body suit / smoking swimsuit gloves swimming trunks">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Replace zipper slider</span>
+          <span class="service-id">ID: 942</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">87 assigned</span>
+          <span class="badge badge-red">14 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 269 SEK</span>
+        <span>Missing category IDs: 100, 85, 89, 194, 96, 86, 92, 195, 169, 168, 90, 84, 91, 104</span>
+      </div>
+      <div class="section-label">Categories to add (14)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Gloves <small>(100)</small></span>
+        <span class="cat-tag">Jacket <small>(85)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Swimming trunks <small>(169)</small></span>
+        <span class="cat-tag">Swimsuit <small>(168)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (87)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Bags <small>(51)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Backpack <small>(75)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(87)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(88)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(94)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Other <small>(105)</small></span>
+          <span class="cat-tag current">Men's Shoes <small>(106)</small></span>
+          <span class="cat-tag current">Women's Shoes <small>(107)</small></span>
+          <span class="cat-tag current">Children's Shoes <small>(108)</small></span>
+          <span class="cat-tag current">Workwear Shoes <small>(109)</small></span>
+          <span class="cat-tag current">Boots <small>(110)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(111)</small></span>
+          <span class="cat-tag current">Sneakers <small>(112)</small></span>
+          <span class="cat-tag current">Boots <small>(113)</small></span>
+          <span class="cat-tag current">Sneakers <small>(115)</small></span>
+          <span class="cat-tag current">Dress Shoes <small>(116)</small></span>
+          <span class="cat-tag current">Briefcase <small>(117)</small></span>
+          <span class="cat-tag current">Handbags <small>(118)</small></span>
+          <span class="cat-tag current">Larger bag / Duffel <small>(119)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(120)</small></span>
+          <span class="cat-tag current">Backpack <small>(121)</small></span>
+          <span class="cat-tag current">Briefcase <small>(122)</small></span>
+          <span class="cat-tag current">Handbags <small>(123)</small></span>
+          <span class="cat-tag current">Larger Bag / Duffel <small>(124)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(125)</small></span>
+          <span class="cat-tag current">ID 136 <small>(136)</small></span>
+          <span class="cat-tag current">Boots <small>(138)</small></span>
+          <span class="cat-tag current">Shoes <small>(140)</small></span>
+          <span class="cat-tag current">Sandals <small>(141)</small></span>
+          <span class="cat-tag current">Rain Jacket <small>(142)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Winter boots <small>(145)</small></span>
+          <span class="cat-tag current">Other shoes <small>(146)</small></span>
+          <span class="cat-tag current">Rain boots <small>(147)</small></span>
+          <span class="cat-tag current">Rain boots <small>(148)</small></span>
+          <span class="cat-tag current">Rain boots <small>(149)</small></span>
+          <span class="cat-tag current">Rain boots <small>(150)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Midlayer <small>(161)</small></span>
+          <span class="cat-tag current">Sweater <small>(162)</small></span>
+          <span class="cat-tag current">Sandals <small>(164)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Protective / MC shoes <small>(181)</small></span>
+          <span class="cat-tag current">Boots <small>(182)</small></span>
+          <span class="cat-tag current">Shoes <small>(183)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">ID 186 <small>(186)</small></span>
+          <span class="cat-tag current">Leather <small>(187)</small></span>
+          <span class="cat-tag current">Suede <small>(188)</small></span>
+          <span class="cat-tag current">Standard textile <small>(189)</small></span>
+          <span class="cat-tag current">Galloon <small>(190)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(191)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(193)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(196)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+          <span class="cat-tag current">Others <small>(200)</small></span>
+          <span class="cat-tag current">Others <small>(202)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+          <span class="cat-tag current">Riding boots <small>(204)</small></span>
+          <span class="cat-tag current">Ancle boots <small>(205)</small></span>
+          <span class="cat-tag current">Knee-high boots <small>(206)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="shorten sleeves" data-missing="10" data-id="1355" data-cats="midlayer ski / shell jacket t-shirt rain jacket overall shirt / blouse top / t-shirt shirts/t-shirts shirt / t-shirt / body sweatshirt / hoodie">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Shorten sleeves</span>
+          <span class="service-id">ID: 1355</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">31 assigned</span>
+          <span class="badge badge-red">10 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 419 SEK</span>
+        <span>Missing category IDs: 161, 198, 142, 89, 194, 96, 78, 196, 163, 90</span>
+      </div>
+      <div class="section-label">Categories to add (10)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Rain Jacket <small>(142)</small></span>
+        <span class="cat-tag">Shirt / Blouse <small>(89)</small></span>
+        <span class="cat-tag">Shirt / t-shirt / Body <small>(194)</small></span>
+        <span class="cat-tag">Shirts/t-shirts <small>(96)</small></span>
+        <span class="cat-tag">Ski / Shell jacket <small>(78)</small></span>
+        <span class="cat-tag">Sweatshirt / Hoodie <small>(196)</small></span>
+        <span class="cat-tag">T-shirt <small>(163)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (31)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(87)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(88)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(94)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Sweater <small>(162)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(193)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="tapering legs" data-missing="9" data-id="1369" data-cats="rain trousers trousers / shorts suit trousers / shorts suit / smoking trousers / shorts overall suit / smoking trousers">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Tapering legs</span>
+          <span class="service-id">ID: 1369</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">17 assigned</span>
+          <span class="badge badge-red">9 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 659 SEK</span>
+        <span>Missing category IDs: 199, 185, 86, 92, 195, 82, 84, 91, 104</span>
+      </div>
+      <div class="section-label">Categories to add (9)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Overall <small>(199)</small></span>
+        <span class="cat-tag">Rain Trousers <small>(185)</small></span>
+        <span class="cat-tag">Suit <small>(86)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(92)</small></span>
+        <span class="cat-tag">Suit / Smoking <small>(195)</small></span>
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (17)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="expand thigh" data-missing="4" data-id="1373" data-cats="trousers / shorts trousers / shorts trousers / shorts trousers">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Expand thigh</span>
+          <span class="service-id">ID: 1373</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">22 assigned</span>
+          <span class="badge badge-red">4 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 499 SEK</span>
+        <span>Missing category IDs: 82, 84, 91, 104</span>
+      </div>
+      <div class="section-label">Categories to add (4)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Trousers <small>(82)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(84)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(91)</small></span>
+        <span class="cat-tag">Trousers / Shorts <small>(104)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (22)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Outerwear <small>(54)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Tulle <small>(215)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="take in shoulders" data-missing="4" data-id="971" data-cats="overalls jacket overall lined jacket / vest">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Take in shoulders</span>
+          <span class="service-id">ID: 971</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">37 assigned</span>
+          <span class="badge badge-red">4 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 499 SEK</span>
+        <span>Missing category IDs: 173, 61, 175, 160</span>
+      </div>
+      <div class="section-label">Categories to add (4)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Jacket <small>(173)</small></span>
+        <span class="cat-tag">Lined Jacket / Vest <small>(61)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (37)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Adjust measurements <small>(39)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Suit <small>(86)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(87)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(88)</small></span>
+          <span class="cat-tag current">Shirt / Blouse <small>(89)</small></span>
+          <span class="cat-tag current">Top / T-shirt <small>(90)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(92)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(94)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Shirts/t-shirts <small>(96)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Other <small>(105)</small></span>
+          <span class="cat-tag current">Rain Jacket <small>(142)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Midlayer <small>(161)</small></span>
+          <span class="cat-tag current">Sweater <small>(162)</small></span>
+          <span class="cat-tag current">T-shirt <small>(163)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimsuit <small>(168)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(193)</small></span>
+          <span class="cat-tag current">Shirt / t-shirt / Body <small>(194)</small></span>
+          <span class="cat-tag current">Suit / Smoking <small>(195)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(196)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+          <span class="cat-tag current">Others <small>(202)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="replace jeans button" data-missing="3" data-id="936" data-cats="overall overalls overall">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Replace jeans button</span>
+          <span class="service-id">ID: 936</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">11 assigned</span>
+          <span class="badge badge-red">3 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 69 SEK</span>
+        <span>Missing category IDs: 198, 175, 160</span>
+      </div>
+      <div class="section-label">Categories to add (3)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Overall <small>(198)</small></span>
+        <span class="cat-tag">Overall <small>(175)</small></span>
+        <span class="cat-tag">Overalls <small>(160)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (11)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(104)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+        </div>
+      </div>
+    </div>
+    <div class="service-card" data-name="replace snap button" data-missing="2" data-id="937" data-cats="midlayer top / t-shirt">
+      <div class="service-header">
+        <div>
+          <span class="service-name">Replace snap button</span>
+          <span class="service-id">ID: 937</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge badge-green">88 assigned</span>
+          <span class="badge badge-red">2 missing</span>
+        </div>
+      </div>
+      <div class="service-meta">
+        <span>Price: 69 SEK</span>
+        <span>Missing category IDs: 161, 90</span>
+      </div>
+      <div class="section-label">Categories to add (2)</div>
+      <div class="category-grid">
+        <span class="cat-tag">Midlayer <small>(161)</small></span>
+        <span class="cat-tag">Top / T-shirt <small>(90)</small></span>
+      </div>
+      <div class="current-cats hidden">
+        <div class="section-label">Currently assigned (88)</div>
+        <div class="category-grid">
+          <span class="cat-tag current">Repair <small>(37)</small></span>
+          <span class="cat-tag current">Bags <small>(51)</small></span>
+          <span class="cat-tag current">Outerwear <small>(54)</small></span>
+          <span class="cat-tag current">Women's Clothing <small>(55)</small></span>
+          <span class="cat-tag current">Men's Clothing <small>(56)</small></span>
+          <span class="cat-tag current">Accessories <small>(57)</small></span>
+          <span class="cat-tag current">Children's Clothing <small>(58)</small></span>
+          <span class="cat-tag current">Workwear <small>(59)</small></span>
+          <span class="cat-tag current">Coat <small>(60)</small></span>
+          <span class="cat-tag current">Lined Jacket / Vest <small>(61)</small></span>
+          <span class="cat-tag current">Unlined Jacket / Vest <small>(62)</small></span>
+          <span class="cat-tag current">Skirt / Dress <small>(66)</small></span>
+          <span class="cat-tag current">ID 68 <small>(68)</small></span>
+          <span class="cat-tag current">Standard textile <small>(69)</small></span>
+          <span class="cat-tag current">Leather/Suede <small>(71)</small></span>
+          <span class="cat-tag current">Fur <small>(72)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(73)</small></span>
+          <span class="cat-tag current">Backpack <small>(75)</small></span>
+          <span class="cat-tag current">Others <small>(76)</small></span>
+          <span class="cat-tag current">Ski / Shell jacket <small>(78)</small></span>
+          <span class="cat-tag current">Ski / Shell Trousers <small>(80)</small></span>
+          <span class="cat-tag current">Highvis jacket <small>(81)</small></span>
+          <span class="cat-tag current">Trousers <small>(82)</small></span>
+          <span class="cat-tag current">Highvis <small>(83)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(84)</small></span>
+          <span class="cat-tag current">Jacket <small>(85)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(87)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(88)</small></span>
+          <span class="cat-tag current">Shirt / Blouse <small>(89)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(91)</small></span>
+          <span class="cat-tag current">Jacket <small>(93)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(94)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(95)</small></span>
+          <span class="cat-tag current">Shirts/t-shirts <small>(96)</small></span>
+          <span class="cat-tag current">Hat <small>(98)</small></span>
+          <span class="cat-tag current">Cap <small>(99)</small></span>
+          <span class="cat-tag current">Gloves <small>(100)</small></span>
+          <span class="cat-tag current">Scarf / Shawl <small>(101)</small></span>
+          <span class="cat-tag current">Belt <small>(102)</small></span>
+          <span class="cat-tag current">Jacket <small>(103)</small></span>
+          <span class="cat-tag current">Trousers / Shorts <small>(104)</small></span>
+          <span class="cat-tag current">Other <small>(105)</small></span>
+          <span class="cat-tag current">Workwear Shoes <small>(109)</small></span>
+          <span class="cat-tag current">Briefcase <small>(117)</small></span>
+          <span class="cat-tag current">Handbags <small>(118)</small></span>
+          <span class="cat-tag current">Larger bag / Duffel <small>(119)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(120)</small></span>
+          <span class="cat-tag current">Backpack <small>(121)</small></span>
+          <span class="cat-tag current">Briefcase <small>(122)</small></span>
+          <span class="cat-tag current">Handbags <small>(123)</small></span>
+          <span class="cat-tag current">Larger Bag / Duffel <small>(124)</small></span>
+          <span class="cat-tag current">Weekend Bag <small>(125)</small></span>
+          <span class="cat-tag current">ID 136 <small>(136)</small></span>
+          <span class="cat-tag current">Rain Jacket <small>(142)</small></span>
+          <span class="cat-tag current">Galloon <small>(143)</small></span>
+          <span class="cat-tag current">Flame resistant <small>(144)</small></span>
+          <span class="cat-tag current">Cashmere <small>(159)</small></span>
+          <span class="cat-tag current">Overalls <small>(160)</small></span>
+          <span class="cat-tag current">Sweater <small>(162)</small></span>
+          <span class="cat-tag current">Linen/Wool <small>(166)</small></span>
+          <span class="cat-tag current">Swimwear / Wet suits <small>(167)</small></span>
+          <span class="cat-tag current">Swimsuit <small>(168)</small></span>
+          <span class="cat-tag current">Swimming trunks <small>(169)</small></span>
+          <span class="cat-tag current">Wet suit <small>(170)</small></span>
+          <span class="cat-tag current">Underwear <small>(171)</small></span>
+          <span class="cat-tag current">Protective / MC wear <small>(172)</small></span>
+          <span class="cat-tag current">Jacket <small>(173)</small></span>
+          <span class="cat-tag current">Trousers <small>(174)</small></span>
+          <span class="cat-tag current">Overall <small>(175)</small></span>
+          <span class="cat-tag current">Down <small>(176)</small></span>
+          <span class="cat-tag current">Rain Trousers <small>(185)</small></span>
+          <span class="cat-tag current">ID 186 <small>(186)</small></span>
+          <span class="cat-tag current">Leather <small>(187)</small></span>
+          <span class="cat-tag current">Suede <small>(188)</small></span>
+          <span class="cat-tag current">Standard textile <small>(189)</small></span>
+          <span class="cat-tag current">Galloon <small>(190)</small></span>
+          <span class="cat-tag current">Other/Unsure <small>(191)</small></span>
+          <span class="cat-tag current">Knitted Jumper <small>(193)</small></span>
+          <span class="cat-tag current">Shirt / t-shirt / Body <small>(194)</small></span>
+          <span class="cat-tag current">Sweatshirt / Hoodie <small>(196)</small></span>
+          <span class="cat-tag current">Overall <small>(198)</small></span>
+          <span class="cat-tag current">Overall <small>(199)</small></span>
+          <span class="cat-tag current">Others <small>(200)</small></span>
+          <span class="cat-tag current">Bikini <small>(201)</small></span>
+          <span class="cat-tag current">Others <small>(202)</small></span>
+          <span class="cat-tag current">Others <small>(203)</small></span>
+          <span class="cat-tag current">Riding boots <small>(204)</small></span>
+          <span class="cat-tag current">Knee-high boots <small>(206)</small></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const search = document.getElementById('search');
+const sort = document.getElementById('sort');
+const showCurrent = document.getElementById('showCurrent');
+const container = document.getElementById('services');
+
+function filterAndSort() {
+  const q = search.value.toLowerCase();
+  const cards = Array.from(container.children);
+  
+  cards.forEach(card => {
+    const name = card.dataset.name;
+    const cats = card.dataset.cats;
+    const match = !q || name.includes(q) || cats.includes(q) || card.dataset.id.includes(q);
+    card.style.display = match ? '' : 'none';
+  });
+
+  const sortVal = sort.value;
+  const sorted = cards.sort((a, b) => {
+    if (sortVal === 'missing-desc') return parseInt(b.dataset.missing) - parseInt(a.dataset.missing);
+    if (sortVal === 'missing-asc') return parseInt(a.dataset.missing) - parseInt(b.dataset.missing);
+    if (sortVal === 'name') return a.dataset.name.localeCompare(b.dataset.name);
+    if (sortVal === 'id') return parseInt(a.dataset.id) - parseInt(b.dataset.id);
+  });
+  sorted.forEach(card => container.appendChild(card));
+}
+
+search.addEventListener('input', filterAndSort);
+sort.addEventListener('change', filterAndSort);
+
+showCurrent.addEventListener('change', () => {
+  document.querySelectorAll('.current-cats').forEach(el => {
+    el.classList.toggle('hidden', !showCurrent.checked);
+  });
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,716 @@
+Service ID,Service Name,Price (SEK),Missing Category ID,Missing Category Name
+1323,Dry Cleaning,399,102,Belt
+1323,Dry Cleaning,399,201,Bikini
+1323,Dry Cleaning,399,99,Cap
+1323,Dry Cleaning,399,60,Coat
+1323,Dry Cleaning,399,100,Gloves
+1323,Dry Cleaning,399,98,Hat
+1323,Dry Cleaning,399,81,Highvis jacket
+1323,Dry Cleaning,399,173,Jacket
+1323,Dry Cleaning,399,87,Knitted Jumper
+1323,Dry Cleaning,399,95,Knitted Jumper
+1323,Dry Cleaning,399,193,Knitted Jumper
+1323,Dry Cleaning,399,61,Lined Jacket / Vest
+1323,Dry Cleaning,399,161,Midlayer
+1323,Dry Cleaning,399,105,Other
+1323,Dry Cleaning,399,202,Others
+1323,Dry Cleaning,399,203,Others
+1323,Dry Cleaning,399,200,Others
+1323,Dry Cleaning,399,175,Overall
+1323,Dry Cleaning,399,198,Overall
+1323,Dry Cleaning,399,199,Overall
+1323,Dry Cleaning,399,160,Overalls
+1323,Dry Cleaning,399,142,Rain Jacket
+1323,Dry Cleaning,399,185,Rain Trousers
+1323,Dry Cleaning,399,101,Scarf / Shawl
+1323,Dry Cleaning,399,89,Shirt / Blouse
+1323,Dry Cleaning,399,194,Shirt / t-shirt / Body
+1323,Dry Cleaning,399,96,Shirts/t-shirts
+1323,Dry Cleaning,399,78,Ski / Shell jacket
+1323,Dry Cleaning,399,66,Skirt / Dress
+1323,Dry Cleaning,399,162,Sweater
+1323,Dry Cleaning,399,88,Sweatshirt / Hoodie
+1323,Dry Cleaning,399,94,Sweatshirt / Hoodie
+1323,Dry Cleaning,399,169,Swimming trunks
+1323,Dry Cleaning,399,168,Swimsuit
+1323,Dry Cleaning,399,163,T-shirt
+1323,Dry Cleaning,399,90,Top / T-shirt
+1323,Dry Cleaning,399,82,Trousers
+1323,Dry Cleaning,399,174,Trousers
+1323,Dry Cleaning,399,84,Trousers / Shorts
+1323,Dry Cleaning,399,91,Trousers / Shorts
+1323,Dry Cleaning,399,171,Underwear
+1323,Dry Cleaning,399,62,Unlined Jacket / Vest
+1294,Clean and condition,599,201,Bikini
+1294,Clean and condition,599,99,Cap
+1294,Clean and condition,599,81,Highvis jacket
+1294,Clean and condition,599,85,Jacket
+1294,Clean and condition,599,93,Jacket
+1294,Clean and condition,599,103,Jacket
+1294,Clean and condition,599,87,Knitted Jumper
+1294,Clean and condition,599,95,Knitted Jumper
+1294,Clean and condition,599,193,Knitted Jumper
+1294,Clean and condition,599,161,Midlayer
+1294,Clean and condition,599,105,Other
+1294,Clean and condition,599,202,Others
+1294,Clean and condition,599,200,Others
+1294,Clean and condition,599,199,Overall
+1294,Clean and condition,599,160,Overalls
+1294,Clean and condition,599,142,Rain Jacket
+1294,Clean and condition,599,185,Rain Trousers
+1294,Clean and condition,599,101,Scarf / Shawl
+1294,Clean and condition,599,89,Shirt / Blouse
+1294,Clean and condition,599,194,Shirt / t-shirt / Body
+1294,Clean and condition,599,96,Shirts/t-shirts
+1294,Clean and condition,599,80,Ski / Shell Trousers
+1294,Clean and condition,599,78,Ski / Shell jacket
+1294,Clean and condition,599,66,Skirt / Dress
+1294,Clean and condition,599,86,Suit
+1294,Clean and condition,599,92,Suit / Smoking
+1294,Clean and condition,599,195,Suit / Smoking
+1294,Clean and condition,599,162,Sweater
+1294,Clean and condition,599,88,Sweatshirt / Hoodie
+1294,Clean and condition,599,94,Sweatshirt / Hoodie
+1294,Clean and condition,599,196,Sweatshirt / Hoodie
+1294,Clean and condition,599,169,Swimming trunks
+1294,Clean and condition,599,168,Swimsuit
+1294,Clean and condition,599,163,T-shirt
+1294,Clean and condition,599,90,Top / T-shirt
+1294,Clean and condition,599,82,Trousers
+1294,Clean and condition,599,84,Trousers / Shorts
+1294,Clean and condition,599,91,Trousers / Shorts
+1294,Clean and condition,599,104,Trousers / Shorts
+1294,Clean and condition,599,171,Underwear
+1294,Clean and condition,599,170,Wet suit
+1325,Dry cleaning,599,201,Bikini
+1325,Dry cleaning,599,99,Cap
+1325,Dry cleaning,599,100,Gloves
+1325,Dry cleaning,599,98,Hat
+1325,Dry cleaning,599,85,Jacket
+1325,Dry cleaning,599,93,Jacket
+1325,Dry cleaning,599,103,Jacket
+1325,Dry cleaning,599,87,Knitted Jumper
+1325,Dry cleaning,599,95,Knitted Jumper
+1325,Dry cleaning,599,193,Knitted Jumper
+1325,Dry cleaning,599,161,Midlayer
+1325,Dry cleaning,599,105,Other
+1325,Dry cleaning,599,200,Others
+1325,Dry cleaning,599,199,Overall
+1325,Dry cleaning,599,185,Rain Trousers
+1325,Dry cleaning,599,101,Scarf / Shawl
+1325,Dry cleaning,599,89,Shirt / Blouse
+1325,Dry cleaning,599,194,Shirt / t-shirt / Body
+1325,Dry cleaning,599,96,Shirts/t-shirts
+1325,Dry cleaning,599,80,Ski / Shell Trousers
+1325,Dry cleaning,599,78,Ski / Shell jacket
+1325,Dry cleaning,599,66,Skirt / Dress
+1325,Dry cleaning,599,86,Suit
+1325,Dry cleaning,599,92,Suit / Smoking
+1325,Dry cleaning,599,195,Suit / Smoking
+1325,Dry cleaning,599,162,Sweater
+1325,Dry cleaning,599,88,Sweatshirt / Hoodie
+1325,Dry cleaning,599,94,Sweatshirt / Hoodie
+1325,Dry cleaning,599,196,Sweatshirt / Hoodie
+1325,Dry cleaning,599,169,Swimming trunks
+1325,Dry cleaning,599,168,Swimsuit
+1325,Dry cleaning,599,163,T-shirt
+1325,Dry cleaning,599,90,Top / T-shirt
+1325,Dry cleaning,599,82,Trousers
+1325,Dry cleaning,599,84,Trousers / Shorts
+1325,Dry cleaning,599,91,Trousers / Shorts
+1325,Dry cleaning,599,104,Trousers / Shorts
+1325,Dry cleaning,599,171,Underwear
+1325,Dry cleaning,599,62,Unlined Jacket / Vest
+938,Replace zipper,419,60,Coat
+938,Replace zipper,419,100,Gloves
+938,Replace zipper,419,81,Highvis jacket
+938,Replace zipper,419,85,Jacket
+938,Replace zipper,419,93,Jacket
+938,Replace zipper,419,103,Jacket
+938,Replace zipper,419,173,Jacket
+938,Replace zipper,419,87,Knitted Jumper
+938,Replace zipper,419,95,Knitted Jumper
+938,Replace zipper,419,193,Knitted Jumper
+938,Replace zipper,419,61,Lined Jacket / Vest
+938,Replace zipper,419,161,Midlayer
+938,Replace zipper,419,105,Other
+938,Replace zipper,419,202,Others
+938,Replace zipper,419,203,Others
+938,Replace zipper,419,200,Others
+938,Replace zipper,419,198,Overall
+938,Replace zipper,419,175,Overall
+938,Replace zipper,419,160,Overalls
+938,Replace zipper,419,185,Rain Trousers
+938,Replace zipper,419,89,Shirt / Blouse
+938,Replace zipper,419,96,Shirts/t-shirts
+938,Replace zipper,419,80,Ski / Shell Trousers
+938,Replace zipper,419,78,Ski / Shell jacket
+938,Replace zipper,419,66,Skirt / Dress
+938,Replace zipper,419,86,Suit
+938,Replace zipper,419,92,Suit / Smoking
+938,Replace zipper,419,195,Suit / Smoking
+938,Replace zipper,419,162,Sweater
+938,Replace zipper,419,88,Sweatshirt / Hoodie
+938,Replace zipper,419,94,Sweatshirt / Hoodie
+938,Replace zipper,419,169,Swimming trunks
+938,Replace zipper,419,168,Swimsuit
+938,Replace zipper,419,90,Top / T-shirt
+938,Replace zipper,419,174,Trousers
+938,Replace zipper,419,62,Unlined Jacket / Vest
+938,Replace zipper,419,170,Wet suit
+1652,Waterproofing,379,102,Belt
+1652,Waterproofing,379,99,Cap
+1652,Waterproofing,379,60,Coat
+1652,Waterproofing,379,100,Gloves
+1652,Waterproofing,379,98,Hat
+1652,Waterproofing,379,81,Highvis jacket
+1652,Waterproofing,379,85,Jacket
+1652,Waterproofing,379,93,Jacket
+1652,Waterproofing,379,103,Jacket
+1652,Waterproofing,379,173,Jacket
+1652,Waterproofing,379,61,Lined Jacket / Vest
+1652,Waterproofing,379,161,Midlayer
+1652,Waterproofing,379,105,Other
+1652,Waterproofing,379,202,Others
+1652,Waterproofing,379,203,Others
+1652,Waterproofing,379,200,Others
+1652,Waterproofing,379,199,Overall
+1652,Waterproofing,379,142,Rain Jacket
+1652,Waterproofing,379,101,Scarf / Shawl
+1652,Waterproofing,379,89,Shirt / Blouse
+1652,Waterproofing,379,194,Shirt / t-shirt / Body
+1652,Waterproofing,379,96,Shirts/t-shirts
+1652,Waterproofing,379,78,Ski / Shell jacket
+1652,Waterproofing,379,66,Skirt / Dress
+1652,Waterproofing,379,86,Suit
+1652,Waterproofing,379,92,Suit / Smoking
+1652,Waterproofing,379,195,Suit / Smoking
+1652,Waterproofing,379,162,Sweater
+1652,Waterproofing,379,88,Sweatshirt / Hoodie
+1652,Waterproofing,379,94,Sweatshirt / Hoodie
+1652,Waterproofing,379,196,Sweatshirt / Hoodie
+1652,Waterproofing,379,84,Trousers / Shorts
+1652,Waterproofing,379,91,Trousers / Shorts
+1652,Waterproofing,379,104,Trousers / Shorts
+1652,Waterproofing,379,62,Unlined Jacket / Vest
+1652,Waterproofing,379,170,Wet suit
+1352,Waterwash,59,102,Belt
+1352,Waterwash,59,99,Cap
+1352,Waterwash,59,60,Coat
+1352,Waterwash,59,98,Hat
+1352,Waterwash,59,81,Highvis jacket
+1352,Waterwash,59,85,Jacket
+1352,Waterwash,59,93,Jacket
+1352,Waterwash,59,103,Jacket
+1352,Waterwash,59,173,Jacket
+1352,Waterwash,59,87,Knitted Jumper
+1352,Waterwash,59,95,Knitted Jumper
+1352,Waterwash,59,193,Knitted Jumper
+1352,Waterwash,59,61,Lined Jacket / Vest
+1352,Waterwash,59,105,Other
+1352,Waterwash,59,202,Others
+1352,Waterwash,59,200,Others
+1352,Waterwash,59,203,Others
+1352,Waterwash,59,175,Overall
+1352,Waterwash,59,198,Overall
+1352,Waterwash,59,199,Overall
+1352,Waterwash,59,160,Overalls
+1352,Waterwash,59,142,Rain Jacket
+1352,Waterwash,59,185,Rain Trousers
+1352,Waterwash,59,80,Ski / Shell Trousers
+1352,Waterwash,59,78,Ski / Shell jacket
+1352,Waterwash,59,66,Skirt / Dress
+1352,Waterwash,59,86,Suit
+1352,Waterwash,59,92,Suit / Smoking
+1352,Waterwash,59,195,Suit / Smoking
+1352,Waterwash,59,162,Sweater
+1352,Waterwash,59,88,Sweatshirt / Hoodie
+1352,Waterwash,59,94,Sweatshirt / Hoodie
+1352,Waterwash,59,196,Sweatshirt / Hoodie
+1352,Waterwash,59,174,Trousers
+1352,Waterwash,59,62,Unlined Jacket / Vest
+1352,Waterwash,59,170,Wet suit
+1420,Repair tear,269,102,Belt
+1420,Repair tear,269,201,Bikini
+1420,Repair tear,269,99,Cap
+1420,Repair tear,269,60,Coat
+1420,Repair tear,269,100,Gloves
+1420,Repair tear,269,98,Hat
+1420,Repair tear,269,81,Highvis jacket
+1420,Repair tear,269,85,Jacket
+1420,Repair tear,269,93,Jacket
+1420,Repair tear,269,173,Jacket
+1420,Repair tear,269,61,Lined Jacket / Vest
+1420,Repair tear,269,161,Midlayer
+1420,Repair tear,269,202,Others
+1420,Repair tear,269,203,Others
+1420,Repair tear,269,200,Others
+1420,Repair tear,269,175,Overall
+1420,Repair tear,269,198,Overall
+1420,Repair tear,269,160,Overalls
+1420,Repair tear,269,142,Rain Jacket
+1420,Repair tear,269,185,Rain Trousers
+1420,Repair tear,269,101,Scarf / Shawl
+1420,Repair tear,269,80,Ski / Shell Trousers
+1420,Repair tear,269,78,Ski / Shell jacket
+1420,Repair tear,269,86,Suit
+1420,Repair tear,269,92,Suit / Smoking
+1420,Repair tear,269,162,Sweater
+1420,Repair tear,269,169,Swimming trunks
+1420,Repair tear,269,168,Swimsuit
+1420,Repair tear,269,163,T-shirt
+1420,Repair tear,269,82,Trousers
+1420,Repair tear,269,171,Underwear
+1420,Repair tear,269,62,Unlined Jacket / Vest
+1420,Repair tear,269,170,Wet suit
+916,Repair hole,269,102,Belt
+916,Repair hole,269,201,Bikini
+916,Repair hole,269,99,Cap
+916,Repair hole,269,60,Coat
+916,Repair hole,269,100,Gloves
+916,Repair hole,269,98,Hat
+916,Repair hole,269,81,Highvis jacket
+916,Repair hole,269,85,Jacket
+916,Repair hole,269,93,Jacket
+916,Repair hole,269,173,Jacket
+916,Repair hole,269,61,Lined Jacket / Vest
+916,Repair hole,269,161,Midlayer
+916,Repair hole,269,105,Other
+916,Repair hole,269,202,Others
+916,Repair hole,269,203,Others
+916,Repair hole,269,200,Others
+916,Repair hole,269,175,Overall
+916,Repair hole,269,198,Overall
+916,Repair hole,269,160,Overalls
+916,Repair hole,269,142,Rain Jacket
+916,Repair hole,269,185,Rain Trousers
+916,Repair hole,269,101,Scarf / Shawl
+916,Repair hole,269,80,Ski / Shell Trousers
+916,Repair hole,269,78,Ski / Shell jacket
+916,Repair hole,269,86,Suit
+916,Repair hole,269,92,Suit / Smoking
+916,Repair hole,269,168,Swimsuit
+916,Repair hole,269,90,Top / T-shirt
+916,Repair hole,269,82,Trousers
+916,Repair hole,269,174,Trousers
+916,Repair hole,269,104,Trousers / Shorts
+916,Repair hole,269,62,Unlined Jacket / Vest
+916,Repair hole,269,170,Wet suit
+1282,Stain removal,289,102,Belt
+1282,Stain removal,289,201,Bikini
+1282,Stain removal,289,99,Cap
+1282,Stain removal,289,103,Jacket
+1282,Stain removal,289,87,Knitted Jumper
+1282,Stain removal,289,95,Knitted Jumper
+1282,Stain removal,289,193,Knitted Jumper
+1282,Stain removal,289,161,Midlayer
+1282,Stain removal,289,202,Others
+1282,Stain removal,289,200,Others
+1282,Stain removal,289,198,Overall
+1282,Stain removal,289,199,Overall
+1282,Stain removal,289,142,Rain Jacket
+1282,Stain removal,289,185,Rain Trousers
+1282,Stain removal,289,89,Shirt / Blouse
+1282,Stain removal,289,194,Shirt / t-shirt / Body
+1282,Stain removal,289,96,Shirts/t-shirts
+1282,Stain removal,289,66,Skirt / Dress
+1282,Stain removal,289,195,Suit / Smoking
+1282,Stain removal,289,162,Sweater
+1282,Stain removal,289,88,Sweatshirt / Hoodie
+1282,Stain removal,289,94,Sweatshirt / Hoodie
+1282,Stain removal,289,196,Sweatshirt / Hoodie
+1282,Stain removal,289,169,Swimming trunks
+1282,Stain removal,289,168,Swimsuit
+1282,Stain removal,289,163,T-shirt
+1282,Stain removal,289,90,Top / T-shirt
+1282,Stain removal,289,82,Trousers
+1282,Stain removal,289,84,Trousers / Shorts
+1282,Stain removal,289,91,Trousers / Shorts
+1282,Stain removal,289,104,Trousers / Shorts
+1282,Stain removal,289,171,Underwear
+1282,Stain removal,289,170,Wet suit
+958,Take in waist,314,102,Belt
+958,Take in waist,314,60,Coat
+958,Take in waist,314,81,Highvis jacket
+958,Take in waist,314,85,Jacket
+958,Take in waist,314,93,Jacket
+958,Take in waist,314,103,Jacket
+958,Take in waist,314,173,Jacket
+958,Take in waist,314,87,Knitted Jumper
+958,Take in waist,314,95,Knitted Jumper
+958,Take in waist,314,193,Knitted Jumper
+958,Take in waist,314,61,Lined Jacket / Vest
+958,Take in waist,314,161,Midlayer
+958,Take in waist,314,199,Overall
+958,Take in waist,314,175,Overall
+958,Take in waist,314,160,Overalls
+958,Take in waist,314,142,Rain Jacket
+958,Take in waist,314,89,Shirt / Blouse
+958,Take in waist,314,194,Shirt / t-shirt / Body
+958,Take in waist,314,96,Shirts/t-shirts
+958,Take in waist,314,78,Ski / Shell jacket
+958,Take in waist,314,162,Sweater
+958,Take in waist,314,88,Sweatshirt / Hoodie
+958,Take in waist,314,94,Sweatshirt / Hoodie
+958,Take in waist,314,196,Sweatshirt / Hoodie
+958,Take in waist,314,168,Swimsuit
+958,Take in waist,314,163,T-shirt
+958,Take in waist,314,90,Top / T-shirt
+958,Take in waist,314,171,Underwear
+958,Take in waist,314,62,Unlined Jacket / Vest
+958,Take in waist,314,170,Wet suit
+1328,Take in the back,699,201,Bikini
+1328,Take in the back,699,103,Jacket
+1328,Take in the back,699,87,Knitted Jumper
+1328,Take in the back,699,95,Knitted Jumper
+1328,Take in the back,699,193,Knitted Jumper
+1328,Take in the back,699,161,Midlayer
+1328,Take in the back,699,199,Overall
+1328,Take in the back,699,142,Rain Jacket
+1328,Take in the back,699,185,Rain Trousers
+1328,Take in the back,699,89,Shirt / Blouse
+1328,Take in the back,699,194,Shirt / t-shirt / Body
+1328,Take in the back,699,96,Shirts/t-shirts
+1328,Take in the back,699,80,Ski / Shell Trousers
+1328,Take in the back,699,78,Ski / Shell jacket
+1328,Take in the back,699,195,Suit / Smoking
+1328,Take in the back,699,162,Sweater
+1328,Take in the back,699,88,Sweatshirt / Hoodie
+1328,Take in the back,699,94,Sweatshirt / Hoodie
+1328,Take in the back,699,196,Sweatshirt / Hoodie
+1328,Take in the back,699,168,Swimsuit
+1328,Take in the back,699,163,T-shirt
+1328,Take in the back,699,90,Top / T-shirt
+1328,Take in the back,699,174,Trousers
+1328,Take in the back,699,82,Trousers
+1328,Take in the back,699,84,Trousers / Shorts
+1328,Take in the back,699,91,Trousers / Shorts
+1328,Take in the back,699,104,Trousers / Shorts
+1328,Take in the back,699,171,Underwear
+1328,Take in the back,699,62,Unlined Jacket / Vest
+1328,Take in the back,699,170,Wet suit
+1401,Replace main zipper,299,85,Jacket
+1401,Replace main zipper,299,93,Jacket
+1401,Replace main zipper,299,103,Jacket
+1401,Replace main zipper,299,87,Knitted Jumper
+1401,Replace main zipper,299,95,Knitted Jumper
+1401,Replace main zipper,299,193,Knitted Jumper
+1401,Replace main zipper,299,161,Midlayer
+1401,Replace main zipper,299,105,Other
+1401,Replace main zipper,299,202,Others
+1401,Replace main zipper,299,200,Others
+1401,Replace main zipper,299,199,Overall
+1401,Replace main zipper,299,89,Shirt / Blouse
+1401,Replace main zipper,299,194,Shirt / t-shirt / Body
+1401,Replace main zipper,299,96,Shirts/t-shirts
+1401,Replace main zipper,299,66,Skirt / Dress
+1401,Replace main zipper,299,86,Suit
+1401,Replace main zipper,299,92,Suit / Smoking
+1401,Replace main zipper,299,195,Suit / Smoking
+1401,Replace main zipper,299,162,Sweater
+1401,Replace main zipper,299,88,Sweatshirt / Hoodie
+1401,Replace main zipper,299,94,Sweatshirt / Hoodie
+1401,Replace main zipper,299,196,Sweatshirt / Hoodie
+1401,Replace main zipper,299,169,Swimming trunks
+1401,Replace main zipper,299,168,Swimsuit
+1401,Replace main zipper,299,90,Top / T-shirt
+1401,Replace main zipper,299,82,Trousers
+1401,Replace main zipper,299,84,Trousers / Shorts
+1401,Replace main zipper,299,91,Trousers / Shorts
+1401,Replace main zipper,299,104,Trousers / Shorts
+1408,Repair wear,434,102,Belt
+1408,Repair wear,434,99,Cap
+1408,Repair wear,434,100,Gloves
+1408,Repair wear,434,98,Hat
+1408,Repair wear,434,103,Jacket
+1408,Repair wear,434,87,Knitted Jumper
+1408,Repair wear,434,95,Knitted Jumper
+1408,Repair wear,434,193,Knitted Jumper
+1408,Repair wear,434,161,Midlayer
+1408,Repair wear,434,105,Other
+1408,Repair wear,434,202,Others
+1408,Repair wear,434,200,Others
+1408,Repair wear,434,199,Overall
+1408,Repair wear,434,101,Scarf / Shawl
+1408,Repair wear,434,89,Shirt / Blouse
+1408,Repair wear,434,194,Shirt / t-shirt / Body
+1408,Repair wear,434,96,Shirts/t-shirts
+1408,Repair wear,434,195,Suit / Smoking
+1408,Repair wear,434,162,Sweater
+1408,Repair wear,434,88,Sweatshirt / Hoodie
+1408,Repair wear,434,94,Sweatshirt / Hoodie
+1408,Repair wear,434,196,Sweatshirt / Hoodie
+1408,Repair wear,434,163,T-shirt
+1408,Repair wear,434,90,Top / T-shirt
+1408,Repair wear,434,82,Trousers
+1408,Repair wear,434,84,Trousers / Shorts
+1408,Repair wear,434,91,Trousers / Shorts
+1408,Repair wear,434,104,Trousers / Shorts
+1408,Repair wear,434,171,Underwear
+914,Replace button,69,85,Jacket
+914,Replace button,69,93,Jacket
+914,Replace button,69,103,Jacket
+914,Replace button,69,87,Knitted Jumper
+914,Replace button,69,95,Knitted Jumper
+914,Replace button,69,193,Knitted Jumper
+914,Replace button,69,161,Midlayer
+914,Replace button,69,105,Other
+914,Replace button,69,202,Others
+914,Replace button,69,200,Others
+914,Replace button,69,199,Overall
+914,Replace button,69,89,Shirt / Blouse
+914,Replace button,69,194,Shirt / t-shirt / Body
+914,Replace button,69,96,Shirts/t-shirts
+914,Replace button,69,66,Skirt / Dress
+914,Replace button,69,86,Suit
+914,Replace button,69,92,Suit / Smoking
+914,Replace button,69,195,Suit / Smoking
+914,Replace button,69,162,Sweater
+914,Replace button,69,88,Sweatshirt / Hoodie
+914,Replace button,69,94,Sweatshirt / Hoodie
+914,Replace button,69,196,Sweatshirt / Hoodie
+914,Replace button,69,169,Swimming trunks
+914,Replace button,69,163,T-shirt
+914,Replace button,69,90,Top / T-shirt
+914,Replace button,69,84,Trousers / Shorts
+914,Replace button,69,91,Trousers / Shorts
+914,Replace button,69,104,Trousers / Shorts
+1416,Repair burn mark,439,102,Belt
+1416,Repair burn mark,439,99,Cap
+1416,Repair burn mark,439,100,Gloves
+1416,Repair burn mark,439,98,Hat
+1416,Repair burn mark,439,87,Knitted Jumper
+1416,Repair burn mark,439,95,Knitted Jumper
+1416,Repair burn mark,439,193,Knitted Jumper
+1416,Repair burn mark,439,161,Midlayer
+1416,Repair burn mark,439,105,Other
+1416,Repair burn mark,439,202,Others
+1416,Repair burn mark,439,200,Others
+1416,Repair burn mark,439,199,Overall
+1416,Repair burn mark,439,160,Overalls
+1416,Repair burn mark,439,101,Scarf / Shawl
+1416,Repair burn mark,439,89,Shirt / Blouse
+1416,Repair burn mark,439,194,Shirt / t-shirt / Body
+1416,Repair burn mark,439,96,Shirts/t-shirts
+1416,Repair burn mark,439,195,Suit / Smoking
+1416,Repair burn mark,439,162,Sweater
+1416,Repair burn mark,439,88,Sweatshirt / Hoodie
+1416,Repair burn mark,439,94,Sweatshirt / Hoodie
+1416,Repair burn mark,439,196,Sweatshirt / Hoodie
+1416,Repair burn mark,439,163,T-shirt
+1416,Repair burn mark,439,90,Top / T-shirt
+1416,Repair burn mark,439,84,Trousers / Shorts
+1416,Repair burn mark,439,91,Trousers / Shorts
+1416,Repair burn mark,439,171,Underwear
+1337,Shorten length,559,102,Belt
+1337,Shorten length,559,201,Bikini
+1337,Shorten length,559,100,Gloves
+1337,Shorten length,559,87,Knitted Jumper
+1337,Shorten length,559,193,Knitted Jumper
+1337,Shorten length,559,161,Midlayer
+1337,Shorten length,559,142,Rain Jacket
+1337,Shorten length,559,185,Rain Trousers
+1337,Shorten length,559,101,Scarf / Shawl
+1337,Shorten length,559,89,Shirt / Blouse
+1337,Shorten length,559,194,Shirt / t-shirt / Body
+1337,Shorten length,559,96,Shirts/t-shirts
+1337,Shorten length,559,80,Ski / Shell Trousers
+1337,Shorten length,559,78,Ski / Shell jacket
+1337,Shorten length,559,162,Sweater
+1337,Shorten length,559,88,Sweatshirt / Hoodie
+1337,Shorten length,559,94,Sweatshirt / Hoodie
+1337,Shorten length,559,196,Sweatshirt / Hoodie
+1337,Shorten length,559,168,Swimsuit
+1337,Shorten length,559,163,T-shirt
+1337,Shorten length,559,90,Top / T-shirt
+1337,Shorten length,559,82,Trousers
+1337,Shorten length,559,84,Trousers / Shorts
+1337,Shorten length,559,91,Trousers / Shorts
+1337,Shorten length,559,104,Trousers / Shorts
+1337,Shorten length,559,171,Underwear
+1337,Shorten length,559,170,Wet suit
+957,Replace lining,1299,201,Bikini
+957,Replace lining,1299,99,Cap
+957,Replace lining,1299,98,Hat
+957,Replace lining,1299,161,Midlayer
+957,Replace lining,1299,105,Other
+957,Replace lining,1299,203,Others
+957,Replace lining,1299,200,Others
+957,Replace lining,1299,202,Others
+957,Replace lining,1299,175,Overall
+957,Replace lining,1299,160,Overalls
+957,Replace lining,1299,101,Scarf / Shawl
+957,Replace lining,1299,89,Shirt / Blouse
+957,Replace lining,1299,96,Shirts/t-shirts
+957,Replace lining,1299,80,Ski / Shell Trousers
+957,Replace lining,1299,66,Skirt / Dress
+957,Replace lining,1299,88,Sweatshirt / Hoodie
+957,Replace lining,1299,94,Sweatshirt / Hoodie
+957,Replace lining,1299,196,Sweatshirt / Hoodie
+957,Replace lining,1299,169,Swimming trunks
+957,Replace lining,1299,168,Swimsuit
+957,Replace lining,1299,82,Trousers
+957,Replace lining,1299,174,Trousers
+957,Replace lining,1299,84,Trousers / Shorts
+957,Replace lining,1299,91,Trousers / Shorts
+957,Replace lining,1299,104,Trousers / Shorts
+957,Replace lining,1299,171,Underwear
+1329,Take in sides,599,201,Bikini
+1329,Take in sides,599,100,Gloves
+1329,Take in sides,599,87,Knitted Jumper
+1329,Take in sides,599,95,Knitted Jumper
+1329,Take in sides,599,193,Knitted Jumper
+1329,Take in sides,599,161,Midlayer
+1329,Take in sides,599,142,Rain Jacket
+1329,Take in sides,599,101,Scarf / Shawl
+1329,Take in sides,599,89,Shirt / Blouse
+1329,Take in sides,599,194,Shirt / t-shirt / Body
+1329,Take in sides,599,96,Shirts/t-shirts
+1329,Take in sides,599,78,Ski / Shell jacket
+1329,Take in sides,599,162,Sweater
+1329,Take in sides,599,88,Sweatshirt / Hoodie
+1329,Take in sides,599,94,Sweatshirt / Hoodie
+1329,Take in sides,599,196,Sweatshirt / Hoodie
+1329,Take in sides,599,168,Swimsuit
+1329,Take in sides,599,163,T-shirt
+1329,Take in sides,599,90,Top / T-shirt
+1329,Take in sides,599,82,Trousers
+1329,Take in sides,599,84,Trousers / Shorts
+1329,Take in sides,599,91,Trousers / Shorts
+1329,Take in sides,599,104,Trousers / Shorts
+1329,Take in sides,599,171,Underwear
+1329,Take in sides,599,62,Unlined Jacket / Vest
+1329,Take in sides,599,170,Wet suit
+960,Expand waist,349,201,Bikini
+960,Expand waist,349,60,Coat
+960,Expand waist,349,81,Highvis jacket
+960,Expand waist,349,85,Jacket
+960,Expand waist,349,93,Jacket
+960,Expand waist,349,103,Jacket
+960,Expand waist,349,173,Jacket
+960,Expand waist,349,87,Knitted Jumper
+960,Expand waist,349,95,Knitted Jumper
+960,Expand waist,349,193,Knitted Jumper
+960,Expand waist,349,61,Lined Jacket / Vest
+960,Expand waist,349,142,Rain Jacket
+960,Expand waist,349,89,Shirt / Blouse
+960,Expand waist,349,194,Shirt / t-shirt / Body
+960,Expand waist,349,96,Shirts/t-shirts
+960,Expand waist,349,78,Ski / Shell jacket
+960,Expand waist,349,162,Sweater
+960,Expand waist,349,88,Sweatshirt / Hoodie
+960,Expand waist,349,94,Sweatshirt / Hoodie
+960,Expand waist,349,196,Sweatshirt / Hoodie
+960,Expand waist,349,168,Swimsuit
+960,Expand waist,349,163,T-shirt
+960,Expand waist,349,171,Underwear
+960,Expand waist,349,62,Unlined Jacket / Vest
+1327,Narrow shoulder area,699,60,Coat
+1327,Narrow shoulder area,699,81,Highvis jacket
+1327,Narrow shoulder area,699,103,Jacket
+1327,Narrow shoulder area,699,87,Knitted Jumper
+1327,Narrow shoulder area,699,95,Knitted Jumper
+1327,Narrow shoulder area,699,193,Knitted Jumper
+1327,Narrow shoulder area,699,161,Midlayer
+1327,Narrow shoulder area,699,199,Overall
+1327,Narrow shoulder area,699,142,Rain Jacket
+1327,Narrow shoulder area,699,89,Shirt / Blouse
+1327,Narrow shoulder area,699,194,Shirt / t-shirt / Body
+1327,Narrow shoulder area,699,96,Shirts/t-shirts
+1327,Narrow shoulder area,699,78,Ski / Shell jacket
+1327,Narrow shoulder area,699,195,Suit / Smoking
+1327,Narrow shoulder area,699,162,Sweater
+1327,Narrow shoulder area,699,88,Sweatshirt / Hoodie
+1327,Narrow shoulder area,699,94,Sweatshirt / Hoodie
+1327,Narrow shoulder area,699,196,Sweatshirt / Hoodie
+1327,Narrow shoulder area,699,163,T-shirt
+1327,Narrow shoulder area,699,90,Top / T-shirt
+1327,Narrow shoulder area,699,62,Unlined Jacket / Vest
+1327,Narrow shoulder area,699,170,Wet suit
+1443,Repair seam,254,102,Belt
+1443,Repair seam,254,99,Cap
+1443,Repair seam,254,60,Coat
+1443,Repair seam,254,98,Hat
+1443,Repair seam,254,81,Highvis jacket
+1443,Repair seam,254,173,Jacket
+1443,Repair seam,254,61,Lined Jacket / Vest
+1443,Repair seam,254,202,Others
+1443,Repair seam,254,203,Others
+1443,Repair seam,254,200,Others
+1443,Repair seam,254,175,Overall
+1443,Repair seam,254,198,Overall
+1443,Repair seam,254,160,Overalls
+1443,Repair seam,254,142,Rain Jacket
+1443,Repair seam,254,185,Rain Trousers
+1443,Repair seam,254,80,Ski / Shell Trousers
+1443,Repair seam,254,78,Ski / Shell jacket
+1443,Repair seam,254,66,Skirt / Dress
+1443,Repair seam,254,174,Trousers
+1443,Repair seam,254,62,Unlined Jacket / Vest
+1443,Repair seam,254,170,Wet suit
+1312,Stain treatment and wash,269,102,Belt
+1312,Stain treatment and wash,269,201,Bikini
+1312,Stain treatment and wash,269,99,Cap
+1312,Stain treatment and wash,269,98,Hat
+1312,Stain treatment and wash,269,81,Highvis jacket
+1312,Stain treatment and wash,269,173,Jacket
+1312,Stain treatment and wash,269,161,Midlayer
+1312,Stain treatment and wash,269,202,Others
+1312,Stain treatment and wash,269,203,Others
+1312,Stain treatment and wash,269,200,Others
+1312,Stain treatment and wash,269,175,Overall
+1312,Stain treatment and wash,269,160,Overalls
+1312,Stain treatment and wash,269,142,Rain Jacket
+1312,Stain treatment and wash,269,185,Rain Trousers
+1312,Stain treatment and wash,269,169,Swimming trunks
+1312,Stain treatment and wash,269,168,Swimsuit
+1312,Stain treatment and wash,269,82,Trousers
+1312,Stain treatment and wash,269,174,Trousers
+1312,Stain treatment and wash,269,171,Underwear
+1312,Stain treatment and wash,269,170,Wet suit
+942,Replace zipper slider,269,100,Gloves
+942,Replace zipper slider,269,85,Jacket
+942,Replace zipper slider,269,89,Shirt / Blouse
+942,Replace zipper slider,269,194,Shirt / t-shirt / Body
+942,Replace zipper slider,269,96,Shirts/t-shirts
+942,Replace zipper slider,269,86,Suit
+942,Replace zipper slider,269,92,Suit / Smoking
+942,Replace zipper slider,269,195,Suit / Smoking
+942,Replace zipper slider,269,169,Swimming trunks
+942,Replace zipper slider,269,168,Swimsuit
+942,Replace zipper slider,269,90,Top / T-shirt
+942,Replace zipper slider,269,84,Trousers / Shorts
+942,Replace zipper slider,269,91,Trousers / Shorts
+942,Replace zipper slider,269,104,Trousers / Shorts
+1355,Shorten sleeves,419,161,Midlayer
+1355,Shorten sleeves,419,198,Overall
+1355,Shorten sleeves,419,142,Rain Jacket
+1355,Shorten sleeves,419,89,Shirt / Blouse
+1355,Shorten sleeves,419,194,Shirt / t-shirt / Body
+1355,Shorten sleeves,419,96,Shirts/t-shirts
+1355,Shorten sleeves,419,78,Ski / Shell jacket
+1355,Shorten sleeves,419,196,Sweatshirt / Hoodie
+1355,Shorten sleeves,419,163,T-shirt
+1355,Shorten sleeves,419,90,Top / T-shirt
+1369,Tapering legs,659,199,Overall
+1369,Tapering legs,659,185,Rain Trousers
+1369,Tapering legs,659,86,Suit
+1369,Tapering legs,659,92,Suit / Smoking
+1369,Tapering legs,659,195,Suit / Smoking
+1369,Tapering legs,659,82,Trousers
+1369,Tapering legs,659,84,Trousers / Shorts
+1369,Tapering legs,659,91,Trousers / Shorts
+1369,Tapering legs,659,104,Trousers / Shorts
+1373,Expand thigh,499,82,Trousers
+1373,Expand thigh,499,84,Trousers / Shorts
+1373,Expand thigh,499,91,Trousers / Shorts
+1373,Expand thigh,499,104,Trousers / Shorts
+971,Take in shoulders,499,173,Jacket
+971,Take in shoulders,499,61,Lined Jacket / Vest
+971,Take in shoulders,499,175,Overall
+971,Take in shoulders,499,160,Overalls
+936,Replace jeans button,69,198,Overall
+936,Replace jeans button,69,175,Overall
+936,Replace jeans button,69,160,Overalls
+937,Replace snap button,69,161,Midlayer
+937,Replace snap button,69,90,Top / T-shirt

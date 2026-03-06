@@ -3255,6 +3255,12 @@ def docs_category_products():
     })
 
 
+@app.route("/docs/assigned-categories-gap")
+def docs_assigned_categories_gap():
+    """View assigned_categories gap analysis."""
+    return send_from_directory(DOCS_DIR, "assigned_categories_gap.html")
+
+
 @app.route("/docs/keyword-stats")
 def docs_keyword_stats():
     """Return product counts per keyword injection rule."""
