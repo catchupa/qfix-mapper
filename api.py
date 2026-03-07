@@ -28,6 +28,8 @@ from database import (create_table, upsert_product, update_qfix_mapping,
                       DATABASE_URL, DATABASE_WRITE_URL)
 from protocol_parser import parse_protocol_xlsx
 from vision import classify_and_map
+from brands import BRAND_ROUTES, BRAND_SLUG
+from catalog import catalog
 
 app = Flask(__name__)
 CORS(app)
@@ -173,267 +175,6 @@ def _log_request(response):
     return response
 
 
-# ── QFix catalog cache ────────────────────────────────────────────────────
-
-QFIX_CATEGORIES_URL = "https://dev.qfixr.me/wp-json/qfix/v1/product-categories?parent=23"
-# Metadata from product-categories (L3 items, L4 subitems, services)
-_qfix_items = {}      # L3 clothing types: {id: {name, slug, link, parent}}
-_qfix_subitems = {}   # L4 materials:      {id: {name, slug, link}}
-_qfix_services = {}   # {(L3_id, L4_id): [service_categories]}
-_action_assigned_categories = {}  # {action_id: set(L3 category IDs)}
-_qfix_catalog_loaded = False
-
-# ── Service filtering ────────────────────────────────────────────────────
-# Two filtering strategies:
-#   1. "assigned_categories" — use assigned_categories from QFix API (authoritative)
-#   2. "allowlist" — use crawled qfix_services_by_type.json (legacy, better ranking)
-# Set QFIX_SERVICE_FILTER to choose: "assigned_categories" (default) or "allowlist"
-# Set to "off" to disable all filtering.
-QFIX_SERVICE_FILTER = os.environ.get("QFIX_SERVICE_FILTER", "assigned_categories")
-# Legacy env var — QFIX_FILTER_SERVICES=0 disables all filtering
-if os.environ.get("QFIX_FILTER_SERVICES") == "0":
-    QFIX_SERVICE_FILTER = "off"
-
-_qfix_allowed_services = {}  # {ct_id_str: {mat_id_str: {svc_key: [{id, name}]}}}
-
-def _load_qfix_allowed_services():
-    global _qfix_allowed_services
-    if _qfix_allowed_services:
-        return
-    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "qfix_services_by_type.json")
-    if os.path.exists(path):
-        with open(path) as f:
-            _qfix_allowed_services = json.load(f)
-        logger.info("Loaded QFix service allowlist: %d clothing types", len(_qfix_allowed_services))
-
-
-def _swap_to_valid_variants(actions, ct_id, mat_id, service_key):
-    """Swap action variants to prefer ones valid for this clothing type.
-
-    When the AI ranking picks e.g. "Replace main zipper" #1401 but that ID
-    isn't in assigned_categories for this ct_id, look for another variant
-    with the same name (e.g. #1395) that IS valid, and swap it in.
-    Preserves the AI ranking order — only changes which variant is used.
-    """
-    if not _action_assigned_categories:
-        return actions
-
-    # Build name→[valid variants] from the catalog for this (ct_id, mat_id)
-    slug_map = {"repair": "repair", "adjustment": "adjustment", "care": "washing"}
-    slug_pattern = slug_map.get(service_key, service_key)
-    svc_cats = _qfix_services.get((ct_id, mat_id), [])
-
-    name_to_valid = {}  # action_name -> [valid action dicts]
-    for svc_cat in svc_cats:
-        if slug_pattern not in svc_cat.get("slug", ""):
-            continue
-        for s in svc_cat.get("services", []):
-            if ct_id in _action_assigned_categories.get(s["id"], set()):
-                name_to_valid.setdefault(s["name"], []).append(s)
-
-    result = []
-    for a in actions:
-        aid = a.get("id")
-        if ct_id in _action_assigned_categories.get(aid, set()):
-            result.append(a)  # Already valid
-            continue
-        # Not valid — look for a same-name variant that is
-        variants = name_to_valid.get(a.get("name"), [])
-        if variants:
-            best = min(variants, key=lambda v: v.get("price") or 9999)
-            result.append({"id": best["id"], "name": best["name"], "price": best.get("price")})
-        else:
-            result.append(a)  # No valid variant found, keep original (filtering will handle it)
-    return result
-
-
-def _filter_by_assigned_categories(actions, ct_id, mat_id, service_key, max_actions=5):
-    """Filter actions by assigned_categories from QFix API.
-
-    Only keeps actions whose assigned_categories includes the product's
-    clothing_type_id (L3 category). If fewer than max_actions survive,
-    backfills from the full valid action list for this (ct_id, mat_id) combo.
-    """
-    if not _action_assigned_categories:
-        return actions  # Data not loaded yet, pass through
-
-    # Filter ranked actions to only valid ones
-    filtered = [a for a in actions
-                if ct_id in _action_assigned_categories.get(a.get("id"), set())]
-
-    # Backfill if we have fewer than max_actions
-    if len(filtered) < max_actions:
-        seen_ids = {a["id"] for a in filtered}
-        # Map service_key to slug pattern for finding the right L5 category
-        slug_map = {"repair": "repair", "adjustment": "adjustment", "care": "washing"}
-        slug_pattern = slug_map.get(service_key, service_key)
-
-        svc_cats = _qfix_services.get((ct_id, mat_id), [])
-        for svc_cat in svc_cats:
-            if slug_pattern not in svc_cat.get("slug", ""):
-                continue
-            for s in svc_cat.get("services", []):
-                if s["id"] in seen_ids:
-                    continue
-                if ct_id not in _action_assigned_categories.get(s["id"], set()):
-                    continue
-                filtered.append({"id": s["id"], "name": s["name"], "price": s.get("price")})
-                seen_ids.add(s["id"])
-                if len(filtered) >= max_actions:
-                    break
-            break
-
-    return filtered
-
-
-def _filter_allowed_services(actions, ct_id, mat_id, service_key):
-    """Filter actions to only those QFix actually shows for this clothing type + material.
-    Legacy allowlist filter — used when QFIX_SERVICE_FILTER=allowlist."""
-    _load_qfix_allowed_services()
-    if not _qfix_allowed_services:
-        return actions  # No allowlist data, pass through
-    allowed = _qfix_allowed_services.get(str(ct_id), {}).get(str(mat_id), {}).get(service_key)
-    if allowed is None:
-        return actions  # No data for this combo, pass through
-    allowed_ids = {s["id"] for s in allowed}
-    return [a for a in actions if a.get("id") in allowed_ids]
-
-
-def filter_services(actions, ct_id, mat_id, service_key):
-    """Apply the active service filter strategy.
-
-    Uses QFIX_SERVICE_FILTER to choose between:
-      - "assigned_categories": filter by API assigned_categories + backfill (default)
-      - "allowlist": filter by crawled site allowlist (legacy)
-      - "off": no filtering
-    """
-    if QFIX_SERVICE_FILTER == "off":
-        return actions
-    if QFIX_SERVICE_FILTER == "allowlist":
-        return _filter_allowed_services(actions, ct_id, mat_id, service_key)
-    # Default: assigned_categories
-    _load_qfix_catalog()
-    return _filter_by_assigned_categories(actions, ct_id, mat_id, service_key)
-
-
-def _build_catalog_node(node):
-    """Extract the fields we want from a QFix catalog node."""
-    return {
-        "id": node.get("id"),
-        "name": node.get("name"),
-        "slug": node.get("slug"),
-        "link": node.get("link"),
-        "description": node.get("category_description") or None,
-    }
-
-
-def _load_qfix_catalog():
-    """Fetch the QFix category tree and build lookup dicts.
-
-    The tree structure is:
-      L1 (Clothing/Shoes/Bags) → L2 (Women's/Men's/...) → L3 (Shirt/Trousers/...)
-        → L4 (Standard textile/Leather/...) → L5 (Repair/Adjust/Washing/Other)
-          → Products (services) → Variants
-    """
-    global _qfix_items, _qfix_subitems, _qfix_catalog_loaded, _qfix_services, _action_assigned_categories
-    if _qfix_catalog_loaded:
-        return
-    try:
-        resp = http_requests.get(QFIX_CATEGORIES_URL, timeout=30)
-        resp.raise_for_status()
-        tree = resp.json()
-    except Exception as e:
-        logger.warning("Failed to fetch QFix catalog: %s", e)
-        return
-
-    for l1 in tree:
-        for l2 in l1.get("children", []):
-            for l3 in l2.get("children", []):
-                l3_id = l3.get("id")
-                if l3_id not in _qfix_items:
-                    _qfix_items[l3_id] = {
-                        **_build_catalog_node(l3),
-                        "parent": _build_catalog_node(l2),
-                    }
-                for l4 in l3.get("children", []):
-                    l4_id = l4.get("id")
-                    if l4_id not in _qfix_subitems:
-                        _qfix_subitems[l4_id] = _build_catalog_node(l4)
-
-                    # Extract services grouped by L5 service category
-                    service_categories = []
-                    for l5 in l4.get("children", []):
-                        svc_cat = {
-                            "id": l5.get("id"),
-                            "name": l5.get("name"),
-                            "slug": l5.get("slug"),
-                            "services": [],
-                        }
-                        for prod in l5.get("products", []):
-                            service = {
-                                "id": prod.get("id"),
-                                "name": prod.get("name"),
-                                "price": prod.get("price"),
-                                "variants": [
-                                    {
-                                        "id": v.get("id"),
-                                        "name": v.get("name"),
-                                        "price": v.get("price"),
-                                    }
-                                    for v in prod.get("variants", [])
-                                ],
-                            }
-                            svc_cat["services"].append(service)
-                            # Extract assigned_categories for service filtering
-                            ac = prod.get("assigned_categories", "")
-                            if ac and prod["id"] not in _action_assigned_categories:
-                                _action_assigned_categories[prod["id"]] = set(
-                                    int(c) for c in ac.split(",") if c.strip()
-                                )
-                        service_categories.append(svc_cat)
-                    _qfix_services[(l3_id, l4_id)] = service_categories
-
-    _qfix_catalog_loaded = True
-    logger.info("QFix catalog loaded: %d items, %d subitems, %d service combos, %d actions with assigned_categories",
-                len(_qfix_items), len(_qfix_subitems), len(_qfix_services), len(_action_assigned_categories))
-
-
-def enrich_qfix(qfix):
-    """Add QFix catalog item, subitem, and service data to a qfix mapping dict.
-
-    Services are looked up by the (clothing_type_id, material_id) pair, matching
-    the QFix website behavior where services depend on both item and material.
-    """
-    _load_qfix_catalog()
-    ct_id = qfix.get("qfix_clothing_type_id")
-    mat_id = qfix.get("qfix_material_id")
-
-    if ct_id and ct_id in _qfix_items:
-        qfix["qfix_item"] = _qfix_items[ct_id]
-
-    if mat_id and mat_id in _qfix_subitems:
-        qfix["qfix_subitem"] = _qfix_subitems[mat_id]
-
-    if ct_id and mat_id:
-        qfix["qfix_services"] = _qfix_services.get((ct_id, mat_id), [])
-
-    return qfix
-
-
-# ── Brand routing config ──────────────────────────────────────────────────
-
-BRAND_ROUTES = {
-    "kappahl": "KappAhl",
-    "ginatricot": "Gina Tricot",
-    "eton": "Eton",
-    "nudie": "Nudie Jeans",
-    "lindex": "Lindex",
-}
-
-# Reverse lookup: brand display name -> slug
-BRAND_SLUG = {v: k for k, v in BRAND_ROUTES.items()}
-
-
 # --- DB connections with retry and timeout ---
 
 def _connect_with_retry(dsn, retries=3, delay=1.0):
@@ -528,7 +269,7 @@ def get_brand_product(brand_slug, product_id):
 
     # Use persisted mapping as base if available, otherwise compute live
     if product.get("qfix_url"):
-        qfix = enrich_qfix({
+        qfix = catalog.enrich_qfix({
             "qfix_clothing_type": product["qfix_clothing_type"],
             "qfix_clothing_type_id": product["qfix_clothing_type_id"],
             "qfix_material": product["qfix_material"],
@@ -536,7 +277,7 @@ def get_brand_product(brand_slug, product_id):
             "qfix_url": product["qfix_url"],
         })
     else:
-        qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
+        qfix = catalog.enrich_qfix(_get_mapper()(product, brand=brand_slug))
 
     return jsonify({
         brand_slug: product,
@@ -570,7 +311,7 @@ def _redirect_to_qfix(brand_slug, service_key=None):
 
     # Use persisted mapping if available, otherwise fall back to live mapping
     if product.get("qfix_url"):
-        qfix = enrich_qfix({
+        qfix = catalog.enrich_qfix({
             "qfix_clothing_type": product["qfix_clothing_type"],
             "qfix_clothing_type_id": product["qfix_clothing_type_id"],
             "qfix_material": product["qfix_material"],
@@ -578,7 +319,7 @@ def _redirect_to_qfix(brand_slug, service_key=None):
             "qfix_url": product["qfix_url"],
         })
     else:
-        qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
+        qfix = catalog.enrich_qfix(_get_mapper()(product, brand=brand_slug))
 
     qfix_url = qfix.get("qfix_url")
     if not qfix_url:
@@ -875,7 +616,7 @@ def v2_get_by_gtin(gtin):
         return jsonify({"error": f"GTIN {gtin} not found"}), 404
 
     product = dict(row)
-    qfix = enrich_qfix(map_product_v2(product))
+    qfix = catalog.enrich_qfix(map_product_v2(product))
 
     return jsonify({
         "product": product,
@@ -914,7 +655,7 @@ def v2_get_by_article(article_number):
         return jsonify({"error": f"Article {article_number} not found"}), 404
 
     products = [dict(r) for r in rows]
-    qfix = enrich_qfix(map_product_v2(products[0]))
+    qfix = catalog.enrich_qfix(map_product_v2(products[0]))
 
     return jsonify({
         "article_number": article_number,
@@ -977,7 +718,7 @@ def v3_get_product(product_id):
         return jsonify({"error": f"Product {product_id} not found"}), 404
 
     product = dict(row)
-    qfix = enrich_qfix(_get_mapper()(product, brand="ginatricot"))
+    qfix = catalog.enrich_qfix(_get_mapper()(product, brand="ginatricot"))
 
     return jsonify({
         "product": product,
@@ -1114,7 +855,7 @@ def v4_get_product(product_id):
 
     # Use persisted mapping if available, otherwise compute live
     if product.get("qfix_url"):
-        qfix = enrich_qfix({
+        qfix = catalog.enrich_qfix({
             "qfix_clothing_type": product["qfix_clothing_type"],
             "qfix_clothing_type_id": product["qfix_clothing_type_id"],
             "qfix_material": product["qfix_material"],
@@ -1124,9 +865,9 @@ def v4_get_product(product_id):
     else:
         brand_slug = BRAND_SLUG.get(product.get("brand"))
         if product.get("article_number"):
-            qfix = enrich_qfix(map_product_v2(product, materials=materials_list))
+            qfix = catalog.enrich_qfix(map_product_v2(product, materials=materials_list))
         else:
-            qfix = enrich_qfix(_get_mapper()(product, brand=brand_slug))
+            qfix = catalog.enrich_qfix(_get_mapper()(product, brand=brand_slug))
 
     return jsonify({
         "product": merged,
@@ -1293,7 +1034,7 @@ def identify_redirect():
         return jsonify({"error": "Could not identify garment type", "classification": result.get("classification")}), 422
 
     # Find matching service categories and build redirect URLs for all services
-    enriched = enrich_qfix(qfix)
+    enriched = catalog.enrich_qfix(qfix)
     ct_id = qfix.get("qfix_clothing_type_id")
     mat_id = qfix.get("qfix_material_id")
 
@@ -1574,7 +1315,7 @@ def remap_run():
     batch_count = 0
 
     # Ensure QFix catalog is loaded for service ID resolution
-    _load_qfix_catalog()
+    catalog.load()
 
     # Slug-to-service-category mapping
     _SERVICE_SLUG_MAP = {
@@ -1600,7 +1341,7 @@ def remap_run():
             ct_id = qfix.get("qfix_clothing_type_id")
             mat_id = qfix.get("qfix_material_id")
             if base_url and ct_id and mat_id:
-                service_cats = _qfix_services.get((ct_id, mat_id), [])
+                service_cats = catalog.services.get((ct_id, mat_id), [])
                 for svc_cat in service_cats:
                     svc_slug = svc_cat.get("slug", "")
                     svc_id = svc_cat.get("id")
@@ -2110,8 +1851,8 @@ def _inject_keyword_actions(top_actions, product_text, qfix_services, ct_id=None
                 if not variants:
                     variants = all_actions[action_name]
                 # Filter by assigned_categories if active
-                if ct_id and QFIX_SERVICE_FILTER == "assigned_categories" and _action_assigned_categories:
-                    variants = [a for a in variants if ct_id in _action_assigned_categories.get(a["id"], set())]
+                if ct_id and catalog.filter_mode == "assigned_categories" and catalog.assigned_categories:
+                    variants = [a for a in variants if ct_id in catalog.assigned_categories.get(a["id"], set())]
                 if not variants:
                     continue
                 best = min(variants, key=lambda a: a["price"] or 9999)
@@ -2213,9 +1954,9 @@ def remap_rank_actions():
     if not api_key:
         return jsonify({"error": "ANTHROPIC_API_KEY not configured"}), 500
 
-    _load_qfix_catalog()
+    catalog.load()
 
-    if not _qfix_services:
+    if not catalog.services:
         return jsonify({"error": "QFix catalog not loaded"}), 500
 
     ai_client = anthropic.Anthropic(api_key=api_key)
@@ -2239,7 +1980,7 @@ def remap_rank_actions():
                 existing.add((row[0], row[1]))
     read_conn.close()
 
-    total = len(_qfix_services)
+    total = len(catalog.services)
     skipped = len(existing)
     ranked = 0
     errors = 0
@@ -2251,12 +1992,12 @@ def remap_rank_actions():
         "customize": "other",
     }
 
-    for (ct_id, mat_id), svc_cats in _qfix_services.items():
+    for (ct_id, mat_id), svc_cats in catalog.services.items():
         if (ct_id, mat_id) in existing:
             continue
 
-        ct_name = _qfix_items.get(ct_id, {}).get("name", f"ID {ct_id}")
-        mat_name = _qfix_subitems.get(mat_id, {}).get("name", f"ID {mat_id}")
+        ct_name = catalog.items.get(ct_id, {}).get("name", f"ID {ct_id}")
+        mat_name = catalog.subitems.get(mat_id, {}).get("name", f"ID {mat_id}")
 
         rankings = {}
 
@@ -2663,18 +2404,23 @@ def health():
       500:
         description: Database unreachable
     """
+    result = {"status": "ok", "catalog_loaded": catalog.loaded}
+    if catalog.loaded:
+        result["catalog_items"] = len(catalog.items)
+        result["catalog_services"] = len(catalog.services)
     try:
         conn = psycopg2.connect(DATABASE_URL, connect_timeout=5)
         conn.autocommit = True
         with conn.cursor() as cur:
             cur.execute("SELECT 1")
         conn.close()
-        return jsonify({"status": "ok"})
     except Exception as e:
         # Return 200 with degraded status to avoid Fly killing the app
         # during transient DB issues — the app itself is still running
         logger.warning("Health check DB probe failed: %s", e)
-        return jsonify({"status": "degraded", "detail": str(e)})
+        result["status"] = "degraded"
+        result["detail"] = str(e)
+    return jsonify(result)
 
 
 # --- QFix Widget Demo ---
@@ -2698,15 +2444,15 @@ def _get_filtered_actions(product_row):
         ranking_conn.close()
 
     # Swap variants: if an action has a same-name sibling with valid assigned_categories, use it
-    if top_actions and _action_assigned_categories:
-        _load_qfix_catalog()
+    if top_actions and catalog.assigned_categories:
+        catalog.load()
         for key in list(top_actions.keys()):
-            top_actions[key] = _swap_to_valid_variants(top_actions[key], ct_id, mat_id, key)
+            top_actions[key] = catalog.swap_to_valid_variants(top_actions[key], ct_id, mat_id, key)
 
     # Filter — remove actions not valid for this clothing type
     if top_actions:
         for key in list(top_actions.keys()):
-            top_actions[key] = filter_services(top_actions[key], ct_id, mat_id, key)
+            top_actions[key] = catalog.filter_services(top_actions[key], ct_id, mat_id, key)
 
     # Apply keyword require/exclusion rules
     if top_actions:
@@ -2716,7 +2462,7 @@ def _get_filtered_actions(product_row):
             product_row.get("clothing_type", ""),
         ]))
         if product_text:
-            svc_cats = _qfix_services.get((ct_id, mat_id), [])
+            svc_cats = catalog.services.get((ct_id, mat_id), [])
             if svc_cats:
                 top_actions = _inject_keyword_actions(top_actions, product_text, svc_cats, ct_id=ct_id)
 
@@ -3091,7 +2837,7 @@ def docs_verify(product_id):
         "qfix_material_id": mat_id,
         "qfix_url": final_url,
     }
-    enriched = enrich_qfix(qfix_data)
+    enriched = catalog.enrich_qfix(qfix_data)
 
     # Build service URLs
     services = []
@@ -3192,7 +2938,7 @@ def docs_mappings():
 @app.route("/docs/rankings")
 def docs_rankings():
     """Return all AI-ranked top actions grouped by clothing type and material."""
-    _load_qfix_catalog()
+    catalog.load()
     conn = get_db()
     with conn.cursor(cursor_factory=RealDictCursor) as cur:
         cur.execute("SELECT clothing_type_id, material_id, rankings FROM qfix_action_rankings ORDER BY clothing_type_id, material_id")
@@ -3203,8 +2949,8 @@ def docs_rankings():
     for row in rows:
         ct_id = row["clothing_type_id"]
         mat_id = row["material_id"]
-        ct_name = _qfix_items.get(ct_id, {}).get("name", f"Unknown ({ct_id})")
-        mat_name = _qfix_subitems.get(mat_id, {}).get("name", f"Unknown ({mat_id})")
+        ct_name = catalog.items.get(ct_id, {}).get("name", f"Unknown ({ct_id})")
+        mat_name = catalog.subitems.get(mat_id, {}).get("name", f"Unknown ({mat_id})")
         rankings = row["rankings"]
         if isinstance(rankings, str):
             rankings = json.loads(rankings)
@@ -3222,14 +2968,14 @@ def docs_rankings():
 @app.route("/docs/missing-services")
 def docs_missing_services():
     """Return QFix clothing types that have no service actions defined."""
-    _load_qfix_catalog()
+    catalog.load()
 
     missing = []
-    for (ct_id, mat_id), svc_cats in _qfix_services.items():
+    for (ct_id, mat_id), svc_cats in catalog.services.items():
         total_actions = sum(len(cat.get("services", [])) for cat in svc_cats)
         if total_actions == 0:
-            ct_info = _qfix_items.get(ct_id, {})
-            mat_info = _qfix_subitems.get(mat_id, {})
+            ct_info = catalog.items.get(ct_id, {})
+            mat_info = catalog.subitems.get(mat_id, {})
             parent = ct_info.get("parent", {})
             missing.append({
                 "clothing_type_id": ct_id,
@@ -3360,7 +3106,7 @@ def validate_keyword_scores():
     if not api_key:
         return jsonify({"error": "ANTHROPIC_API_KEY not configured"}), 500
 
-    _load_qfix_catalog()
+    catalog.load()
     ai_client = anthropic.Anthropic(api_key=api_key)
     conn = get_db()
 
@@ -3401,7 +3147,7 @@ def validate_keyword_scores():
                 continue
 
             # Get the full service list for this clothing type
-            svc_cats = _qfix_services.get((ct_id, mat_id), [])
+            svc_cats = catalog.services.get((ct_id, mat_id), [])
             if not svc_cats:
                 continue
 
