@@ -148,6 +148,38 @@ body {
   color: var(--text-tertiary);
   pointer-events: none;
 }
+.brand-filter {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.brand-filter-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  margin-right: 2px;
+}
+.brand-btn {
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  font-size: 12px;
+  font-family: var(--font-body);
+  font-weight: 500;
+  cursor: pointer;
+  background: var(--surface);
+  color: var(--text-secondary);
+  transition: all 0.15s;
+}
+.brand-btn:hover { border-color: var(--text-secondary); }
+.brand-btn.active {
+  background: var(--text);
+  color: var(--surface);
+  border-color: var(--text);
+}
 .toolbar select {
   padding: 11px 32px 11px 14px;
   border: 1px solid var(--border);
@@ -298,6 +330,12 @@ body {
 .gap-ct-id {
   font-size: 12px;
   color: var(--text-tertiary);
+}
+.gap-ct-parent {
+  font-size: 11px;
+  color: var(--coral);
+  font-weight: 400;
+  margin-left: 4px;
 }
 
 .svc-type {
@@ -459,6 +497,15 @@ body {
       <option value="adjustment">Adjustment</option>
       <option value="care">Care</option>
     </select>
+  </div>
+  <div class="brand-filter">
+    <span class="brand-filter-label">Brand:</span>
+    <button class="brand-btn active" data-brand="all" onclick="toggleBrand(this)">All</button>
+    <button class="brand-btn" data-brand="KappAhl" onclick="toggleBrand(this)">KappAhl</button>
+    <button class="brand-btn" data-brand="Gina Tricot" onclick="toggleBrand(this)">Gina Tricot</button>
+    <button class="brand-btn" data-brand="Lindex" onclick="toggleBrand(this)">Lindex</button>
+    <button class="brand-btn" data-brand="Nudie Jeans" onclick="toggleBrand(this)">Nudie Jeans</button>
+    <button class="brand-btn" data-brand="Eton" onclick="toggleBrand(this)">Eton</button>
   </div>
 
   <div id="services">
@@ -28968,9 +29015,104 @@ function filterAndSort() {
   cards.forEach(function(card) { container.appendChild(card); });
 }
 
+var activeBrands = new Set(); // empty = all
+
+window.toggleBrand = function(btn) {
+  var brand = btn.dataset.brand;
+  var allBtn = document.querySelector('.brand-btn[data-brand="all"]');
+  if (brand === 'all') {
+    activeBrands.clear();
+    document.querySelectorAll('.brand-btn').forEach(function(b) { b.classList.remove('active'); });
+    allBtn.classList.add('active');
+  } else {
+    allBtn.classList.remove('active');
+    if (activeBrands.has(brand)) {
+      activeBrands.delete(brand);
+      btn.classList.remove('active');
+    } else {
+      activeBrands.add(brand);
+      btn.classList.add('active');
+    }
+    if (activeBrands.size === 0) allBtn.classList.add('active');
+  }
+  applyBrandFilter();
+  filterAndSort();
+};
+
+function applyBrandFilter() {
+  var showAll = activeBrands.size === 0;
+  // For each gap-item (category row), filter products and update count
+  document.querySelectorAll('.gap-item').forEach(function(gi) {
+    var products = gi.querySelectorAll('.product-item');
+    var visible = 0;
+    products.forEach(function(pi) {
+      var brandEl = pi.querySelector('.product-brand');
+      var brand = brandEl ? brandEl.textContent : '';
+      if (showAll || activeBrands.has(brand)) {
+        pi.style.display = '';
+        visible++;
+      } else {
+        pi.style.display = 'none';
+      }
+    });
+    // Update product count
+    var countEl = gi.querySelector('.product-count');
+    if (countEl) {
+      var orig = countEl.dataset.orig;
+      if (!orig) { countEl.dataset.orig = countEl.textContent; orig = countEl.textContent; }
+      if (showAll) {
+        countEl.textContent = orig;
+      } else {
+        countEl.textContent = visible + ' products';
+      }
+    }
+    // Hide gap-item if 0 products for selected brands
+    if (!showAll && visible === 0) {
+      gi.style.display = 'none';
+    } else {
+      gi.style.display = '';
+    }
+  });
+}
+
 search.addEventListener('input', filterAndSort);
 sort.addEventListener('change', filterAndSort);
 svcFilter.addEventListener('change', filterAndSort);
+
+// Inject parent category names next to each clothing type
+(function() {
+  var parentMap = {
+    60:"Outerwear",61:"Outerwear",62:"Outerwear",66:"Women's Clothing",
+    78:"Outerwear",80:"Outerwear",81:"Workwear",82:"Workwear",
+    84:"Women's Clothing",85:"Women's Clothing",86:"Women's Clothing",
+    87:"Women's Clothing",88:"Women's Clothing",89:"Women's Clothing",
+    90:"Women's Clothing",91:"Men's Clothing",92:"Men's Clothing",
+    93:"Men's Clothing",94:"Men's Clothing",95:"Men's Clothing",
+    96:"Men's Clothing",98:"Accessories",99:"Accessories",100:"Accessories",
+    101:"Accessories",102:"Accessories",103:"Children's Clothing",
+    104:"Children's Clothing",105:"Children's Clothing",142:"Outerwear",
+    160:"Workwear",161:"Workwear",162:"Workwear",163:"Workwear",
+    168:"Swimwear / Wet suits",169:"Swimwear / Wet suits",
+    170:"Swimwear / Wet suits",171:"Accessories",173:"Protective / MC wear",
+    174:"Protective / MC wear",175:"Protective / MC wear",185:"Outerwear",
+    193:"Children's Clothing",194:"Children's Clothing",195:"Children's Clothing",
+    196:"Children's Clothing",198:"Outerwear",199:"Children's Clothing",
+    200:"Accessories",201:"Swimwear / Wet suits",202:"Workwear",
+    203:"Protective / MC wear"
+  };
+  document.querySelectorAll('.gap-ct-id').forEach(function(el) {
+    var m = el.textContent.match(/\((\d+)\)/);
+    if (m) {
+      var parent = parentMap[parseInt(m[1])];
+      if (parent) {
+        var span = document.createElement('span');
+        span.className = 'gap-ct-parent';
+        span.textContent = parent;
+        el.parentNode.insertBefore(span, el.nextSibling);
+      }
+    }
+  });
+})();
 </script>
 </body>
 </html>

@@ -4,30 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Jeansjacka — KappAhl</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg: #FAF7F2;
+      --bg: #FFFFFF;
       --surface: #FFFFFF;
-      --text: #1C1917;
-      --text-secondary: #78716C;
-      --text-tertiary: #A8A29E;
-      --border: #E7E5E4;
+      --text: #000000;
+      --text-secondary: #555555;
+      --text-tertiary: #999999;
+      --border: #e0e0e0;
+      --border-light: #f0f0f0;
       --coral: #DC5945;
       --coral-bg: #FDF2F0;
       --emerald: #0F7B5F;
       --emerald-bg: #ECFDF5;
-      --emerald-border: #A7F3D0;
       --amber: #B45309;
       --amber-bg: #FFFBEB;
-      --blue: #1D4ED8;
-      --blue-bg: #EFF6FF;
-      --font-display: "Instrument Serif", Georgia, serif;
-      --font-body: "DM Sans", -apple-system, sans-serif;
+      --font-body: "Helvetica Neue", Helvetica, Arial, sans-serif;
     }
 
     body {
@@ -39,9 +33,19 @@
 
     a { color: inherit; text-decoration: none; }
 
+    /* Top banner */
+    .kh-banner {
+      background: #f5f5f0;
+      text-align: center;
+      padding: 10px 20px;
+      font-size: 13px;
+      color: var(--text);
+      letter-spacing: 0.2px;
+    }
+
     /* Header */
     .kh-header {
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--border-light);
       padding: 0 40px;
       display: flex;
       align-items: center;
@@ -49,182 +53,270 @@
       height: 60px;
       background: var(--surface);
     }
-    .kh-logo {
-      font-family: var(--font-display);
-      font-size: 26px;
-      font-weight: 400;
-      letter-spacing: 1px;
+    .kh-header-left {
+      display: flex;
+      align-items: center;
+      gap: 24px;
     }
-    .kh-nav { display: flex; gap: 28px; }
-    .kh-nav span {
-      font-size: 13px;
-      font-weight: 500;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-secondary);
+    .kh-menu-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      background: none;
+      border: none;
       cursor: pointer;
-      transition: color 0.15s;
+      padding: 4px;
     }
-    .kh-nav span:hover { color: var(--text); }
+    .kh-menu-btn span {
+      display: block;
+      width: 22px;
+      height: 2px;
+      background: var(--text);
+    }
+    .kh-menu-label {
+      font-size: 10px;
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+    .kh-search {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      font-size: 14px;
+      color: var(--text-tertiary);
+      min-width: 220px;
+    }
+    .kh-logo {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-family: "Georgia", serif;
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+    }
+    .kh-header-right {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    .kh-header-icon {
+      width: 22px;
+      height: 22px;
+      color: var(--text);
+    }
 
     /* Breadcrumb */
     .kh-breadcrumb {
-      padding: 14px 40px;
+      padding: 12px 40px;
       font-size: 12px;
       color: var(--text-tertiary);
-      letter-spacing: 0.3px;
     }
-    .kh-breadcrumb a {
-      color: var(--text-tertiary);
-      transition: color 0.15s;
-    }
-    .kh-breadcrumb a:hover { color: var(--text-secondary); }
+    .kh-breadcrumb a { color: var(--text-tertiary); }
+    .kh-breadcrumb a:hover { text-decoration: underline; }
 
-    /* Product layout */
+    /* Product layout — KappAhl style: images ~60%, info ~40% */
     .kh-product {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      max-width: 1140px;
+      grid-template-columns: 3fr 2fr;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 24px 40px 80px;
-      gap: 56px;
+      padding: 0 40px 80px;
+      gap: 40px;
     }
-    @media (max-width: 768px) {
-      .kh-product { grid-template-columns: 1fr; gap: 32px; padding: 20px 20px 60px; }
-      .kh-header { padding: 0 20px; }
-      .kh-breadcrumb { padding: 12px 20px; }
+    @media (max-width: 900px) {
+      .kh-product { grid-template-columns: 1fr; gap: 24px; padding: 0 16px 60px; }
+      .kh-header { padding: 0 16px; position: relative; }
+      .kh-breadcrumb { padding: 10px 16px; }
+      .kh-image-grid { grid-template-columns: 1fr !important; }
     }
 
-    /* Image */
-    .kh-image {
-      background: #f0ece6;
+    /* Image gallery — 2-column grid like KappAhl */
+    .kh-image-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 4px;
+    }
+    .kh-image-cell {
+      background: #f5f3ef;
       aspect-ratio: 3/4;
+      overflow: hidden;
       display: flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
-      overflow: hidden;
-      position: sticky;
-      top: 80px;
     }
-    .kh-image img {
+    .kh-image-cell img {
       width: 100%;
       height: 100%;
       object-fit: cover;
-      transition: transform 0.4s ease;
     }
-    .kh-image:hover img { transform: scale(1.03); }
+    .kh-image-cell.placeholder {
+      color: var(--text-tertiary);
+      font-size: 13px;
+    }
 
     /* Info panel */
-    .kh-info { display: flex; flex-direction: column; gap: 18px; padding-top: 4px; }
-    .kh-brand-label {
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--text-tertiary);
-      font-weight: 500;
+    .kh-info {
+      padding-top: 8px;
+      position: sticky;
+      top: 70px;
+      align-self: start;
     }
-    .kh-title {
-      font-family: var(--font-display);
-      font-size: 32px;
+    .kh-product-name {
+      font-size: 22px;
       font-weight: 400;
-      line-height: 1.2;
-      letter-spacing: -0.3px;
+      line-height: 1.3;
+      margin-bottom: 6px;
     }
     .kh-price {
-      font-size: 22px;
-      font-weight: 500;
-      letter-spacing: -0.3px;
-    }
-    .kh-color { font-size: 14px; color: var(--text-secondary); }
-    .kh-color-swatch {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      vertical-align: middle;
-      margin-right: 8px;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 20px;
     }
 
-    /* Size selector */
-    .kh-sizes { display: flex; flex-direction: column; gap: 10px; }
-    .kh-sizes-label {
-      font-size: 12px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      color: var(--text-secondary);
+    /* Color selector */
+    .kh-color-section { margin-bottom: 20px; }
+    .kh-color-label {
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    .kh-color-label span { color: var(--text-secondary); }
+    .kh-color-swatches { display: flex; gap: 8px; }
+    .kh-color-thumb {
+      width: 56px;
+      height: 72px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      overflow: hidden;
+      background: #f0ece6;
+    }
+    .kh-color-thumb.active { border-color: var(--text); }
+    .kh-color-thumb img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* Size selector — KappAhl uses square bordered buttons */
+    .kh-size-section { margin-bottom: 20px; }
+    .kh-size-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .kh-size-label { font-size: 14px; }
+    .kh-size-guide {
+      font-size: 13px;
+      text-decoration: underline;
+      cursor: pointer;
+      color: var(--text);
     }
     .kh-sizes-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .kh-size {
-      padding: 9px 18px;
+      min-width: 52px;
+      height: 48px;
+      padding: 0 16px;
       border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 13px;
+      background: var(--surface);
+      font-size: 14px;
       font-family: var(--font-body);
       cursor: pointer;
-      background: var(--surface);
-      color: var(--text);
-      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.15s;
     }
     .kh-size:hover { border-color: var(--text); }
-    .kh-size--active { border-color: var(--text); font-weight: 600; background: var(--text); color: var(--surface); }
+    .kh-size--active { border-color: var(--text); border-width: 2px; }
 
-    /* Add to cart */
+    /* Add to cart — KappAhl style: dark rounded button with cart icon */
+    .kh-cart-row {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
     .kh-add-to-cart {
-      width: 100%;
-      padding: 15px;
+      flex: 1;
+      padding: 16px 24px;
       background: var(--text);
       color: var(--surface);
       border: none;
-      border-radius: 8px;
-      font-size: 14px;
+      border-radius: 30px;
+      font-size: 15px;
       font-family: var(--font-body);
-      font-weight: 600;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
+      font-weight: 500;
       cursor: pointer;
-      transition: background 0.2s, transform 0.1s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: background 0.2s;
     }
     .kh-add-to-cart:hover { background: #333; }
-    .kh-add-to-cart:active { transform: scale(0.99); }
+    .kh-wishlist-btn {
+      width: 52px;
+      height: 52px;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: var(--surface);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: border-color 0.15s;
+    }
+    .kh-wishlist-btn:hover { border-color: var(--text); }
+
+    .kh-payment-info {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* Divider */
+    .kh-divider { border: none; border-top: 1px solid var(--border-light); margin: 16px 0; }
 
     /* QFix Service Links */
-    .qfix-links { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0; }
+    .qfix-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 4px 0;
+    }
     .kh-redirect-link {
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      padding: 11px 22px;
+      padding: 12px 20px;
       background: var(--surface);
       color: var(--text);
-      border: 1.5px solid var(--border);
-      border-radius: 8px;
+      border: 1px solid var(--border);
+      border-radius: 30px;
       font-size: 13px;
       font-family: var(--font-body);
-      font-weight: 600;
+      font-weight: 500;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
       text-decoration: none;
     }
     .kh-redirect-link:hover {
       border-color: var(--text);
-      transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(28,25,23,0.08);
     }
-    .kh-redirect-link:active { transform: translateY(0); }
-
-    /* Divider */
-    .kh-divider { border: none; border-top: 1px solid var(--border); }
 
     /* Suggested actions */
     .kh-actions-group { margin-bottom: 14px; }
     .kh-actions-label {
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--text-tertiary);
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-secondary);
       text-transform: uppercase;
-      letter-spacing: 1.2px;
+      letter-spacing: 0.5px;
       margin-bottom: 8px;
     }
     .kh-actions-row { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -265,11 +357,11 @@
 
     /* Filter comparison */
     .comparison-section {
-      background: var(--surface);
-      border: 1px solid var(--border);
+      background: #fafafa;
+      border: 1px solid var(--border-light);
       border-radius: 8px;
       padding: 14px 18px;
-      margin: 4px 0 12px;
+      margin: 0 0 16px;
     }
     .comparison-header {
       display: flex;
@@ -282,12 +374,12 @@
       font-size: 11px;
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 1.2px;
+      letter-spacing: 1px;
       color: var(--text-tertiary);
     }
     .filter-btn {
       padding: 6px 16px;
-      border: 1.5px solid var(--border);
+      border: 1px solid var(--border);
       border-radius: 20px;
       font-size: 12px;
       font-family: var(--font-body);
@@ -319,100 +411,117 @@
     .diff-dot.green { background: var(--emerald); }
     .diff-dot.gray { background: var(--text-tertiary); }
 
-    /* Details / Mapping */
-    .kh-details {
+    /* Expandable sections — KappAhl uses centered text with chevrons */
+    .kh-expandable {
+      border-top: 1px solid var(--border-light);
+      font-size: 14px;
+    }
+    .kh-expandable summary {
+      padding: 16px 0;
+      cursor: pointer;
+      font-weight: 400;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      list-style: none;
+    }
+    .kh-expandable summary::-webkit-details-marker { display: none; }
+    .kh-expandable summary::after {
+      content: "›";
+      font-size: 18px;
+      color: var(--text-secondary);
+      transition: transform 0.2s;
+    }
+    .kh-expandable[open] summary::after {
+      transform: rotate(90deg);
+    }
+    .kh-expandable-content {
+      padding: 0 0 16px;
       font-size: 13px;
       color: var(--text-secondary);
       line-height: 1.6;
     }
-    .kh-details summary {
-      font-family: var(--font-body);
-      font-weight: 600;
-      font-size: 13px;
-      color: var(--text);
-      cursor: pointer;
-      padding: 10px 0;
-      letter-spacing: 0.2px;
-    }
     .kh-mapping-table { width: 100%; font-size: 13px; border-collapse: collapse; }
-    .kh-mapping-table td { padding: 5px 0; vertical-align: top; }
+    .kh-mapping-table td { padding: 4px 0; vertical-align: top; }
     .kh-mapping-table td:first-child {
       color: var(--text-tertiary);
       width: 130px;
-      font-weight: 500;
       font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
     }
 
     /* Footer */
     .kh-footer {
-      margin-top: 0;
       padding: 24px 40px;
-      border-top: 1px solid var(--border);
+      border-top: 1px solid var(--border-light);
       text-align: center;
       font-size: 12px;
       color: var(--text-tertiary);
-      letter-spacing: 0.3px;
     }
-
-    /* Animations */
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(16px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .kh-info > * {
-      animation: slideUp 0.5s ease both;
-    }
-    .kh-info > *:nth-child(1) { animation-delay: 0.05s; }
-    .kh-info > *:nth-child(2) { animation-delay: 0.1s; }
-    .kh-info > *:nth-child(3) { animation-delay: 0.15s; }
-    .kh-info > *:nth-child(4) { animation-delay: 0.2s; }
-    .kh-info > *:nth-child(5) { animation-delay: 0.25s; }
-    .kh-info > *:nth-child(6) { animation-delay: 0.3s; }
-    .kh-info > *:nth-child(7) { animation-delay: 0.32s; }
-    .kh-info > *:nth-child(8) { animation-delay: 0.34s; }
-    .kh-info > *:nth-child(9) { animation-delay: 0.36s; }
-    .kh-info > *:nth-child(10) { animation-delay: 0.38s; }
-    .kh-info > *:nth-child(n+11) { animation-delay: 0.4s; }
   </style>
 </head>
 <body>
 
+  <!-- Top banner -->
+  <div class="kh-banner">Medlemserbjudande 25% pa damklader</div>
+
   <!-- Header -->
   <header class="kh-header">
-    <div class="kh-logo">KappAhl</div>
-    <nav class="kh-nav">
-      <span>Dam</span>
-      <span>Herr</span>
-      <span>Barn</span>
-      <span>Hem</span>
-    </nav>
+    <div class="kh-header-left">
+      <button class="kh-menu-btn">
+        <span></span><span></span><span></span>
+        <div class="kh-menu-label">Meny</div>
+      </button>
+      <div class="kh-search">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        Vad soker du idag?
+      </div>
+    </div>
+    <div class="kh-logo">Kappahl</div>
+    <div class="kh-header-right">
+      <svg class="kh-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      <svg class="kh-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <svg class="kh-header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+    </div>
   </header>
 
   <!-- Breadcrumb -->
   <div class="kh-breadcrumb" id="breadcrumb">
-    <a href="#">Hem</a> / <a href="#">Dam</a> / <a href="#">Jackor &amp; rockar</a> / Jeansjacka
+    <a href="#">Dam</a> / <a href="#">Jackor &amp; rockar</a> / <a href="#">Jackor</a> / Jeansjacka
   </div>
 
   <!-- Product -->
   <main class="kh-product">
-    <div class="kh-image">
-      <img src="https://lp2.hm.com/hmgoepprod?set=format%5Bwebp%5D%2Cquality%5B79%5D%2Csource%5B%2F73%2F68%2F7368d3e5dfb1d42c37cc7fe2f204fee1e3e25bc6.jpg%5D%2Corigin%5Bdam%5D%2Ccategory%5B%5D%2Ctype%5BDESCRIPTIVESTILLLIFE%5D%2Cres%5Bm%5D%2Chmver%5B2%5D&call=url%5Bfile%3A%2Fproduct%2Fmain%5D" alt="Jeansjacka" onerror="this.parentElement.textContent='[ Product Image ]'">
+    <!-- Image gallery -->
+    <div class="kh-image-grid">
+      <div class="kh-image-cell">
+        <img id="mainImage" src="https://lp2.hm.com/hmgoepprod?set=format%5Bwebp%5D%2Cquality%5B79%5D%2Csource%5B%2F73%2F68%2F7368d3e5dfb1d42c37cc7fe2f204fee1e3e25bc6.jpg%5D%2Corigin%5Bdam%5D%2Ccategory%5B%5D%2Ctype%5BDESCRIPTIVESTILLLIFE%5D%2Cres%5Bm%5D%2Chmver%5B2%5D&call=url%5Bfile%3A%2Fproduct%2Fmain%5D" alt="Jeansjacka" onerror="this.parentElement.classList.add('placeholder'); this.parentElement.textContent='[ Produktbild ]'">
+      </div>
+      <div class="kh-image-cell placeholder" id="imageCell2"></div>
+      <div class="kh-image-cell placeholder" id="imageCell3"></div>
+      <div class="kh-image-cell placeholder" id="imageCell4"></div>
     </div>
 
+    <!-- Product info -->
     <div class="kh-info">
-      <div class="kh-brand-label">KappAhl</div>
-      <h1 class="kh-title">Jeansjacka</h1>
+      <h1 class="kh-product-name">Jeansjacka</h1>
       <div class="kh-price">499 kr</div>
 
-      <div class="kh-color">
-        <span class="kh-color-swatch" style="background:#4a6fa5;"></span>
-        Ljusblå denim
+      <!-- Color -->
+      <div class="kh-color-section">
+        <div class="kh-color-label">Farg: <span id="colorName">Ljusbla denim</span></div>
+        <div class="kh-color-swatches">
+          <div class="kh-color-thumb active" id="colorThumb">
+            <img src="" alt="" onerror="this.style.display='none'">
+          </div>
+        </div>
       </div>
 
-      <div class="kh-sizes">
-        <div class="kh-sizes-label">Storlek</div>
+      <!-- Size -->
+      <div class="kh-size-section">
+        <div class="kh-size-header">
+          <div class="kh-size-label">Storlek:</div>
+          <div class="kh-size-guide">Storleksguide</div>
+        </div>
         <div class="kh-sizes-row">
           <button class="kh-size">XS</button>
           <button class="kh-size kh-size--active">S</button>
@@ -422,28 +531,22 @@
         </div>
       </div>
 
-      <button class="kh-add-to-cart">Lägg i varukorgen</button>
-
-      <hr class="kh-divider">
-
-      <!-- QFix Service Links -->
-      <div class="qfix-links">
-        <a class="kh-redirect-link qfix-redirect" href="/kappahl/repair/?productId=530956" target="_blank" rel="noopener">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-          Reparera
-        </a>
-        <a class="kh-redirect-link qfix-redirect" href="/kappahl/adjustment/?productId=530956" target="_blank" rel="noopener">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
-          Måttanpassa
-        </a>
-        <a class="kh-redirect-link qfix-redirect" href="/kappahl/care/?productId=530956" target="_blank" rel="noopener">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
-          Skötsel
-        </a>
+      <!-- Add to cart -->
+      <div class="kh-cart-row">
+        <button class="kh-add-to-cart">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+          Lagg i varukorgen
+        </button>
+        <button class="kh-wishlist-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+        </button>
+      </div>
+      <div class="kh-payment-info">
+        <span>Smidig betalning med Klarna.</span>
+        <span>Gratis fraktalternativ</span>
       </div>
 
-      <!-- Suggested Actions (loaded dynamically) -->
-      <div id="suggestedActions" style="display:none; margin:4px 0 12px;"></div>
+      <hr class="kh-divider">
 
       <!-- Comparison toggle -->
       <div id="comparisonSection" class="comparison-section" style="display:none;">
@@ -455,31 +558,53 @@
         <div id="comparisonDiff" class="comparison-diff"></div>
       </div>
 
-      <hr class="kh-divider">
+      <!-- QFix Service Links -->
+      <div class="qfix-links">
+        <a class="kh-redirect-link qfix-redirect" href="/kappahl/repair/?productId=530956" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+          Reparera
+        </a>
+        <a class="kh-redirect-link qfix-redirect" href="/kappahl/adjustment/?productId=530956" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
+          Mattanpassa
+        </a>
+        <a class="kh-redirect-link qfix-redirect" href="/kappahl/care/?productId=530956" target="_blank" rel="noopener">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 16.3c2.2 0 4-1.83 4-4.05 0-1.16-.57-2.26-1.71-3.19S7.29 6.75 7 5.3c-.29 1.45-1.14 2.84-2.29 3.76S3 11.1 3 12.25c0 2.22 1.8 4.05 4 4.05z"/><path d="M12.56 14.1c1.34 0 2.44-1.12 2.44-2.47 0-.7-.35-1.38-1.05-1.95S12.78 8.57 12.56 7.7c-.17.88-.7 1.73-1.4 2.3s-1.04 1.23-1.04 1.95c0 1.35 1.1 2.47 2.44 2.47z"/></svg>
+          Skotsel
+        </a>
+      </div>
 
-      <!-- Product & mapping info (loaded dynamically) -->
+      <!-- Suggested Actions (loaded dynamically) -->
+      <div id="suggestedActions" style="display:none; margin:4px 0 12px;"></div>
+
+      <!-- Expandable sections like KappAhl -->
       <div id="mappingInfo" style="display:none;">
-        <details class="kh-details" open>
+        <details class="kh-expandable" open>
           <summary>Produktinfo &amp; QFix-mappning</summary>
-          <table class="kh-mapping-table">
-            <tr><td>Varumärke</td><td id="infoBrand">—</td></tr>
-            <tr><td>Typ (brand)</td><td id="infoClothingType">—</td></tr>
-            <tr><td>Material</td><td id="infoMaterial">—</td></tr>
-            <tr><td>QFix typ</td><td><span id="infoQfixType">—</span></td></tr>
-            <tr><td>QFix material</td><td><span id="infoQfixMaterial">—</span></td></tr>
-          </table>
+          <div class="kh-expandable-content">
+            <table class="kh-mapping-table">
+              <tr><td>Varumarke</td><td id="infoBrand">&mdash;</td></tr>
+              <tr><td>Typ (brand)</td><td id="infoClothingType">&mdash;</td></tr>
+              <tr><td>Material</td><td id="infoMaterial">&mdash;</td></tr>
+              <tr><td>QFix typ</td><td><span id="infoQfixType">&mdash;</span></td></tr>
+              <tr><td>QFix material</td><td><span id="infoQfixMaterial">&mdash;</span></td></tr>
+            </table>
+          </div>
         </details>
       </div>
 
-      <details class="kh-details">
+      <details class="kh-expandable">
         <summary>Art.nr</summary>
-        <p id="infoArtNr">530956</p>
+        <div class="kh-expandable-content">
+          <p id="infoArtNr">530956</p>
+        </div>
       </details>
+      <div style="border-top: 1px solid var(--border-light);"></div>
     </div>
   </main>
 
   <footer class="kh-footer">
-    Demo — QFix Repair Widget
+    Demo &mdash; QFix Repair Widget
   </footer>
 
   <script>
@@ -497,7 +622,7 @@
       var unfilteredActions = null;
 
       function renderActions(ta, compareWith) {
-        var labels = {repair: "Reparation", adjustment: "Justering", care: "Tvätt & skötsel", other: "Övrigt"};
+        var labels = {repair: "Reparation", adjustment: "Justering", care: "Tvatt & skotsel", other: "Ovrigt"};
         var compareIds = {};
         var compareNames = {};
         var currentNames = {};
@@ -521,28 +646,25 @@
           html += '<div class="kh-actions-group"><div class="kh-actions-label">' + labels[key] + '</div><div class="kh-actions-row">';
           for (var i = 0; i < actions.length; i++) {
             var a = actions[i];
-            var price = a.price ? " — from " + a.price + " kr" : "";
+            var price = a.price ? " \u2014 from " + a.price + " kr" : "";
             var cls = "kh-action-chip";
             if (compareWith && compareIds[key] && !compareIds[key][a.id]) {
-              // Not in other view — is it a variant swap (same name, different ID)?
               if (compareNames[key] && compareNames[key][a.name] && compareNames[key][a.name].id !== a.id) {
                 cls += " kh-action-swapped";
                 var otherA = compareNames[key][a.name];
-                html += '<span class="' + cls + '" title="Variant swap: #' + otherA.id + ' → #' + a.id + '">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + ' ← was #' + otherA.id + '</span></span>';
+                html += '<span class="' + cls + '" title="Variant swap: #' + otherA.id + ' \u2192 #' + a.id + '">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + ' \u2190 was #' + otherA.id + '</span></span>';
                 continue;
               }
               cls += " kh-action-added";
             }
             html += '<span class="' + cls + '">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + '</span></span>';
           }
-          // Show removed actions from comparison
           if (compareWith && compareWith[key]) {
             var currentIds = {};
             actions.forEach(function(a) { currentIds[a.id] = true; });
             compareWith[key].forEach(function(a) {
               if (!currentIds[a.id]) {
-                var price = a.price ? " — from " + a.price + " kr" : "";
-                // Skip if it was a variant swap (already shown inline)
+                var price = a.price ? " \u2014 from " + a.price + " kr" : "";
                 if (currentNames[key] && currentNames[key][a.name] && currentNames[key][a.name].id !== a.id) return;
                 html += '<span class="kh-action-chip kh-action-removed">' + esc(a.name) + ' <span class="kh-action-price">#' + a.id + esc(price) + '</span></span>';
               }
@@ -570,14 +692,13 @@
             var fIds = {}; var fNames = {}; (filteredActions[key]||[]).forEach(function(a){fIds[a.id]=1; fNames[a.name]=a;});
             var uIds = {}; var uNames = {}; (unfilteredActions[key]||[]).forEach(function(a){uIds[a.id]=1; uNames[a.name]=a;});
             for (var id in uIds) if (!fIds[id]) {
-              // Check if it's a swap
               var ua = (unfilteredActions[key]||[]).find(function(a){return a.id==id;});
               if (ua && fNames[ua.name] && fNames[ua.name].id != ua.id) swapped++;
               else removed++;
             }
             for (var id in fIds) if (!uIds[id]) {
               var fa = (filteredActions[key]||[]).find(function(a){return a.id==id;});
-              if (fa && uNames[fa.name] && uNames[fa.name].id != fa.id) {} // swap, already counted
+              if (fa && uNames[fa.name] && uNames[fa.name].id != fa.id) {}
               else added++;
             }
           }
@@ -604,19 +725,20 @@
 
           var name = p.product_name || ("Product " + pid);
           var brand = p.brand || "KappAhl";
-          document.querySelector(".kh-title").textContent = name;
-          document.querySelector(".kh-brand-label").textContent = brand;
+          document.querySelector(".kh-product-name").textContent = name;
           document.querySelector(".kh-logo").textContent = brand;
-          document.title = name + " — " + brand;
+          document.title = name + " \u2014 " + brand;
 
           if (p.image_url) {
-            var img = document.querySelector(".kh-image img");
+            var img = document.getElementById("mainImage");
             if (img) { img.src = p.image_url; img.alt = name; }
+            // Use same image as color thumbnail
+            var thumb = document.querySelector(".kh-color-thumb img");
+            if (thumb) { thumb.src = p.image_url; thumb.alt = name; thumb.style.display = "block"; }
           }
 
           var category = p.category || p.clothing_type || "";
-          var bc = '<a href="#">Hem</a>';
-          if (brand) bc += ' / <a href="#">' + esc(brand) + '</a>';
+          var bc = '<a href="#">' + esc(brand) + '</a>';
           if (category) bc += ' / <a href="#">' + esc(category) + '</a>';
           bc += ' / ' + esc(name);
           document.getElementById("breadcrumb").innerHTML = bc;
@@ -629,12 +751,12 @@
           });
 
           document.getElementById("infoBrand").textContent = brand;
-          document.getElementById("infoClothingType").textContent = p.clothing_type || "—";
-          document.getElementById("infoMaterial").textContent = p.material_composition || "—";
+          document.getElementById("infoClothingType").textContent = p.clothing_type || "\u2014";
+          document.getElementById("infoMaterial").textContent = p.material_composition || "\u2014";
           document.getElementById("infoQfixType").textContent = m.clothing_type_result
-            ? m.clothing_type_result + " (ID " + m.clothing_type_id + ")" : "—";
+            ? m.clothing_type_result + " (ID " + m.clothing_type_id + ")" : "\u2014";
           document.getElementById("infoQfixMaterial").textContent = m.material_result
-            ? m.material_result + " (ID " + m.material_id + ")" : "—";
+            ? m.material_result + " (ID " + m.material_id + ")" : "\u2014";
           document.getElementById("mappingInfo").style.display = "block";
 
           document.getElementById("comparisonSection").style.display = "block";
