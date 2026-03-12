@@ -1,0 +1,66 @@
+name: Nightly Product Scrape
+
+# Runs every night at 2 AM UTC (3 AM CET)
+# Can also be triggered manually from the GitHub Actions tab
+on:
+  schedule:
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120  # kill if stuck for 2 hours
+
+    steps:
+      # 1. Check out the code so we have our scraper scripts
+      - uses: actions/checkout@v4
+
+      # 2. Set up Python with our dependencies
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      # 3. Install flyctl (Fly.io CLI) to create DB tunnel
+      - name: Install flyctl
+        uses: superfly/flyctl-actions/setup-flyctl@master
+
+      # 4. Start fly proxy — tunnels localhost:5432 to the Fly Postgres DB
+      #    This runs in the background so the scrapers can connect to it
+      - name: Start database tunnel
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          flyctl proxy 5432:5432 --app kappahl-qfix-db &
+          sleep 5
+          echo "Fly proxy started"
+
+      # 5. Run each scraper sequentially
+      #    They connect to localhost:5432 (the tunnel) and upsert products
+      - name: Scrape KappAhl
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python main.py
+
+      - name: Scrape Gina Tricot
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python ginatricot_main.py
+
+      - name: Scrape Eton
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python eton_main.py
+
+      - name: Scrape Nudie Jeans
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python nudie_main.py
+
+      - name: Scrape Lindex
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python lindex_main.py
