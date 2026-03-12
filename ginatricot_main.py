@@ -25,7 +25,7 @@ def main():
     logger.info("Starting to scrape %d products...", len(urls))
 
     def scrape(on_product):
-        scrape_all(urls, callback=on_product, workers=3)
+        scrape_all(urls, callback=on_product, workers=10)
 
     run_scraper(scrape, brand="Gina Tricot")
 
