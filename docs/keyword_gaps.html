@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keyword Injection Gaps — QFix Service Mapping</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,300..700;1,9..40,300..700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #FAF7F2;
+  --surface: #FFFFFF;
+  --surface-hover: #F5F0EA;
+  --text: #1C1917;
+  --text-secondary: #78716C;
+  --text-tertiary: #A8A29E;
+  --border: #E7E5E4;
+  --border-light: #F0EDEA;
+  --coral: #DC5945;
+  --coral-bg: #FDF2F0;
+  --coral-border: #F5D0CA;
+  --emerald: #0F7B5F;
+  --emerald-bg: #ECFDF5;
+  --emerald-border: #A7F3D0;
+  --amber: #B45309;
+  --amber-bg: #FFFBEB;
+  --amber-border: #FDE68A;
+  --blue: #1D4ED8;
+  --blue-bg: #EFF6FF;
+  --blue-border: #BFDBFE;
+  --font-display: "Instrument Serif", Georgia, serif;
+  --font-body: "DM Sans", -apple-system, sans-serif;
+  --shadow-sm: 0 1px 2px rgba(28,25,23,0.04);
+  --shadow-md: 0 4px 12px rgba(28,25,23,0.06);
+  --shadow-lg: 0 12px 40px rgba(28,25,23,0.08);
+  --radius: 10px;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: var(--bg);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page-header {
+  padding: 48px 32px 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+.page-header h1 {
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 400;
+  letter-spacing: -0.5px;
+  line-height: 1.15;
+  margin-bottom: 6px;
+}
+.page-header h1 em { font-style: italic; color: var(--coral); }
+.page-header .lead {
+  font-size: 15px;
+  color: var(--text-secondary);
+  max-width: 700px;
+  line-height: 1.6;
+}
+
+.container { max-width: 1200px; margin: 0 auto; padding: 0 32px 80px; }
+
+.stats-strip {
+  display: flex;
+  gap: 1px;
+  background: var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-sm);
+}
+.stat {
+  flex: 1;
+  background: var(--surface);
+  padding: 24px 28px;
+  text-align: center;
+}
+.stat:first-child { border-radius: var(--radius) 0 0 var(--radius); }
+.stat:last-child { border-radius: 0 var(--radius) var(--radius) 0; }
+.stat-number {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 400;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+.stat-number.coral { color: var(--coral); }
+.stat-number.amber { color: var(--amber); }
+.stat-number.blue { color: var(--blue); }
+.stat-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+/* Brand filter */
+.brand-filter {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.brand-btn {
+  padding: 8px 18px;
+  border: 1.5px solid var(--border);
+  border-radius: 100px;
+  background: var(--surface);
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.brand-btn:hover { border-color: var(--text-tertiary); }
+.brand-btn.active {
+  background: var(--text);
+  color: white;
+  border-color: var(--text);
+}
+
+/* Loading */
+.loading {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-secondary);
+  font-size: 15px;
+}
+.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border);
+  border-top-color: var(--coral);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin: 0 auto 16px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Action group */
+.action-group {
+  margin-bottom: 32px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.action-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-light);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+}
+.action-header:hover { background: var(--surface-hover); }
+.action-title {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+}
+.action-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.action-count {
+  background: var(--coral-bg);
+  color: var(--coral);
+  border: 1px solid var(--coral-border);
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.action-category {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+.chevron {
+  color: var(--text-tertiary);
+  transition: transform 0.2s;
+  font-size: 18px;
+}
+.action-group.open .chevron { transform: rotate(180deg); }
+
+.action-body {
+  display: none;
+  padding: 0;
+}
+.action-group.open .action-body { display: block; }
+
+/* Clothing type rows */
+.ct-row {
+  display: grid;
+  grid-template-columns: 1fr 180px 80px;
+  gap: 12px;
+  align-items: center;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border-light);
+  font-size: 14px;
+}
+.ct-row:last-child { border-bottom: none; }
+.ct-row:hover { background: var(--surface-hover); }
+.ct-name {
+  font-weight: 500;
+}
+.ct-parent {
+  font-size: 12px;
+  color: var(--text-tertiary);
+}
+.ct-products {
+  text-align: right;
+  font-weight: 600;
+  color: var(--coral);
+}
+.ct-example {
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Explanation block */
+.explanation {
+  background: var(--blue-bg);
+  border: 1px solid var(--blue-border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  font-size: 14px;
+  color: #1e40af;
+  line-height: 1.7;
+}
+.explanation strong { font-weight: 600; }
+
+/* Product drilldown */
+.ct-row { cursor: pointer; }
+.ct-products-list {
+  display: none;
+  padding: 0 24px 16px 24px;
+  border-bottom: 1px solid var(--border-light);
+}
+.ct-products-list.open { display: block; }
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 6px;
+}
+.product-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  color: var(--text);
+  font-size: 13px;
+  transition: background 0.1s;
+}
+.product-link:hover {
+  background: var(--blue-bg);
+  color: var(--blue);
+}
+.product-id {
+  font-family: "SF Mono", "Fira Code", monospace;
+  font-size: 11px;
+  color: var(--text-tertiary);
+  min-width: 60px;
+}
+.product-name-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.product-kw {
+  font-size: 10px;
+  color: var(--coral);
+  margin-left: auto;
+  white-space: nowrap;
+}
+.products-more {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--text-tertiary);
+  font-style: italic;
+}
+
+/* Priority section */
+.priority-section {
+  margin-bottom: 40px;
+}
+.priority-heading {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 4px;
+}
+.priority-sub {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.priority-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--surface);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
+}
+.priority-table th {
+  text-align: left;
+  padding: 12px 16px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+  font-weight: 600;
+  background: var(--surface-hover);
+  border-bottom: 1px solid var(--border);
+}
+.priority-table th:last-child { text-align: right; }
+.priority-table td {
+  padding: 12px 16px;
+  font-size: 14px;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: top;
+}
+.priority-table td:last-child { text-align: right; font-weight: 600; color: var(--coral); }
+.priority-table tr { cursor: pointer; transition: background 0.1s; }
+.priority-table tbody tr:hover { background: var(--surface-hover); }
+.priority-rank {
+  font-family: var(--font-display);
+  font-size: 18px;
+  color: var(--text-tertiary);
+  min-width: 28px;
+  display: inline-block;
+}
+.priority-service {
+  font-weight: 500;
+}
+.priority-ct {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.priority-detail {
+  display: none;
+  background: var(--surface-hover);
+  border-bottom: 1px solid var(--border-light);
+}
+.priority-detail.open { display: table-row; }
+.priority-detail td {
+  padding: 12px 24px 16px;
+  font-weight: normal;
+  color: var(--text);
+}
+.priority-impact {
+  display: inline-block;
+  background: var(--coral-bg);
+  color: var(--coral);
+  border: 1px solid var(--coral-border);
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.section-divider {
+  margin: 48px 0 28px;
+  border: none;
+  border-top: 2px solid var(--border);
+}
+.section-heading {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+  margin-bottom: 20px;
+  color: var(--text-secondary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .page-header h1 { font-size: 28px; }
+  .stats-strip { flex-direction: column; }
+  .stat:first-child, .stat:last-child { border-radius: 0; }
+  .ct-row { grid-template-columns: 1fr 60px; }
+  .ct-row > :nth-child(2) { display: none; }
+  .product-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <h1>Keyword Injection <em>Gaps</em></h1>
+  <p class="lead">
+    Products where our keyword rules detect a relevant service (e.g. "Replace button" for a shirt with buttons),
+    but QFix's <code>assigned_categories</code> blocks it. These are gaps to raise with QFix.
+  </p>
+</div>
+
+<div class="container">
+
+  <div class="explanation">
+    <strong>How this works:</strong> When a product name or description contains keywords like "knapp" (button),
+    "dragkedja" (zipper), or "läder" (leather), we try to inject the corresponding repair/care service.
+    But if QFix hasn't assigned that service to the product's clothing type, it gets filtered out.
+    Each row below shows a clothing type where a service <em>should</em> be available but isn't.
+  </div>
+
+  <div class="brand-filter" id="brand-filter"></div>
+
+  <div class="stats-strip" id="stats">
+    <div class="stat"><div class="stat-number coral" id="stat-gaps">—</div><div class="stat-label">Blocked Actions</div></div>
+    <div class="stat"><div class="stat-number amber" id="stat-products">—</div><div class="stat-label">Products Affected</div></div>
+    <div class="stat"><div class="stat-number blue" id="stat-types">—</div><div class="stat-label">Clothing Types</div></div>
+  </div>
+
+  <div id="priority-content"></div>
+
+  <div id="content">
+    <div class="loading">
+      <div class="loading-spinner"></div>
+      Loading gap analysis...
+    </div>
+  </div>
+
+</div>
+
+<script>
+const BRANDS = ["kappahl", "ginatricot", "lindex", "eton", "nudie"];
+const BRAND_LABELS = {kappahl: "KappAhl", ginatricot: "Gina Tricot", lindex: "Lindex", eton: "Eton", nudie: "Nudie Jeans"};
+
+// False positive patterns: keyword substring matches that aren't real
+// e.g. "läder" in "handleder", "skinn" in "skinnjeans" (that one IS real)
+const FALSE_POSITIVE_CATEGORIES = new Set([
+  // Underwear/swimwear + leather care is almost always a false positive
+  "171:Clean and condition",  // Underwear
+  "171:Replace lining",
+  "171:Replace zipper",
+  "171:Replace main zipper",
+  "171:Replace buckle",
+  "169:Clean and condition",  // Bikini
+  "169:Replace lining",
+  "168:Clean and condition",  // Swimsuit
+  "168:Replace lining",
+  "168:Replace zipper",
+  "168:Replace main zipper",
+]);
+
+let currentBrand = "kappahl";
+let gapData = null;
+
+function initBrandFilter() {
+  const container = document.getElementById("brand-filter");
+  BRANDS.forEach(slug => {
+    const btn = document.createElement("button");
+    btn.className = "brand-btn" + (slug === currentBrand ? " active" : "");
+    btn.textContent = BRAND_LABELS[slug];
+    btn.onclick = () => selectBrand(slug);
+    container.appendChild(btn);
+  });
+}
+
+function selectBrand(slug) {
+  currentBrand = slug;
+  document.querySelectorAll(".brand-btn").forEach(b => {
+    b.classList.toggle("active", b.textContent === BRAND_LABELS[slug]);
+  });
+  loadData();
+}
+
+async function loadData() {
+  document.getElementById("content").innerHTML = '<div class="loading"><div class="loading-spinner"></div>Loading gap analysis...</div>';
+  try {
+    const resp = await fetch("/api/keyword-gaps/" + currentBrand);
+    gapData = await resp.json();
+    renderData();
+  } catch (e) {
+    document.getElementById("content").innerHTML = '<div class="loading">Failed to load data: ' + e.message + '</div>';
+  }
+}
+
+function renderData() {
+  if (!gapData || !gapData.gaps) return;
+
+  // Filter out false positives
+  const gaps = gapData.gaps.filter(g => !FALSE_POSITIVE_CATEGORIES.has(g.ct_id + ":" + g.action_name));
+
+  // Group by action
+  const byAction = {};
+  gaps.forEach(g => {
+    if (!byAction[g.action_name]) {
+      byAction[g.action_name] = { action: g.action_name, category: g.category, items: [] };
+    }
+    byAction[g.action_name].items.push(g);
+  });
+
+  // Sort by total products
+  const groups = Object.values(byAction).sort((a, b) => {
+    const ta = a.items.reduce((s, i) => s + i.product_count, 0);
+    const tb = b.items.reduce((s, i) => s + i.product_count, 0);
+    return tb - ta;
+  });
+
+  // Stats
+  const uniqueCtIds = new Set(gaps.map(g => g.ct_id));
+  const totalProducts = gaps.reduce((s, g) => s + g.product_count, 0);
+  document.getElementById("stat-gaps").textContent = gaps.length;
+  document.getElementById("stat-products").textContent = totalProducts.toLocaleString();
+  document.getElementById("stat-types").textContent = uniqueCtIds.size;
+
+  // Render priority top 10
+  renderPriority(gaps);
+
+  // Render full list
+  const container = document.getElementById("content");
+  container.innerHTML = '<hr class="section-divider"><div class="section-heading">All gaps by service</div>';
+
+  groups.forEach((group, idx) => {
+    const totalForAction = group.items.reduce((s, i) => s + i.product_count, 0);
+    const div = document.createElement("div");
+    div.className = "action-group" + (idx < 3 ? " open" : "");
+
+    let rows = "";
+    group.items.sort((a, b) => b.product_count - a.product_count).forEach((g, gi) => {
+      const rowId = 'products-' + group.action.replace(/\s/g,'') + '-' + g.ct_id;
+      const examples = (g.example_products || []).slice(0, 2)
+        .map(p => p.name).join(", ");
+      rows += '<div class="ct-row" onclick="toggleProducts(\'' + rowId + '\')">' +
+        '<div><span class="ct-name">' + g.ct_name + '</span>' +
+        '<span class="ct-parent"> &mdash; ' + g.ct_parent + '</span>' +
+        (examples ? '<div class="ct-example">e.g. ' + examples + '</div>' : '') +
+        '</div>' +
+        '<div class="action-category">ct_id ' + g.ct_id + (g.action_id ? ' / action ' + g.action_id : '') + '</div>' +
+        '<div class="ct-products">' + g.product_count + ' &#9662;</div>' +
+        '</div>';
+      // Product drilldown
+      rows += '<div class="ct-products-list" id="' + rowId + '"><div class="product-grid">';
+      (g.example_products || []).forEach(p => {
+        const kws = (p.matched || []).join(', ');
+        rows += '<a class="product-link" href="/demo?productId=' + encodeURIComponent(p.id) + '" target="_blank">' +
+          '<span class="product-id">' + p.id + '</span>' +
+          '<span class="product-name-text">' + p.name + '</span>' +
+          '<span class="product-kw">' + kws + '</span>' +
+          '</a>';
+      });
+      if (g.product_count > (g.example_products || []).length) {
+        rows += '<div class="products-more">+ ' + (g.product_count - (g.example_products || []).length) + ' more products</div>';
+      }
+      rows += '</div></div>';
+    });
+
+    div.innerHTML =
+      '<div class="action-header" onclick="this.parentElement.classList.toggle(\'open\')">' +
+        '<div class="action-title">' + group.action + '</div>' +
+        '<div class="action-meta">' +
+          '<span class="action-category">' + group.category + '</span>' +
+          '<span class="action-count">' + totalForAction + ' products</span>' +
+          '<span class="chevron">&#9660;</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="action-body">' + rows + '</div>';
+
+    container.appendChild(div);
+  });
+}
+
+function renderPriority(gaps) {
+  // Flatten and sort by product count to get top 10
+  const sorted = [...gaps].sort((a, b) => b.product_count - a.product_count).slice(0, 10);
+  const totalTop10 = sorted.reduce((s, g) => s + g.product_count, 0);
+  const totalAll = gaps.reduce((s, g) => s + g.product_count, 0);
+  const pct = Math.round(totalTop10 * 100 / totalAll);
+
+  const pc = document.getElementById("priority-content");
+  let html = '<div class="priority-section">';
+  html += '<div class="priority-heading">Priority: Top 10 changes</div>';
+  html += '<div class="priority-sub">These 10 changes would fix <strong>' + totalTop10 + '</strong> of ' + totalAll + ' affected products (' + pct + '%). Click a row to see affected products.</div>';
+  html += '<table class="priority-table"><thead><tr><th>#</th><th>Service</th><th>Clothing Type</th><th>Products</th></tr></thead><tbody>';
+
+  sorted.forEach((g, i) => {
+    const rowId = 'priority-detail-' + i;
+    html += '<tr onclick="togglePriorityRow(\'' + rowId + '\')">' +
+      '<td><span class="priority-rank">' + (i + 1) + '</span></td>' +
+      '<td><span class="priority-service">' + g.action_name + '</span><br><span class="priority-ct">' + g.category + ' &middot; action ID ' + g.action_id + '</span></td>' +
+      '<td>' + g.ct_name + '<br><span class="priority-ct">' + g.ct_parent + ' &middot; ct_id ' + g.ct_id + '</span></td>' +
+      '<td><span class="priority-impact">' + g.product_count + '</span></td>' +
+      '</tr>';
+
+    // Expandable detail row with products
+    html += '<tr class="priority-detail" id="' + rowId + '"><td colspan="4"><div class="product-grid">';
+    (g.example_products || []).forEach(p => {
+      const kws = (p.matched || []).join(', ');
+      html += '<a class="product-link" href="/demo?productId=' + encodeURIComponent(p.id) + '" target="_blank">' +
+        '<span class="product-id">' + p.id + '</span>' +
+        '<span class="product-name-text">' + p.name + '</span>' +
+        '<span class="product-kw">' + kws + '</span>' +
+        '</a>';
+    });
+    if (g.product_count > (g.example_products || []).length) {
+      html += '<div class="products-more">+ ' + (g.product_count - (g.example_products || []).length) + ' more products</div>';
+    }
+    html += '</div></td></tr>';
+  });
+
+  html += '</tbody></table></div>';
+  pc.innerHTML = html;
+}
+
+function togglePriorityRow(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+function toggleProducts(id) {
+  const el = document.getElementById(id);
+  if (el) el.classList.toggle('open');
+}
+
+initBrandFilter();
+loadData();
+</script>
+</body>
+</html>

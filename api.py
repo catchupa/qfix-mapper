@@ -2389,6 +2389,91 @@ def remap_apply():
     })
 
 
+# --- Scraper trigger ---
+
+_scraper_status = {
+    "running": False,
+    "last_run": None,
+    "results": {},
+}
+
+BRAND_SCRAPERS = {
+    "kappahl": "main",
+    "ginatricot": "ginatricot_main",
+    "lindex": "lindex_main",
+    "eton": "eton_main",
+    "nudie": "nudie_main",
+}
+
+
+def _run_scraper_brand(brand_slug):
+    """Run a single brand scraper, return (brand, status, message)."""
+    module_name = BRAND_SCRAPERS.get(brand_slug)
+    if not module_name:
+        return brand_slug, "error", f"Unknown brand: {brand_slug}"
+    try:
+        import importlib
+        mod = importlib.import_module(module_name)
+        mod.main()
+        return brand_slug, "ok", "Completed"
+    except Exception as e:
+        logger.error("Scraper %s failed: %s", brand_slug, e)
+        return brand_slug, "error", str(e)
+
+
+def _run_scrapers(brands):
+    """Run scrapers for given brands sequentially in background."""
+    import threading
+    _scraper_status["running"] = True
+    _scraper_status["results"] = {}
+    for slug in brands:
+        logger.info("Starting scraper for %s...", slug)
+        _scraper_status["results"][slug] = {"status": "running"}
+        slug, status, msg = _run_scraper_brand(slug)
+        _scraper_status["results"][slug] = {"status": status, "message": msg}
+        logger.info("Scraper %s: %s — %s", slug, status, msg)
+    _scraper_status["running"] = False
+    _scraper_status["last_run"] = _time.strftime("%Y-%m-%dT%H:%M:%SZ", _time.gmtime())
+
+
+@app.route("/api/scrape", methods=["POST"])
+@limiter.exempt
+def trigger_scrape():
+    """Trigger product scraping for one or all brands.
+
+    Requires ADMIN_TOKEN. Runs in background thread.
+    Query params: brand=kappahl (optional, defaults to all)
+    """
+    if _admin_token:
+        token = request.headers.get("Authorization", "").replace("Bearer ", "")
+        if token != _admin_token:
+            return jsonify({"error": "Unauthorized"}), 401
+
+    if _scraper_status["running"]:
+        return jsonify({"error": "Scraper already running", "results": _scraper_status["results"]}), 409
+
+    brand = request.args.get("brand")
+    if brand:
+        if brand not in BRAND_SCRAPERS:
+            return jsonify({"error": f"Unknown brand: {brand}", "valid": list(BRAND_SCRAPERS.keys())}), 400
+        brands = [brand]
+    else:
+        brands = list(BRAND_SCRAPERS.keys())
+
+    import threading
+    t = threading.Thread(target=_run_scrapers, args=(brands,), daemon=True)
+    t.start()
+
+    return jsonify({"status": "started", "brands": brands})
+
+
+@app.route("/api/scrape/status")
+@limiter.exempt
+def scrape_status():
+    """Check scraper status."""
+    return jsonify(_scraper_status)
+
+
 # --- Health check ---
 
 @app.route("/health")
@@ -2863,14 +2948,25 @@ def docs_verify(product_id):
     }
 
     # Top ranked actions — filtered and keyword-adjusted
-    # Pass ?filter=0 to disable service filtering for debugging
+    # Pass ?filter=0 to disable assigned_categories filtering (but keep keyword rules)
     if request.args.get("filter") == "0":
-        # Debug mode: raw rankings, no filtering
         top_actions = {}
         if ct_id and mat_id:
             ranking_conn = get_db()
             top_actions = get_action_ranking(ranking_conn, ct_id, mat_id) or {}
             ranking_conn.close()
+        # Still apply keyword require/exclusion rules — these are about product relevance
+        if top_actions:
+            product_text = " ".join(filter(None, [
+                product.get("product_name", ""),
+                product.get("description", ""),
+                product.get("clothing_type", ""),
+            ]))
+            if product_text:
+                catalog.load()
+                svc_cats = catalog.services.get((ct_id, mat_id), [])
+                if svc_cats:
+                    top_actions = _inject_keyword_actions(top_actions, product_text, svc_cats, ct_id=ct_id)
     else:
         top_actions = _get_filtered_actions(product)
 
@@ -3051,6 +3147,287 @@ def docs_category_products():
 def docs_assigned_categories_gap():
     """View assigned_categories gap analysis."""
     return send_from_directory(DOCS_DIR, "assigned_categories_gap.html")
+
+
+@app.route("/docs/keyword-gaps")
+def docs_keyword_gaps():
+    """View keyword injection gap analysis."""
+    return send_from_directory(DOCS_DIR, "keyword_gaps.html")
+
+
+@app.route("/api/keyword-gaps")
+@app.route("/api/keyword-gaps/<brand_slug>")
+def api_keyword_gaps(brand_slug=None):
+    """Find keyword injection actions blocked by assigned_categories.
+
+    Returns gaps where a product's name/description triggers a keyword rule
+    but the injected action is not in assigned_categories for that clothing type.
+    """
+    catalog.load()
+    if not catalog.services:
+        return jsonify({"error": "Catalog not loaded"}), 500
+
+    brands_to_check = [BRAND_ROUTES[brand_slug]] if brand_slug and brand_slug in BRAND_ROUTES else list(BRAND_ROUTES.values())
+
+    slug_map = {"repair": "repair", "adjustment": "adjustment", "care": "washing"}
+
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT product_id, product_name, description, clothing_type, brand,
+                   qfix_clothing_type, qfix_clothing_type_id,
+                   qfix_material, qfix_material_id
+            FROM products_unified
+            WHERE brand = ANY(%s) AND qfix_clothing_type_id IS NOT NULL
+        """, (brands_to_check,))
+        products = cur.fetchall()
+    conn.close()
+
+    # {(ct_id, action_name, action_id): gap_info}
+    gaps = {}
+
+    for product in products:
+        ct_id = product["qfix_clothing_type_id"]
+        mat_id = product["qfix_material_id"]
+        product_text = " ".join(filter(None, [
+            product.get("product_name", ""),
+            product.get("description", ""),
+            product.get("clothing_type", ""),
+        ])).lower()
+
+        for rule in KEYWORD_ACTION_RULES:
+            matched_keywords = [kw for kw in rule["keywords"] if kw in product_text]
+            if not matched_keywords:
+                continue
+
+            slug_pattern = slug_map.get(rule["category"], rule["category"])
+            svc_cats = catalog.services.get((ct_id, mat_id), [])
+
+            for action_spec in rule["actions"]:
+                action_name = action_spec["name"]
+
+                # Check sub_keywords
+                if "sub_keywords" in action_spec and not action_spec.get("default"):
+                    if not any(sk in product_text for sk in action_spec["sub_keywords"]):
+                        continue
+
+                # Find action in catalog
+                action = None
+                for svc_cat in svc_cats:
+                    if slug_pattern not in svc_cat.get("slug", ""):
+                        continue
+                    for s in svc_cat.get("services", []):
+                        if s["name"] == action_name:
+                            action = s
+                            break
+                    if action:
+                        break
+                if not action:
+                    continue
+
+                if ct_id in catalog.assigned_categories.get(action["id"], set()):
+                    continue  # Valid, no gap
+
+                gap_key = (ct_id, action_name, action["id"])
+                if gap_key not in gaps:
+                    ct_info = catalog.items.get(ct_id, {})
+                    gaps[gap_key] = {
+                        "action_name": action_name,
+                        "action_id": action["id"],
+                        "action_price": action.get("price"),
+                        "category": rule["category"],
+                        "ct_id": ct_id,
+                        "ct_name": ct_info.get("name", f"ID {ct_id}"),
+                        "ct_parent": ct_info.get("parent", {}).get("name", "Unknown"),
+                        "keywords": list(rule["keywords"]),
+                        "product_count": 0,
+                        "example_products": [],
+                    }
+
+                gaps[gap_key]["product_count"] += 1
+                if len(gaps[gap_key]["example_products"]) < 20:
+                    gaps[gap_key]["example_products"].append({
+                        "id": product["product_id"],
+                        "name": product["product_name"],
+                        "brand": product["brand"],
+                        "matched": matched_keywords,
+                    })
+
+    gap_list = sorted(gaps.values(), key=lambda g: (-g["product_count"], g["ct_name"]))
+    return jsonify({
+        "brands": brands_to_check,
+        "total_gaps": len(gap_list),
+        "total_product_action_combos": sum(g["product_count"] for g in gap_list),
+        "gaps": gap_list,
+    })
+
+
+@app.route("/docs/catalog-gaps")
+def docs_catalog_gaps():
+    """View catalog-level gap analysis."""
+    return send_from_directory(DOCS_DIR, "catalog_gaps.html")
+
+
+@app.route("/api/catalog-gaps")
+@app.route("/api/catalog-gaps/<brand_slug>")
+def api_catalog_gaps(brand_slug=None):
+    """Find services blocked by assigned_categories that are relevant to real products.
+
+    A service is considered relevant if:
+    1. The AI ranking includes it for that (clothing_type, material) combo, OR
+    2. Keyword rules would inject it based on the product text.
+
+    This combines AI intelligence with keyword evidence to give the complete picture
+    of what QFix should enable, without including nonsensical services.
+    """
+    catalog.load()
+    if not catalog.services:
+        return jsonify({"error": "Catalog not loaded"}), 500
+
+    brands_to_check = [BRAND_ROUTES[brand_slug]] if brand_slug and brand_slug in BRAND_ROUTES else list(BRAND_ROUTES.values())
+
+    conn = get_db()
+    with conn.cursor(cursor_factory=RealDictCursor) as cur:
+        cur.execute("""
+            SELECT product_id, product_name, description, clothing_type, brand,
+                   qfix_clothing_type, qfix_clothing_type_id,
+                   qfix_material, qfix_material_id
+            FROM products_unified
+            WHERE brand = ANY(%s) AND qfix_clothing_type_id IS NOT NULL
+        """, (brands_to_check,))
+        products = cur.fetchall()
+
+    # Build keyword lookup for evidence tagging
+    keyword_evidence_map = {}  # action_name -> list of keyword sets
+    for rule in KEYWORD_ACTION_RULES:
+        for action_spec in rule["actions"]:
+            name = action_spec["name"]
+            if name not in keyword_evidence_map:
+                keyword_evidence_map[name] = []
+            keyword_evidence_map[name].append(rule["keywords"])
+
+    # Cache AI rankings per (ct_id, mat_id)
+    ranking_cache = {}
+
+    def get_ai_ranked_actions(ct_id, mat_id):
+        key = (ct_id, mat_id)
+        if key in ranking_cache:
+            return ranking_cache[key]
+        rankings = get_action_ranking(conn, ct_id, mat_id) or {}
+        # Flatten to set of action IDs
+        ai_action_ids = set()
+        for actions in rankings.values():
+            for a in actions:
+                ai_action_ids.add(a.get("id"))
+        ranking_cache[key] = ai_action_ids
+        return ai_action_ids
+
+    # Cache blocked services per (ct_id, mat_id)
+    slug_map = {"repair": "repair", "adjustment": "adjustment", "washing": "care"}
+    blocked_cache = {}
+
+    def get_blocked_services(ct_id, mat_id):
+        key = (ct_id, mat_id)
+        if key in blocked_cache:
+            return blocked_cache[key]
+        svc_cats = catalog.services.get(key, [])
+        blocked = {}  # action_id -> info
+        for svc_cat in svc_cats:
+            svc_slug = svc_cat.get("slug", "")
+            cat_key = None
+            for slug_part, cat in slug_map.items():
+                if slug_part in svc_slug:
+                    cat_key = cat
+                    break
+            if not cat_key:
+                continue
+            for s in svc_cat.get("services", []):
+                action_id = s["id"]
+                if ct_id not in catalog.assigned_categories.get(action_id, set()):
+                    blocked[action_id] = {
+                        "action_id": action_id,
+                        "action_name": s["name"],
+                        "action_price": s.get("price"),
+                        "category": cat_key,
+                    }
+        blocked_cache[key] = blocked
+        return blocked
+
+    # {(ct_id, action_id): gap_info}
+    gaps = {}
+
+    for product in products:
+        ct_id = product["qfix_clothing_type_id"]
+        mat_id = product["qfix_material_id"]
+        blocked = get_blocked_services(ct_id, mat_id)
+        if not blocked:
+            continue
+
+        ai_action_ids = get_ai_ranked_actions(ct_id, mat_id)
+
+        product_text = " ".join(filter(None, [
+            product.get("product_name", ""),
+            product.get("description", ""),
+            product.get("clothing_type", ""),
+        ])).lower()
+
+        for action_id, b in blocked.items():
+            # Check keyword evidence for this product
+            matched_kws = []
+            for kw_set in keyword_evidence_map.get(b["action_name"], []):
+                matched_kws.extend(kw for kw in kw_set if kw in product_text)
+
+            is_ai_ranked = action_id in ai_action_ids
+            has_keyword = len(matched_kws) > 0
+
+            # Only include if AI ranked it OR keywords match
+            if not is_ai_ranked and not has_keyword:
+                continue
+
+            gap_key = (ct_id, action_id)
+            if gap_key not in gaps:
+                ct_info = catalog.items.get(ct_id, {})
+                gaps[gap_key] = {
+                    "action_name": b["action_name"],
+                    "action_id": b["action_id"],
+                    "action_price": b["action_price"],
+                    "category": b["category"],
+                    "ct_id": ct_id,
+                    "ct_name": ct_info.get("name", f"ID {ct_id}"),
+                    "ct_parent": ct_info.get("parent", {}).get("name", "Unknown"),
+                    "has_keyword_rule": b["action_name"] in keyword_evidence_map,
+                    "product_count": 0,
+                    "keyword_match_count": 0,
+                    "ai_ranked": is_ai_ranked,
+                    "example_products": [],
+                }
+
+            gap = gaps[gap_key]
+            gap["product_count"] += 1
+            if has_keyword:
+                gap["keyword_match_count"] += 1
+            # Track if ANY product for this gap has AI ranking
+            if is_ai_ranked:
+                gap["ai_ranked"] = True
+
+            if len(gap["example_products"]) < 20:
+                gap["example_products"].append({
+                    "id": product["product_id"],
+                    "name": product["product_name"],
+                    "brand": product["brand"],
+                    "matched_keywords": matched_kws if matched_kws else None,
+                    "ai_ranked": is_ai_ranked,
+                })
+
+    conn.close()
+
+    gap_list = sorted(gaps.values(), key=lambda g: (-g["product_count"], g["ct_name"]))
+    return jsonify({
+        "brands": brands_to_check,
+        "total_gaps": len(gap_list),
+        "total_product_action_combos": sum(g["product_count"] for g in gap_list),
+        "gaps": gap_list,
+    })
 
 
 @app.route("/docs/keyword-stats")

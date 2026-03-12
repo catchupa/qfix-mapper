@@ -593,6 +593,13 @@
         </details>
       </div>
 
+      <details class="kh-expandable" id="descSection" style="display:none;">
+        <summary>Produktbeskrivning</summary>
+        <div class="kh-expandable-content">
+          <p id="infoDesc" style="font-size:13px; line-height:1.6; color:var(--text-secondary);"></p>
+        </div>
+      </details>
+
       <details class="kh-expandable">
         <summary>Art.nr</summary>
         <div class="kh-expandable-content">
@@ -753,6 +760,10 @@
           document.getElementById("infoBrand").textContent = brand;
           document.getElementById("infoClothingType").textContent = p.clothing_type || "\u2014";
           document.getElementById("infoMaterial").textContent = p.material_composition || "\u2014";
+          if (p.description) {
+            document.getElementById("infoDesc").textContent = p.description;
+            document.getElementById("descSection").style.display = "";
+          }
           document.getElementById("infoQfixType").textContent = m.clothing_type_result
             ? m.clothing_type_result + " (ID " + m.clothing_type_id + ")" : "\u2014";
           document.getElementById("infoQfixMaterial").textContent = m.material_result
