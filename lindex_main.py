@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from curl_cffi import requests as cffi_requests
-from database import get_connection, create_table, run_scraper
+from database import run_scraper
 from lindex_scraper import fetch_product_urls, scrape_all
 
 logging.basicConfig(
@@ -17,11 +17,6 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    logger.info("Connecting to database...")
-    conn = get_connection()
-    create_table(conn)
-    conn.close()
-
     session = cffi_requests.Session(impersonate="chrome")
 
     logger.info("Crawling category pages for product URLs...")

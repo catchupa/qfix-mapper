@@ -35,8 +35,15 @@ jobs:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
           flyctl proxy 5432:5432 --app kappahl-qfix-db &
-          sleep 5
-          echo "Fly proxy started"
+          # Wait for tunnel to be ready (up to 30s)
+          for i in $(seq 1 30); do
+            if pg_isready -h localhost -p 5432 > /dev/null 2>&1; then
+              echo "Fly proxy ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+          pg_isready -h localhost -p 5432 || (echo "Tunnel failed to connect" && exit 1)
 
       # 5. Run each scraper sequentially
       #    They connect to localhost:5432 (the tunnel) and upsert products
